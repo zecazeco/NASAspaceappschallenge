@@ -1,0 +1,138 @@
+// Painel da temperatura: de onde vem o número.
+//   • o mapa da NASA (GISTEMP) do ano que está tocando, com a cidade marcada;
+//   • a lente: o pedaço do mapa em volta da cidade, ampliado;
+//   • o valor lido da cor do mapa e a seta branca na escala (−2 a +2 °C), que anda com ele.
+// O mapa acompanha a música: no fim de cada compasso ele se funde com o mapa do ano seguinte.
+// Tudo é desenhado em coordenadas do FRAME (pixels da imagem da NASA), então o ponto
+// da cidade fica no lugar certo em qualquer tamanho de tela.
+
+import { visualizacao, frameDoPasso, imagemDoFrame, pontoNoFrame, corDoValor } from './frames.js';
+
+const $ = (s) => document.querySelector(s);
+const LADO_LENTE = 90;   // pedaço do frame (px, frame de 1280) mostrado na lente
+const INICIO_FUSAO = 0.7; // a partir de 70% do compasso o mapa começa a virar o do ano seguinte
+const num = (v) => Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+export class PainelTemperatura {
+  constructor({ tempo, passos }) {
+    this.tempo = tempo;
+    this.passos = passos;
+    this.v = visualizacao('temperatura');
+    this.botao = $('#mapa-temp');
+    this.mapa = this.botao.querySelector('canvas');
+    this.lente = $('#lente-temp');
+    this.painel = this.botao.closest('.painel-temp');
+    this.imgs = new Map();          // arquivo → imagem já carregada
+    this.cidade = null;
+    this.ponto = null;
+    this.corAnel = '#ff7a45';
+    this.chave = '';
+    const ro = new ResizeObserver(() => this.dimensionar());
+    ro.observe(this.mapa); ro.observe(this.lente);
+    const quadro = () => { this.desenhar(); requestAnimationFrame(quadro); };
+    requestAnimationFrame(quadro);
+  }
+
+  definirCidade(cidade) {
+    this.cidade = cidade;
+    this.ponto = this.v ? pontoNoFrame('temperatura', cidade.lat, cidade.lon) : null;
+    this.chave = '';
+    this.ligarFio();
+  }
+
+  /** Texto, cor e seta do ano (chamado a cada compasso e ao rebobinar). */
+  atualizar(idx, valor) {
+    const ano = this.passos[idx].inicio;
+    const temValor = valor != null;
+    $('#valor-temp').innerHTML = temValor ? `${valor >= 0 ? '+' : '−'}${num(valor)}<small>°C</small>` : '—';
+    $('#legenda-temp').textContent = temValor
+      ? `${Math.abs(valor) < 0.05 ? 'igual à' : valor > 0 ? 'mais quente que a' : 'mais frio que a'} média de 1951–1980, em ${ano}`
+      : `sem dado do mapa em ${ano}`;
+    const seta = $('#seta-temp');
+    seta.hidden = !temValor;
+    if (temValor) seta.style.top = `${((2 - Math.max(-2, Math.min(2, valor))) / 4) * 100}%`;
+    this.corAnel = (temValor && corDoValor(this.v, valor)) || '#ff7a45';
+    this.botao.setAttribute('aria-label', `Ampliar o mapa de temperatura da NASA de ${ano}. O ponto marca ${this.cidade?.nome ?? 'a cidade'}.`);
+    this.chave = '';
+  }
+
+  dimensionar() {
+    this.dpr = Math.min(2, devicePixelRatio || 1);
+    for (const c of [this.mapa, this.lente]) {
+      const r = c.getBoundingClientRect();
+      c.width = Math.max(1, Math.round(r.width * this.dpr));
+      c.height = Math.max(1, Math.round(r.height * this.dpr));
+    }
+    this.chave = '';
+    this.ligarFio();
+  }
+
+  /** Fio tracejado do ponto no mapa até a lente (só no celular; no monitor ficam lado a lado). */
+  ligarFio() {
+    const linha = $('#fio-temp');
+    if (!this.ponto || !this.v) { linha.removeAttribute('x1'); return; }
+    const rc = this.v.recorte, base = this.painel.getBoundingClientRect();
+    const m = this.mapa.getBoundingClientRect(), l = this.lente.getBoundingClientRect();
+    const x1 = m.left - base.left + ((this.ponto.x - rc.x) / rc.largura) * m.width;
+    const y1 = m.top - base.top + ((this.ponto.y - rc.y) / rc.altura) * m.height + 9;
+    const x2 = l.left - base.left + l.width / 2, y2 = l.top - base.top + 3;
+    Object.entries({ x1, y1, x2, y2 }).forEach(([k, v]) => linha.setAttribute(k, v.toFixed(1)));
+  }
+
+  /** Imagem do frame se já estiver carregada; se não, pede e devolve null. */
+  img(f) {
+    if (!f) return null;
+    const i = this.imgs.get(f.arquivo);
+    if (i) return i;
+    if (!this.imgs.has(f.arquivo + '?')) {
+      this.imgs.set(f.arquivo + '?', true);
+      imagemDoFrame(f).then((im) => { this.imgs.set(f.arquivo, im); this.chave = ''; }).catch(() => {});
+    }
+    return null;
+  }
+
+  desenhar() {
+    if (!this.cidade || !this.v || !this.ponto || this.painel.closest('[hidden]')) return;
+    const N = this.passos.length;
+    const t = Math.max(0, Math.min(N - 1, this.tempo()));
+    const i = Math.floor(t), f = t - i;
+    const fusao = i + 1 < N && f > INICIO_FUSAO ? (f - INICIO_FUSAO) / (1 - INICIO_FUSAO) : 0;
+    const suave = fusao * fusao * (3 - 2 * fusao);
+    const chave = `${i}|${Math.round(suave * 24)}|${this.mapa.width}|${this.corAnel}`;
+    if (chave === this.chave) return;
+    const a = this.img(frameDoPasso('temperatura', this.passos[i]));
+    const b = suave > 0 ? this.img(frameDoPasso('temperatura', this.passos[i + 1])) : null;
+    if (!a) return;                  // ainda baixando: tenta no próximo quadro
+    this.chave = chave;
+    const camadas = [[a, 1]];
+    if (b && suave > 0) camadas.push([b, suave]);
+    this.desenharMapa(camadas);
+    this.desenharLente(camadas);
+  }
+
+  desenharMapa(camadas) {
+    const g = this.mapa.getContext('2d'), W = this.mapa.width, H = this.mapa.height, rc = this.v.recorte;
+    g.clearRect(0, 0, W, H);
+    for (const [im, alfa] of camadas) { g.globalAlpha = alfa; g.drawImage(im, rc.x, rc.y, rc.largura, rc.altura, 0, 0, W, H); }
+    g.globalAlpha = 1;
+    const x = ((this.ponto.x - rc.x) / rc.largura) * W, y = ((this.ponto.y - rc.y) / rc.altura) * H, d = this.dpr;
+    for (const [r, a] of [[16, 0.12], [10, 0.25]]) { g.beginPath(); g.arc(x, y, r * d, 0, 7); g.fillStyle = `rgba(255,255,255,${a})`; g.fill(); }
+    g.beginPath(); g.arc(x, y, 10 * d, 0, 7); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 1.2 * d; g.stroke();
+    g.beginPath(); g.arc(x, y, 4 * d, 0, 7); g.fillStyle = this.corAnel; g.fill(); g.lineWidth = 2 * d; g.strokeStyle = '#fff'; g.stroke();
+  }
+
+  desenharLente(camadas) {
+    const g = this.lente.getContext('2d'), W = this.lente.width, d = this.dpr;
+    const c = W / 2, r = c - 4 * d, L = LADO_LENTE;
+    g.clearRect(0, 0, W, W);
+    g.save(); g.beginPath(); g.arc(c, c, r, 0, 7); g.clip();
+    for (const [im, alfa] of camadas) { g.globalAlpha = alfa; g.drawImage(im, this.ponto.x - L / 2, this.ponto.y - L / 2, L, L, c - r, c - r, 2 * r, 2 * r); }
+    g.restore();
+    g.save(); g.shadowColor = this.corAnel; g.shadowBlur = 16 * d;
+    g.beginPath(); g.arc(c, c, r, 0, 7); g.strokeStyle = this.corAnel; g.lineWidth = 3 * d; g.stroke(); g.restore();
+    const m = 4 * d, k = 10 * d;
+    g.strokeStyle = '#fff'; g.lineWidth = 1.2 * d; g.beginPath();
+    g.moveTo(c - k, c); g.lineTo(c - m, c); g.moveTo(c + m, c); g.lineTo(c + k, c);
+    g.moveTo(c, c - k); g.lineTo(c, c - m); g.moveTo(c, c + m); g.lineTo(c, c + k); g.stroke();
+  }
+}

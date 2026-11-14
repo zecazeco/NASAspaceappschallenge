@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05070d">
+  <title>Jukebox da Terra</title>
+  <meta name="description" content="Ouça o clima da sua cidade mudar de 1950 até hoje.">
+  <link rel="stylesheet" href="css/estilo.css">
+  <!-- Bibliotecas (versões fixas) -->
+  <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/dist/d3-geo-projection.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <!-- Anúncios para leitores de tela -->
+  <div id="anuncio" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <div id="alerta" class="sr-only" role="alert"></div>
+
+
+  <!-- 1. Tela inicial -->
+  <section id="tela-inicio" class="tela tela-centro" aria-labelledby="titulo-inicio">
+    <div class="cartao">
+      <h1 id="titulo-inicio">Jukebox da Terra</h1>
+      <p class="lead">Ouça o clima da sua cidade mudar de 1950 até hoje.</p>
+      <p>Cada som é um dado da NASA: <strong>gás carbônico</strong>, <strong>temperatura</strong>, <strong>chuva</strong> e <strong>vegetação</strong>. Use fones de ouvido.</p>
+      <button id="btn-comecar" class="btn btn-grande btn-primario" type="button" disabled>Carregando…</button>
+      <p class="pequeno">Vamos pedir sua localização. Se preferir não compartilhar, você pode digitar a cidade.</p>
+      <p id="status-carregamento" class="pequeno" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- 2. Busca de cidade -->
+  <section id="tela-cidade" class="tela tela-centro" aria-labelledby="titulo-cidade" hidden>
+    <div class="cartao">
+      <h2 id="titulo-cidade">Qual é a sua cidade?</h2>
+      <p id="motivo-busca" class="pequeno"></p>
+      <form id="form-cidade" role="search" autocomplete="off">
+        <label for="campo-cidade" class="rotulo">Digite o nome de qualquer cidade do mundo</label>
+        <div class="linha-busca">
+          <input id="campo-cidade" type="search" inputmode="search" enterkeyhint="search"
+                 aria-describedby="status-busca" spellcheck="false" required>
+          <button class="btn btn-primario" type="submit">Buscar</button>
+        </div>
+      </form>
+      <p id="status-busca" class="pequeno" aria-live="polite"></p>
+      <ul id="resultados-cidade" class="resultados" aria-label="Cidades encontradas"></ul>
+      <button id="btn-cancelar-busca" class="btn btn-texto" type="button" hidden>Cancelar</button>
+    </div>
+  </section>
+
+  <!-- 2b. Preparando a cidade (lê os mapas da NASA e calcula a trilha) -->
+  <section id="tela-carregando" class="tela tela-centro" aria-labelledby="titulo-carregando" hidden>
+    <div class="cartao">
+      <h2 id="titulo-carregando">Preparando a música</h2>
+      <p id="carregando-cidade" class="lead"></p>
+      <progress id="progresso-cidade" max="100" value="0" aria-labelledby="titulo-carregando" aria-describedby="status-cidade"></progress>
+      <p id="status-cidade" class="pequeno" aria-live="polite">Lendo os mapas da NASA…</p>
+    </div>
+  </section>
+
+  <!-- 3. Tela principal -->
+  <main id="tela-principal" class="tela" hidden>
+    <header class="topo">
+      <div class="topo-texto">
+        <h1 id="nome-cidade" tabindex="-1">—</h1>
+        <p id="nome-regiao" class="pequeno"></p>
+      </div>
+      <div class="acoes-topo">
+        <button id="btn-trocar-cidade" class="btn btn-secundario" type="button" aria-label="Trocar cidade">Trocar</button>
+        <button id="btn-ajustes" class="btn btn-icone" type="button" aria-label="Ajustes" aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm7.4-2.5a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6Z"/></svg>
+        </button>
+      </div>
+      <!-- SÓ PARA TESTE: seletores da temperatura. Saem na versão final (fica uma base e um pontual). -->
+      <div class="barra-teste">
+        <div id="seletor-base" class="seletor-base" role="radiogroup" aria-label="Base da temperatura (teste)">
+          <button type="button" role="radio" data-base="base01" aria-checked="true" title="4 notas por compasso">Base01</button>
+          <button type="button" role="radio" data-base="base02" aria-checked="false" title="1 nota sustentada por compasso">Base02</button>
+          <button type="button" role="radio" data-base="base03" aria-checked="false" title="2 notas ligadas por compasso">Base03</button>
+        </div>
+        <div id="seletor-pontual" class="seletor-base" role="radiogroup" aria-label="Som pontual da temperatura (teste)">
+          <button type="button" role="radio" data-pontual="" aria-checked="true" title="Nenhum som pontual">Sem pontual</button>
+          <button type="button" role="radio" data-pontual="pontual01" aria-checked="false" title="Picos e vales da linha">Pontual01</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- A fonte do valor: o mapa de temperatura da NASA no ano que está tocando, com a cidade marcada.
+         O número que você ouve é a cor deste mapa sobre a cidade. -->
+    <section class="painel-temp" aria-labelledby="titulo-mapa-temp">
+      <h2 id="titulo-mapa-temp" class="sr-only">Mapa de temperatura da NASA</h2>
+      <button id="mapa-temp" class="mapa-nasa" type="button" aria-label="Ampliar o mapa de temperatura da NASA">
+        <canvas aria-hidden="true"></canvas>
+        <span class="rot" aria-hidden="true">Mapa NASA · anomalia de temperatura</span>
+      </button>
+      <div class="leitura">
+        <canvas id="lente-temp" class="lente" aria-hidden="true"></canvas>
+        <div class="leitura-texto">
+          <p id="valor-temp" class="valor-temp">—</p>
+          <p id="legenda-temp" class="valor-legenda"></p>
+        </div>
+        <div class="escala" aria-hidden="true">
+          <div class="barra"></div>
+          <span class="marca" style="top:0%">+2</span><span class="marca" style="top:25%">+1</span>
+          <span class="marca" style="top:50%">0</span><span class="marca" style="top:75%">−1</span><span class="marca" style="top:100%">−2</span>
+          <div id="seta-temp" class="seta"></div>
+        </div>
+      </div>
+      <svg class="fio-lente" aria-hidden="true"><line id="fio-temp"/></svg>
+    </section>
+
+    <!-- Valores do ano para leitores de tela (o gráfico é visual) -->
+    <section class="dimensoes sr-only" aria-labelledby="titulo-dimensoes">
+      <h2 id="titulo-dimensoes">O que você está ouvindo</h2>
+      <ul id="lista-dimensoes"></ul>
+    </section>
+
+    <section id="grafico" class="grafico" aria-label="Gráfico das quatro camadas ao longo dos anos. Arraste para os lados para ver o passado e o futuro."></section>
+
+    <section class="linha-tempo" aria-labelledby="titulo-tempo">
+      <h2 id="titulo-tempo" class="sr-only">Linha do tempo</h2>
+      <p id="ano-grande" class="ano-grande" aria-hidden="true">—</p>
+
+      <label for="slider-tempo" class="sr-only">Ano</label>
+      <input id="slider-tempo" class="slider" type="range" min="0" max="1" step="1" value="0">
+
+      <div class="controles">
+        <button id="btn-voltar" class="btn btn-controle" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6v12L2.5 12 11 6Zm10 0v12l-8.5-6L21 6Z"/></svg>
+          <span>Voltar</span>
+        </button>
+        <button id="btn-tocar" class="btn btn-controle btn-tocar" type="button">
+          <svg class="ic-tocar" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12 7 4.5Z"/></svg>
+          <svg class="ic-pausar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>
+          <span id="rotulo-tocar">Tocar</span>
+        </button>
+        <button id="btn-avancar" class="btn btn-controle" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 6v12l8.5-6L13 6ZM3 6v12l8.5-6L3 6Z"/></svg>
+          <span>Avançar</span>
+        </button>
+      </div>
+      <p class="creditos centro">Temperatura: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · CO₂, chuva e vegetação: dados fictícios (protótipo)</p>
+    </section>
+  </main>
+
+  <!-- Frame da NASA ampliado -->
+  <dialog id="frame-grande" aria-labelledby="titulo-frame">
+    <h2 id="titulo-frame"></h2>
+    <canvas id="canvas-frame" width="720" height="360" role="img"></canvas>
+    <p id="legenda-frame" class="pequeno"></p>
+    <form method="dialog"><button class="btn btn-primario">Fechar</button></form>
+  </dialog>
+
+  <!-- Ajustes -->
+  <dialog id="ajustes" aria-labelledby="titulo-ajustes">
+    <form method="dialog" class="ajustes-form">
+      <h2 id="titulo-ajustes">Ajustes</h2>
+
+      <fieldset>
+        <legend>Dimensões (instrumentos)</legend>
+        <label class="opcao"><input type="checkbox" name="dim-co2" checked> Gás carbônico: drone grave</label>
+        <label class="opcao"><input type="checkbox" name="dim-temperatura" checked> Temperatura: harmonia</label>
+        <label class="opcao"><input type="checkbox" name="dim-chuva" checked> Chuva: ritmo e gotas</label>
+        <label class="opcao"><input type="checkbox" name="dim-vegetacao" checked> Vegetação: cordas e floresta</label>
+      </fieldset>
+
+      <label class="rotulo" for="aj-narracao">Narração dos anos</label>
+      <select id="aj-narracao" name="narracao">
+        <option value="off">Desligada</option>
+        <option value="voz">Voz do app</option>
+        <option value="leitor">Só pelo leitor de tela</option>
+      </select>
+
+      <label class="opcao"><input type="checkbox" name="tic" checked> Tic a cada ano ao rebobinar</label>
+
+      <label class="rotulo" for="aj-volume">Volume da música</label>
+      <input id="aj-volume" name="volume" type="range" min="0" max="100" value="80">
+
+      <p class="pequeno" id="aj-info"></p>
+      <button class="btn btn-primario" value="ok">Fechar</button>
+    </form>
+  </dialog>
+</body>
+</html>

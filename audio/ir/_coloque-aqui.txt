@@ -1,0 +1,2 @@
+Reverb (opcional; sem ele o site usa um reverb sintetizado):
+espaco.wav (resposta impulsiva)

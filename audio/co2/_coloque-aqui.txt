@@ -1,0 +1,2 @@
+Coloque aqui os arquivos do músico para o CO2 (mesmo nome dos provisórios, eles têm prioridade):
+co2_base_1.wav … co2_base_4.wav (loops de 1 compasso, 110 BPM)

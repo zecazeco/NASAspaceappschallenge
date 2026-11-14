@@ -1,0 +1,1128 @@
+{
+  "ficticio": true,
+  "aviso": "Temperatura: frames REAIS da NASA (SVS 5207). CO₂, chuva e vegetação: frames fictícios.",
+  "visualizacoes": [
+    {
+      "id": "temperatura",
+      "dimensao": "temperatura",
+      "titulo": "Anomalia de temperatura da superfície (NASA GISTEMP)",
+      "fonte": "NASA SVS 5207 · GISTEMP v4",
+      "link": "https://svs.gsfc.nasa.gov/5207/",
+      "real": true,
+      "unidade": "°C",
+      "referencia": "média de 1951–1980",
+      "leitura": "local",
+      "raio": 2,
+      "projecao": {
+        "tipo": "robinson",
+        "area": [
+          17.333333333333332,
+          8.0,
+          1264.6666666666667,
+          641.0
+        ]
+      },
+      "recorte": {
+        "x": 0,
+        "y": 0,
+        "largura": 1280,
+        "altura": 633
+      },
+      "escala": {
+        "barra": {
+          "x": 52,
+          "y": 527,
+          "largura": 1,
+          "altura": 173,
+          "vertical": true
+        },
+        "min": -2,
+        "max": 2,
+        "tolerancia": 45
+      },
+      "frames": [
+        {
+          "data": "1950",
+          "arquivo": "temperatura-nasa/1950.webp",
+          "quadro": 417
+        },
+        {
+          "data": "1951",
+          "arquivo": "temperatura-nasa/1951.webp",
+          "quadro": 423
+        },
+        {
+          "data": "1952",
+          "arquivo": "temperatura-nasa/1952.webp",
+          "quadro": 429
+        },
+        {
+          "data": "1953",
+          "arquivo": "temperatura-nasa/1953.webp",
+          "quadro": 435
+        },
+        {
+          "data": "1954",
+          "arquivo": "temperatura-nasa/1954.webp",
+          "quadro": 441
+        },
+        {
+          "data": "1955",
+          "arquivo": "temperatura-nasa/1955.webp",
+          "quadro": 447
+        },
+        {
+          "data": "1956",
+          "arquivo": "temperatura-nasa/1956.webp",
+          "quadro": 453
+        },
+        {
+          "data": "1957",
+          "arquivo": "temperatura-nasa/1957.webp",
+          "quadro": 459
+        },
+        {
+          "data": "1958",
+          "arquivo": "temperatura-nasa/1958.webp",
+          "quadro": 465
+        },
+        {
+          "data": "1959",
+          "arquivo": "temperatura-nasa/1959.webp",
+          "quadro": 471
+        },
+        {
+          "data": "1960",
+          "arquivo": "temperatura-nasa/1960.webp",
+          "quadro": 477
+        },
+        {
+          "data": "1961",
+          "arquivo": "temperatura-nasa/1961.webp",
+          "quadro": 483
+        },
+        {
+          "data": "1962",
+          "arquivo": "temperatura-nasa/1962.webp",
+          "quadro": 489
+        },
+        {
+          "data": "1963",
+          "arquivo": "temperatura-nasa/1963.webp",
+          "quadro": 495
+        },
+        {
+          "data": "1964",
+          "arquivo": "temperatura-nasa/1964.webp",
+          "quadro": 501
+        },
+        {
+          "data": "1965",
+          "arquivo": "temperatura-nasa/1965.webp",
+          "quadro": 507
+        },
+        {
+          "data": "1966",
+          "arquivo": "temperatura-nasa/1966.webp",
+          "quadro": 513
+        },
+        {
+          "data": "1967",
+          "arquivo": "temperatura-nasa/1967.webp",
+          "quadro": 519
+        },
+        {
+          "data": "1968",
+          "arquivo": "temperatura-nasa/1968.webp",
+          "quadro": 525
+        },
+        {
+          "data": "1969",
+          "arquivo": "temperatura-nasa/1969.webp",
+          "quadro": 531
+        },
+        {
+          "data": "1970",
+          "arquivo": "temperatura-nasa/1970.webp",
+          "quadro": 537
+        },
+        {
+          "data": "1971",
+          "arquivo": "temperatura-nasa/1971.webp",
+          "quadro": 543
+        },
+        {
+          "data": "1972",
+          "arquivo": "temperatura-nasa/1972.webp",
+          "quadro": 549
+        },
+        {
+          "data": "1973",
+          "arquivo": "temperatura-nasa/1973.webp",
+          "quadro": 555
+        },
+        {
+          "data": "1974",
+          "arquivo": "temperatura-nasa/1974.webp",
+          "quadro": 561
+        },
+        {
+          "data": "1975",
+          "arquivo": "temperatura-nasa/1975.webp",
+          "quadro": 567
+        },
+        {
+          "data": "1976",
+          "arquivo": "temperatura-nasa/1976.webp",
+          "quadro": 573
+        },
+        {
+          "data": "1977",
+          "arquivo": "temperatura-nasa/1977.webp",
+          "quadro": 579
+        },
+        {
+          "data": "1978",
+          "arquivo": "temperatura-nasa/1978.webp",
+          "quadro": 585
+        },
+        {
+          "data": "1979",
+          "arquivo": "temperatura-nasa/1979.webp",
+          "quadro": 591
+        },
+        {
+          "data": "1980",
+          "arquivo": "temperatura-nasa/1980.webp",
+          "quadro": 597
+        },
+        {
+          "data": "1981",
+          "arquivo": "temperatura-nasa/1981.webp",
+          "quadro": 603
+        },
+        {
+          "data": "1982",
+          "arquivo": "temperatura-nasa/1982.webp",
+          "quadro": 609
+        },
+        {
+          "data": "1983",
+          "arquivo": "temperatura-nasa/1983.webp",
+          "quadro": 615
+        },
+        {
+          "data": "1984",
+          "arquivo": "temperatura-nasa/1984.webp",
+          "quadro": 621
+        },
+        {
+          "data": "1985",
+          "arquivo": "temperatura-nasa/1985.webp",
+          "quadro": 627
+        },
+        {
+          "data": "1986",
+          "arquivo": "temperatura-nasa/1986.webp",
+          "quadro": 633
+        },
+        {
+          "data": "1987",
+          "arquivo": "temperatura-nasa/1987.webp",
+          "quadro": 639
+        },
+        {
+          "data": "1988",
+          "arquivo": "temperatura-nasa/1988.webp",
+          "quadro": 645
+        },
+        {
+          "data": "1989",
+          "arquivo": "temperatura-nasa/1989.webp",
+          "quadro": 651
+        },
+        {
+          "data": "1990",
+          "arquivo": "temperatura-nasa/1990.webp",
+          "quadro": 657
+        },
+        {
+          "data": "1991",
+          "arquivo": "temperatura-nasa/1991.webp",
+          "quadro": 663
+        },
+        {
+          "data": "1992",
+          "arquivo": "temperatura-nasa/1992.webp",
+          "quadro": 669
+        },
+        {
+          "data": "1993",
+          "arquivo": "temperatura-nasa/1993.webp",
+          "quadro": 675
+        },
+        {
+          "data": "1994",
+          "arquivo": "temperatura-nasa/1994.webp",
+          "quadro": 681
+        },
+        {
+          "data": "1995",
+          "arquivo": "temperatura-nasa/1995.webp",
+          "quadro": 687
+        },
+        {
+          "data": "1996",
+          "arquivo": "temperatura-nasa/1996.webp",
+          "quadro": 693
+        },
+        {
+          "data": "1997",
+          "arquivo": "temperatura-nasa/1997.webp",
+          "quadro": 699
+        },
+        {
+          "data": "1998",
+          "arquivo": "temperatura-nasa/1998.webp",
+          "quadro": 705
+        },
+        {
+          "data": "1999",
+          "arquivo": "temperatura-nasa/1999.webp",
+          "quadro": 711
+        },
+        {
+          "data": "2000",
+          "arquivo": "temperatura-nasa/2000.webp",
+          "quadro": 717
+        },
+        {
+          "data": "2001",
+          "arquivo": "temperatura-nasa/2001.webp",
+          "quadro": 723
+        },
+        {
+          "data": "2002",
+          "arquivo": "temperatura-nasa/2002.webp",
+          "quadro": 729
+        },
+        {
+          "data": "2003",
+          "arquivo": "temperatura-nasa/2003.webp",
+          "quadro": 735
+        },
+        {
+          "data": "2004",
+          "arquivo": "temperatura-nasa/2004.webp",
+          "quadro": 741
+        },
+        {
+          "data": "2005",
+          "arquivo": "temperatura-nasa/2005.webp",
+          "quadro": 747
+        },
+        {
+          "data": "2006",
+          "arquivo": "temperatura-nasa/2006.webp",
+          "quadro": 753
+        },
+        {
+          "data": "2007",
+          "arquivo": "temperatura-nasa/2007.webp",
+          "quadro": 759
+        },
+        {
+          "data": "2008",
+          "arquivo": "temperatura-nasa/2008.webp",
+          "quadro": 765
+        },
+        {
+          "data": "2009",
+          "arquivo": "temperatura-nasa/2009.webp",
+          "quadro": 771
+        },
+        {
+          "data": "2010",
+          "arquivo": "temperatura-nasa/2010.webp",
+          "quadro": 777
+        },
+        {
+          "data": "2011",
+          "arquivo": "temperatura-nasa/2011.webp",
+          "quadro": 783
+        },
+        {
+          "data": "2012",
+          "arquivo": "temperatura-nasa/2012.webp",
+          "quadro": 789
+        },
+        {
+          "data": "2013",
+          "arquivo": "temperatura-nasa/2013.webp",
+          "quadro": 795
+        },
+        {
+          "data": "2014",
+          "arquivo": "temperatura-nasa/2014.webp",
+          "quadro": 801
+        },
+        {
+          "data": "2015",
+          "arquivo": "temperatura-nasa/2015.webp",
+          "quadro": 807
+        },
+        {
+          "data": "2016",
+          "arquivo": "temperatura-nasa/2016.webp",
+          "quadro": 813
+        },
+        {
+          "data": "2017",
+          "arquivo": "temperatura-nasa/2017.webp",
+          "quadro": 819
+        },
+        {
+          "data": "2018",
+          "arquivo": "temperatura-nasa/2018.webp",
+          "quadro": 825
+        },
+        {
+          "data": "2019",
+          "arquivo": "temperatura-nasa/2019.webp",
+          "quadro": 831
+        },
+        {
+          "data": "2020",
+          "arquivo": "temperatura-nasa/2020.webp",
+          "quadro": 837
+        },
+        {
+          "data": "2021",
+          "arquivo": "temperatura-nasa/2021.webp",
+          "quadro": 843
+        },
+        {
+          "data": "2022",
+          "arquivo": "temperatura-nasa/2022.webp",
+          "quadro": 849
+        },
+        {
+          "data": "2023",
+          "arquivo": "temperatura-nasa/2023.webp",
+          "quadro": 855
+        }
+      ]
+    },
+    {
+      "id": "chuva",
+      "dimensao": "chuva",
+      "titulo": "Anomalia de precipitação (fictício, no estilo GPCP)",
+      "fonte": "Fictício (protótipo)",
+      "unidade": "%",
+      "leitura": "local",
+      "projecao": {
+        "tipo": "equirretangular",
+        "oeste": -180,
+        "leste": 180,
+        "norte": 90,
+        "sul": -90
+      },
+      "recorte": {
+        "x": 0,
+        "y": 0,
+        "largura": 360,
+        "altura": 180
+      },
+      "escala": {
+        "barra": {
+          "x": 30,
+          "y": 201,
+          "largura": 300,
+          "altura": 10
+        },
+        "min": -60,
+        "max": 60
+      },
+      "frames": [
+        {
+          "data": "1979",
+          "arquivo": "chuva/1979.png"
+        },
+        {
+          "data": "1980",
+          "arquivo": "chuva/1980.png"
+        },
+        {
+          "data": "1981",
+          "arquivo": "chuva/1981.png"
+        },
+        {
+          "data": "1982",
+          "arquivo": "chuva/1982.png"
+        },
+        {
+          "data": "1983",
+          "arquivo": "chuva/1983.png"
+        },
+        {
+          "data": "1984",
+          "arquivo": "chuva/1984.png"
+        },
+        {
+          "data": "1985",
+          "arquivo": "chuva/1985.png"
+        },
+        {
+          "data": "1986",
+          "arquivo": "chuva/1986.png"
+        },
+        {
+          "data": "1987",
+          "arquivo": "chuva/1987.png"
+        },
+        {
+          "data": "1988",
+          "arquivo": "chuva/1988.png"
+        },
+        {
+          "data": "1989",
+          "arquivo": "chuva/1989.png"
+        },
+        {
+          "data": "1990",
+          "arquivo": "chuva/1990.png"
+        },
+        {
+          "data": "1991",
+          "arquivo": "chuva/1991.png"
+        },
+        {
+          "data": "1992",
+          "arquivo": "chuva/1992.png"
+        },
+        {
+          "data": "1993",
+          "arquivo": "chuva/1993.png"
+        },
+        {
+          "data": "1994",
+          "arquivo": "chuva/1994.png"
+        },
+        {
+          "data": "1995",
+          "arquivo": "chuva/1995.png"
+        },
+        {
+          "data": "1996",
+          "arquivo": "chuva/1996.png"
+        },
+        {
+          "data": "1997",
+          "arquivo": "chuva/1997.png"
+        },
+        {
+          "data": "1998",
+          "arquivo": "chuva/1998.png"
+        },
+        {
+          "data": "1999",
+          "arquivo": "chuva/1999.png"
+        },
+        {
+          "data": "2000",
+          "arquivo": "chuva/2000.png"
+        },
+        {
+          "data": "2001",
+          "arquivo": "chuva/2001.png"
+        },
+        {
+          "data": "2002",
+          "arquivo": "chuva/2002.png"
+        },
+        {
+          "data": "2003",
+          "arquivo": "chuva/2003.png"
+        },
+        {
+          "data": "2004",
+          "arquivo": "chuva/2004.png"
+        },
+        {
+          "data": "2005",
+          "arquivo": "chuva/2005.png"
+        },
+        {
+          "data": "2006",
+          "arquivo": "chuva/2006.png"
+        },
+        {
+          "data": "2007",
+          "arquivo": "chuva/2007.png"
+        },
+        {
+          "data": "2008",
+          "arquivo": "chuva/2008.png"
+        },
+        {
+          "data": "2009",
+          "arquivo": "chuva/2009.png"
+        },
+        {
+          "data": "2010",
+          "arquivo": "chuva/2010.png"
+        },
+        {
+          "data": "2011",
+          "arquivo": "chuva/2011.png"
+        },
+        {
+          "data": "2012",
+          "arquivo": "chuva/2012.png"
+        },
+        {
+          "data": "2013",
+          "arquivo": "chuva/2013.png"
+        },
+        {
+          "data": "2014",
+          "arquivo": "chuva/2014.png"
+        },
+        {
+          "data": "2015",
+          "arquivo": "chuva/2015.png"
+        },
+        {
+          "data": "2016",
+          "arquivo": "chuva/2016.png"
+        },
+        {
+          "data": "2017",
+          "arquivo": "chuva/2017.png"
+        },
+        {
+          "data": "2018",
+          "arquivo": "chuva/2018.png"
+        },
+        {
+          "data": "2019",
+          "arquivo": "chuva/2019.png"
+        },
+        {
+          "data": "2020",
+          "arquivo": "chuva/2020.png"
+        },
+        {
+          "data": "2021",
+          "arquivo": "chuva/2021.png"
+        },
+        {
+          "data": "2022",
+          "arquivo": "chuva/2022.png"
+        },
+        {
+          "data": "2023",
+          "arquivo": "chuva/2023.png"
+        }
+      ]
+    },
+    {
+      "id": "vegetacao",
+      "dimensao": "vegetacao",
+      "titulo": "Índice de vegetação NDVI (fictício, no estilo MODIS/AVHRR)",
+      "fonte": "Fictício (protótipo)",
+      "unidade": "NDVI",
+      "leitura": "local",
+      "projecao": {
+        "tipo": "equirretangular",
+        "oeste": -180,
+        "leste": 180,
+        "norte": 90,
+        "sul": -90
+      },
+      "recorte": {
+        "x": 0,
+        "y": 0,
+        "largura": 360,
+        "altura": 180
+      },
+      "escala": {
+        "barra": {
+          "x": 30,
+          "y": 201,
+          "largura": 300,
+          "altura": 10
+        },
+        "min": 0,
+        "max": 0.9
+      },
+      "frames": [
+        {
+          "data": "1982",
+          "arquivo": "vegetacao/1982.png"
+        },
+        {
+          "data": "1983",
+          "arquivo": "vegetacao/1983.png"
+        },
+        {
+          "data": "1984",
+          "arquivo": "vegetacao/1984.png"
+        },
+        {
+          "data": "1985",
+          "arquivo": "vegetacao/1985.png"
+        },
+        {
+          "data": "1986",
+          "arquivo": "vegetacao/1986.png"
+        },
+        {
+          "data": "1987",
+          "arquivo": "vegetacao/1987.png"
+        },
+        {
+          "data": "1988",
+          "arquivo": "vegetacao/1988.png"
+        },
+        {
+          "data": "1989",
+          "arquivo": "vegetacao/1989.png"
+        },
+        {
+          "data": "1990",
+          "arquivo": "vegetacao/1990.png"
+        },
+        {
+          "data": "1991",
+          "arquivo": "vegetacao/1991.png"
+        },
+        {
+          "data": "1992",
+          "arquivo": "vegetacao/1992.png"
+        },
+        {
+          "data": "1993",
+          "arquivo": "vegetacao/1993.png"
+        },
+        {
+          "data": "1994",
+          "arquivo": "vegetacao/1994.png"
+        },
+        {
+          "data": "1995",
+          "arquivo": "vegetacao/1995.png"
+        },
+        {
+          "data": "1996",
+          "arquivo": "vegetacao/1996.png"
+        },
+        {
+          "data": "1997",
+          "arquivo": "vegetacao/1997.png"
+        },
+        {
+          "data": "1998",
+          "arquivo": "vegetacao/1998.png"
+        },
+        {
+          "data": "1999",
+          "arquivo": "vegetacao/1999.png"
+        },
+        {
+          "data": "2000",
+          "arquivo": "vegetacao/2000.png"
+        },
+        {
+          "data": "2001",
+          "arquivo": "vegetacao/2001.png"
+        },
+        {
+          "data": "2002",
+          "arquivo": "vegetacao/2002.png"
+        },
+        {
+          "data": "2003",
+          "arquivo": "vegetacao/2003.png"
+        },
+        {
+          "data": "2004",
+          "arquivo": "vegetacao/2004.png"
+        },
+        {
+          "data": "2005",
+          "arquivo": "vegetacao/2005.png"
+        },
+        {
+          "data": "2006",
+          "arquivo": "vegetacao/2006.png"
+        },
+        {
+          "data": "2007",
+          "arquivo": "vegetacao/2007.png"
+        },
+        {
+          "data": "2008",
+          "arquivo": "vegetacao/2008.png"
+        },
+        {
+          "data": "2009",
+          "arquivo": "vegetacao/2009.png"
+        },
+        {
+          "data": "2010",
+          "arquivo": "vegetacao/2010.png"
+        },
+        {
+          "data": "2011",
+          "arquivo": "vegetacao/2011.png"
+        },
+        {
+          "data": "2012",
+          "arquivo": "vegetacao/2012.png"
+        },
+        {
+          "data": "2013",
+          "arquivo": "vegetacao/2013.png"
+        },
+        {
+          "data": "2014",
+          "arquivo": "vegetacao/2014.png"
+        },
+        {
+          "data": "2015",
+          "arquivo": "vegetacao/2015.png"
+        },
+        {
+          "data": "2016",
+          "arquivo": "vegetacao/2016.png"
+        },
+        {
+          "data": "2017",
+          "arquivo": "vegetacao/2017.png"
+        },
+        {
+          "data": "2018",
+          "arquivo": "vegetacao/2018.png"
+        },
+        {
+          "data": "2019",
+          "arquivo": "vegetacao/2019.png"
+        },
+        {
+          "data": "2020",
+          "arquivo": "vegetacao/2020.png"
+        },
+        {
+          "data": "2021",
+          "arquivo": "vegetacao/2021.png"
+        },
+        {
+          "data": "2022",
+          "arquivo": "vegetacao/2022.png"
+        },
+        {
+          "data": "2023",
+          "arquivo": "vegetacao/2023.png"
+        }
+      ]
+    },
+    {
+      "id": "co2",
+      "dimensao": "co2",
+      "titulo": "Dióxido de carbono na atmosfera (fictício, no estilo OCO-2/GEOS)",
+      "fonte": "Fictício (protótipo)",
+      "unidade": "ppm",
+      "leitura": "media",
+      "projecao": {
+        "tipo": "equirretangular",
+        "oeste": -180,
+        "leste": 180,
+        "norte": 90,
+        "sul": -90
+      },
+      "recorte": {
+        "x": 0,
+        "y": 0,
+        "largura": 360,
+        "altura": 180
+      },
+      "escala": {
+        "barra": {
+          "x": 30,
+          "y": 201,
+          "largura": 300,
+          "altura": 10
+        },
+        "min": 300,
+        "max": 440
+      },
+      "frames": [
+        {
+          "data": "1958",
+          "arquivo": "co2/1958.png"
+        },
+        {
+          "data": "1959",
+          "arquivo": "co2/1959.png"
+        },
+        {
+          "data": "1960",
+          "arquivo": "co2/1960.png"
+        },
+        {
+          "data": "1961",
+          "arquivo": "co2/1961.png"
+        },
+        {
+          "data": "1962",
+          "arquivo": "co2/1962.png"
+        },
+        {
+          "data": "1963",
+          "arquivo": "co2/1963.png"
+        },
+        {
+          "data": "1964",
+          "arquivo": "co2/1964.png"
+        },
+        {
+          "data": "1965",
+          "arquivo": "co2/1965.png"
+        },
+        {
+          "data": "1966",
+          "arquivo": "co2/1966.png"
+        },
+        {
+          "data": "1967",
+          "arquivo": "co2/1967.png"
+        },
+        {
+          "data": "1968",
+          "arquivo": "co2/1968.png"
+        },
+        {
+          "data": "1969",
+          "arquivo": "co2/1969.png"
+        },
+        {
+          "data": "1970",
+          "arquivo": "co2/1970.png"
+        },
+        {
+          "data": "1971",
+          "arquivo": "co2/1971.png"
+        },
+        {
+          "data": "1972",
+          "arquivo": "co2/1972.png"
+        },
+        {
+          "data": "1973",
+          "arquivo": "co2/1973.png"
+        },
+        {
+          "data": "1974",
+          "arquivo": "co2/1974.png"
+        },
+        {
+          "data": "1975",
+          "arquivo": "co2/1975.png"
+        },
+        {
+          "data": "1976",
+          "arquivo": "co2/1976.png"
+        },
+        {
+          "data": "1977",
+          "arquivo": "co2/1977.png"
+        },
+        {
+          "data": "1978",
+          "arquivo": "co2/1978.png"
+        },
+        {
+          "data": "1979",
+          "arquivo": "co2/1979.png"
+        },
+        {
+          "data": "1980",
+          "arquivo": "co2/1980.png"
+        },
+        {
+          "data": "1981",
+          "arquivo": "co2/1981.png"
+        },
+        {
+          "data": "1982",
+          "arquivo": "co2/1982.png"
+        },
+        {
+          "data": "1983",
+          "arquivo": "co2/1983.png"
+        },
+        {
+          "data": "1984",
+          "arquivo": "co2/1984.png"
+        },
+        {
+          "data": "1985",
+          "arquivo": "co2/1985.png"
+        },
+        {
+          "data": "1986",
+          "arquivo": "co2/1986.png"
+        },
+        {
+          "data": "1987",
+          "arquivo": "co2/1987.png"
+        },
+        {
+          "data": "1988",
+          "arquivo": "co2/1988.png"
+        },
+        {
+          "data": "1989",
+          "arquivo": "co2/1989.png"
+        },
+        {
+          "data": "1990",
+          "arquivo": "co2/1990.png"
+        },
+        {
+          "data": "1991",
+          "arquivo": "co2/1991.png"
+        },
+        {
+          "data": "1992",
+          "arquivo": "co2/1992.png"
+        },
+        {
+          "data": "1993",
+          "arquivo": "co2/1993.png"
+        },
+        {
+          "data": "1994",
+          "arquivo": "co2/1994.png"
+        },
+        {
+          "data": "1995",
+          "arquivo": "co2/1995.png"
+        },
+        {
+          "data": "1996",
+          "arquivo": "co2/1996.png"
+        },
+        {
+          "data": "1997",
+          "arquivo": "co2/1997.png"
+        },
+        {
+          "data": "1998",
+          "arquivo": "co2/1998.png"
+        },
+        {
+          "data": "1999",
+          "arquivo": "co2/1999.png"
+        },
+        {
+          "data": "2000",
+          "arquivo": "co2/2000.png"
+        },
+        {
+          "data": "2001",
+          "arquivo": "co2/2001.png"
+        },
+        {
+          "data": "2002",
+          "arquivo": "co2/2002.png"
+        },
+        {
+          "data": "2003",
+          "arquivo": "co2/2003.png"
+        },
+        {
+          "data": "2004",
+          "arquivo": "co2/2004.png"
+        },
+        {
+          "data": "2005",
+          "arquivo": "co2/2005.png"
+        },
+        {
+          "data": "2006",
+          "arquivo": "co2/2006.png"
+        },
+        {
+          "data": "2007",
+          "arquivo": "co2/2007.png"
+        },
+        {
+          "data": "2008",
+          "arquivo": "co2/2008.png"
+        },
+        {
+          "data": "2009",
+          "arquivo": "co2/2009.png"
+        },
+        {
+          "data": "2010",
+          "arquivo": "co2/2010.png"
+        },
+        {
+          "data": "2011",
+          "arquivo": "co2/2011.png"
+        },
+        {
+          "data": "2012",
+          "arquivo": "co2/2012.png"
+        },
+        {
+          "data": "2013",
+          "arquivo": "co2/2013.png"
+        },
+        {
+          "data": "2014",
+          "arquivo": "co2/2014.png"
+        },
+        {
+          "data": "2015",
+          "arquivo": "co2/2015.png"
+        },
+        {
+          "data": "2016",
+          "arquivo": "co2/2016.png"
+        },
+        {
+          "data": "2017",
+          "arquivo": "co2/2017.png"
+        },
+        {
+          "data": "2018",
+          "arquivo": "co2/2018.png"
+        },
+        {
+          "data": "2019",
+          "arquivo": "co2/2019.png"
+        },
+        {
+          "data": "2020",
+          "arquivo": "co2/2020.png"
+        },
+        {
+          "data": "2021",
+          "arquivo": "co2/2021.png"
+        },
+        {
+          "data": "2022",
+          "arquivo": "co2/2022.png"
+        },
+        {
+          "data": "2023",
+          "arquivo": "co2/2023.png"
+        }
+      ]
+    }
+  ]
+}

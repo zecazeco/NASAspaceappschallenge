@@ -1,0 +1,230 @@
+:root {
+  --fundo: #05070d;
+  --painel: rgba(12, 18, 32, 0.86);
+  --painel-borda: rgba(255, 255, 255, 0.12);
+  --texto: #f2f5fa;
+  --texto-suave: #b4bfd1;
+  --primaria: #ffd34d;
+  --primaria-texto: #121212;
+  --foco: #7cc4ff;
+  --frio: #59a8ff;
+  --quente: #ff5a3c;
+  --raio: 18px;
+  --gutter: 16px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: radial-gradient(ellipse at 50% 0%, #0d1830, var(--fundo) 60%) fixed, var(--fundo);
+  color: var(--texto);
+  font: 17px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.creditos { font-size: 0.72rem; color: var(--texto-suave); margin: 6px 0 0; }
+.creditos a { color: inherit; }
+
+.tela { position: relative; z-index: 1; min-height: 100dvh; padding: var(--gutter); padding-bottom: max(var(--gutter), env(safe-area-inset-bottom)); }
+.tela[hidden] { display: none; }
+.tela-centro { display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; }
+
+.cartao {
+  width: min(520px, 100%);
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+h1 { font-size: 2rem; line-height: 1.15; margin: 0 0 8px; }
+h2 { font-size: 1.4rem; margin: 0 0 8px; }
+.lead { font-size: 1.2rem; color: var(--texto); }
+.pequeno { font-size: 0.92rem; color: var(--texto-suave); margin: 6px 0; }
+.centro { text-align: center; }
+.rotulo { display: block; font-weight: 600; margin: 14px 0 6px; }
+
+/* ---------- botões ---------- */
+.btn {
+  font: inherit; font-weight: 650; color: var(--texto);
+  border: 2px solid transparent; border-radius: 14px;
+  min-height: 48px; padding: 10px 16px; cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.btn:focus-visible, input:focus-visible, select:focus-visible, h1:focus-visible { outline: 3px solid var(--foco); outline-offset: 3px; }
+.btn:disabled { opacity: 0.55; cursor: progress; }
+.btn-primario { background: var(--primaria); color: var(--primaria-texto); }
+#progresso-cidade { width: 100%; height: 10px; margin: 14px 0 6px; accent-color: #ffd34d; }
+.btn-secundario { background: rgba(255, 255, 255, 0.1); border-color: var(--painel-borda); }
+.btn-texto { background: none; text-decoration: underline; }
+.btn-grande { width: 100%; min-height: 64px; font-size: 1.25rem; margin: 18px 0 8px; }
+.btn-icone { width: 52px; height: 52px; padding: 12px; }
+.btn svg { width: 100%; height: 100%; fill: currentColor; }
+
+/* ---------- busca ---------- */
+.linha-busca { display: flex; gap: 8px; }
+.linha-busca input {
+  flex: 1; min-width: 0; font: inherit; font-size: 1.15rem; padding: 12px 14px; min-height: 56px;
+  border-radius: 12px; border: 2px solid var(--painel-borda); background: #0b1120; color: var(--texto);
+}
+.resultados { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
+.resultados button { width: 100%; text-align: left; min-height: 56px; }
+.resultados .sub { display: block; font-weight: 400; font-size: 0.9rem; color: var(--texto-suave); }
+
+/* ---------- tela principal ---------- */
+/* celular: tudo numa coluna de altura fixa; o gráfico ocupa o espaço que sobra */
+#tela-principal {
+  display: flex; flex-direction: column; gap: 10px; height: 100dvh; min-height: 0;
+  max-width: 820px; margin: 0 auto;
+}
+#tela-principal[hidden] { display: none; }
+.topo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.topo-texto { min-width: 0; flex: 1; }
+.topo h1 { font-size: 1.3rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topo .pequeno { margin: 1px 0 0; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acoes-topo { display: flex; gap: 8px; flex-shrink: 0; }
+/* SÓ PARA TESTE: seletores Base / Pontual da temperatura (saem na versão final) */
+.barra-teste { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.seletor-base { display: flex; align-self: center; border: 1px dashed var(--painel-borda); border-radius: 999px; padding: 2px; }
+.seletor-base button {
+  font: inherit; font-size: 0.75rem; font-weight: 600; color: var(--texto-suave); background: none;
+  border: 0; border-radius: 999px; padding: 6px 9px; min-height: 32px; cursor: pointer;
+}
+.seletor-base button[aria-checked="true"] { background: var(--primaria); color: var(--primaria-texto); }
+.seletor-base button:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+
+/* mapa de temperatura da NASA: de onde vem o número (mapa + lente + valor + escala) */
+.painel-temp { position: relative; display: flex; flex-direction: column; gap: 8px; flex: none; }
+.mapa-nasa {
+  position: relative; display: block; width: 100%; padding: 0; min-height: 0; cursor: zoom-in;
+  border-radius: 12px; overflow: hidden; background: #000;
+  border: 1px solid rgba(255, 122, 69, 0.35); box-shadow: 0 0 18px -6px rgba(255, 122, 69, 0.6);
+}
+.mapa-nasa canvas { display: block; width: 100%; aspect-ratio: 1280 / 633; }
+.mapa-nasa .rot {
+  position: absolute; left: 8px; top: 6px; font-size: 0.66rem; font-weight: 500; color: #dfe6f5;
+  background: rgba(0, 0, 0, 0.55); padding: 2px 8px; border-radius: 20px;
+}
+.leitura { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; }
+.lente { width: 104px; height: 104px; display: block; }
+.leitura-texto { min-width: 0; }
+.valor-temp { margin: 0; font-size: 2.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.valor-temp small { font-size: 1.05rem; font-weight: 600; margin-left: 3px; }
+.valor-legenda { margin: 5px 0 0; font-size: 0.78rem; color: var(--texto-suave); line-height: 1.3; }
+.escala { position: relative; width: 48px; height: 104px; }
+/* cores aproximadas da legenda do mapa (+2 °C no topo, −2 °C embaixo) */
+.escala .barra {
+  position: absolute; left: 14px; top: 0; bottom: 0; width: 10px; border-radius: 3px;
+  background: linear-gradient(#a50f15, #e3711b 22%, #f6d443 40%, #fffbe8 50%, #a9c4e3 62%, #4878b8 80%, #0f2b5c);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.escala .marca { position: absolute; left: 30px; font-size: 0.62rem; color: var(--texto-suave); transform: translateY(-50%); }
+.escala .seta {
+  position: absolute; left: 1px; top: 50%; width: 0; height: 0; transform: translateY(-50%);
+  border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 10px solid #fff;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8)); transition: top 0.6s ease;
+}
+.fio-lente { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.fio-lente line { stroke: rgba(255, 255, 255, 0.45); stroke-width: 1; stroke-dasharray: 3 4; }
+
+/* gráfico */
+.grafico { position: relative; flex: 1; min-height: 190px; overflow: hidden; border-radius: 14px; touch-action: pan-y; }
+.grafico canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+.grafico-cards { position: absolute; inset: 0; pointer-events: none; }
+.card-evento {
+  position: absolute; left: 0; top: 0; max-width: min(190px, 46vw); padding: 7px 10px; border-radius: 10px;
+  background: rgba(10, 18, 34, 0.82); border: 1px solid var(--cor);
+  box-shadow: 0 0 16px -2px var(--cor), inset 0 0 12px -6px var(--cor);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  font-size: 0.8rem; line-height: 1.35; opacity: 0; transition: opacity 0.45s; will-change: transform;
+}
+.card-evento.visivel { opacity: 1; }
+.card-evento b { display: block; font-size: 0.68rem; color: var(--cor); letter-spacing: 0.3px; margin-bottom: 2px; }
+.card-fio { position: absolute; left: 0; top: 0; height: 1px; background: var(--cor); box-shadow: 0 0 6px var(--cor); opacity: 0; transition: opacity 0.45s; transform-origin: 0 0; }
+.card-fio.visivel { opacity: 0.7; }
+.grafico-agora {
+  position: absolute; right: 8px; top: 8px; min-height: 36px; padding: 4px 14px; font-size: 0.85rem;
+  background: rgba(255, 211, 77, 0.15); border-color: var(--primaria); color: var(--primaria);
+}
+
+/* linha do tempo e controles */
+.linha-tempo { flex: none; }
+.ano-grande {
+  margin: 0; text-align: center; font-size: clamp(2rem, 10vw, 3.2rem); font-weight: 700;
+  letter-spacing: 0.01em; font-variant-numeric: tabular-nums; line-height: 1.05;
+  color: #fff6d6; text-shadow: 0 0 18px rgba(255, 211, 77, 0.45);
+}
+.slider { width: 100%; height: 36px; margin: 4px 0 0; accent-color: var(--primaria); }
+.controles { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 10px; margin-top: 6px; }
+.btn-controle {
+  min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: rgba(255, 255, 255, 0.08); border-color: var(--painel-borda); font-size: 0.95rem;
+}
+.btn-controle svg { width: 34px; height: 34px; }
+.btn-controle.ativo { background: rgba(255, 211, 77, 0.25); border-color: var(--primaria); }
+.btn-tocar { background: var(--primaria); color: var(--primaria-texto); }
+.btn-tocar .ic-pausar { display: none; }
+.btn-tocar[aria-pressed="true"] .ic-pausar { display: block; }
+.btn-tocar[aria-pressed="true"] .ic-tocar { display: none; }
+
+/* ---------- monitor grande: mapa e leitura lado a lado, gráfico na largura toda ---------- */
+@media (min-width: 1000px) {
+  #tela-principal {
+    max-width: 1400px; display: grid; gap: 14px 22px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "topo topo" "mapa leitura" "grafico grafico" "tempo tempo";
+  }
+  .topo { grid-area: topo; }
+  .painel-temp { display: contents; }
+  .mapa-nasa { grid-area: mapa; }
+  .leitura {
+    grid-area: leitura; position: relative; grid-template-columns: auto 1fr; align-content: center;
+    padding: 18px 90px 18px 22px; border-radius: 16px; background: rgba(12, 18, 32, 0.6); border: 1px solid var(--painel-borda);
+  }
+  .lente { width: clamp(110px, 13vw, 190px); height: clamp(110px, 13vw, 190px); }
+  .valor-temp { font-size: clamp(2.4rem, 4.2vw, 4.4rem); }
+  .valor-temp small { font-size: clamp(1rem, 1.5vw, 1.6rem); }
+  .valor-legenda { font-size: 0.95rem; }
+  .escala { position: absolute; right: 22px; top: 22px; bottom: 22px; height: auto; width: 56px; }
+  .fio-lente { display: none; }
+  .grafico { grid-area: grafico; min-height: 220px; }
+  .linha-tempo { grid-area: tempo; display: grid; grid-template-columns: 170px 1fr 420px; align-items: center; gap: 20px; }
+  .linha-tempo .ano-grande { text-align: left; font-size: 3rem; }
+  .linha-tempo .slider { margin: 0; }
+  .linha-tempo .controles { margin: 0; }
+  .linha-tempo .btn-controle { min-height: 60px; }
+  .linha-tempo .creditos { grid-column: 1 / -1; margin: -6px 0 0; }
+}
+
+/* frame ampliado */
+#frame-grande { width: min(760px, calc(100% - 2 * var(--gutter))); }
+#frame-grande h2 { font-size: 1.05rem; margin: 0 0 10px; }
+#canvas-frame { width: 100%; height: auto; border-radius: 8px; display: block; }
+
+/* ---------- ajustes ---------- */
+dialog {
+  width: min(480px, calc(100% - 2 * var(--gutter))); max-height: calc(100dvh - 32px);
+  background: #0d1424; color: var(--texto); border: 1px solid var(--painel-borda); border-radius: var(--raio); padding: 20px;
+}
+dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
+fieldset { border: 1px solid var(--painel-borda); border-radius: 12px; padding: 8px 12px; margin: 0; }
+legend { font-weight: 600; padding: 0 4px; }
+.opcao { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.opcao input { width: 22px; height: 22px; accent-color: var(--primaria); }
+select, dialog input[type="range"] { width: 100%; font: inherit; min-height: 44px; }
+select { background: #0b1120; color: var(--texto); border: 2px solid var(--painel-borda); border-radius: 10px; padding: 8px; }
+.ajustes-form .btn-primario { width: 100%; margin-top: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
