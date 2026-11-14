@@ -1,15 +1,17 @@
 // As 4 camadas da trilha.
 //
 // Dois jeitos de tocar a base:
-//   • 'niveis' (CO₂, chuva, vegetação): 4 loops de 1 compasso tocando juntos, sincronizados;
-//     o código só ajusta qual nível se ouve (volume). Não mexe em filtro, afinação nem tempo.
+//   • 'niveis' (CO₂, chuva, vegetação): 4 loops de 1 compasso; o código só ajusta qual nível se ouve
+//     (volume). Não mexe em filtro, afinação nem tempo.
+//     Só toca o loop que pode ser ouvido. Quando ele entra, começa no ponto certo do relógio (como se
+//     tivesse tocado desde o início), então as frases das vozes ficam sempre alinhadas entre si.
 //   • 'compassos' (temperatura): 6 compassos diferentes, do mais frio ao mais
 //     quente; a cada ano toca o compasso inteiro que o dado daquele ano escolheu, começando
 //     exatamente no início do compasso. A melodia nasce da sequência dos anos.
 //     EM TESTE: duas bases, trocadas pelo seletor no topo da página (na versão final fica só uma):
 //       Base01 = 4 semínimas; cada compasso é um arquivo tocado do início (com cauda).
-//       Base02 = 1 nota sustentada; os 6 arquivos são LOOPS que tocam juntos e o código só abre o
-//                do ano, então a mesma nota repetida em anos seguidos continua sem novo ataque.
+//       Base02 = 1 nota sustentada; os 6 arquivos são LOOPS; só o do ano toca (os outros ficam parados)
+//                e a mesma nota repetida em anos seguidos continua sem novo ataque.
 //       Base03 = 2 mínimas ligadas; como a Base01, cada compasso é um arquivo tocado do início.
 //       Base04 = movimento: 7 figuras (parado, sobe/desce pequena/média/grande) que começam e voltam
 //                para a mesma nota; escolhidas pela mudança até o ano seguinte (trilha.movimento).
@@ -83,12 +85,12 @@ export class Camada {
     this.saida = new Tone.Gain(1);
     this.mix = new Tone.Gain(VOLUME_BASE).connect(this.saida);
     this.ligada = true;
-    this.bases = [];       // modo 'niveis': { player, ganho }
+    this.bases = [];       // modo 'niveis': { buf, ganho, fonte } (criarLoop)
     this.buffers = {};     // modo 'compassos': base → [um buffer por compasso]
     this.baseAtiva = this.def.bases?.[0] ?? null;
     this.soando = [];      // modo 'compassos': { fonte, ganho } ainda tocando
-    this.continuas = {};   // modo 'compassos', bases contínuas: base → [{ player, ganho }]
-    this.vozes = [];       // modo 'niveis' com vozes (CO₂ Base02): { player, ganho }, tocam juntas
+    this.continuas = {};   // modo 'compassos', bases contínuas: base → [loop]
+    this.vozes = [];       // modo 'niveis' com vozes (CO₂ Base02): só tocam as vozes que entraram
     this.pontuais = {};    // conjunto → { pico: buffer, vale: buffer }
     this.pontualAtivo = null;   // ex.: 'pontual01'; null = sem pontual
   }
@@ -97,20 +99,10 @@ export class Camada {
   async carregar(aoArquivo = () => {}) {
     const { pasta } = this.def;
     await Promise.all([...nomesDaCamada(this.def).map(({ nome, base, k, voz }) => carregarSom(pasta, nome).then((buf) => {
-      if (voz) {
-        const ganho = new Tone.Gain(0).connect(this.mix);
-        const player = buf ? new Tone.Player({ url: buf, loop: true }).connect(ganho) : null;
-        this.vozes[k] = { player, ganho };
-      } else if (this.def.continuas?.includes(base)) {
-        const ganho = new Tone.Gain(0).connect(this.mix);
-        const player = buf ? new Tone.Player({ url: buf, loop: true }).connect(ganho) : null;
-        (this.continuas[base] ??= [])[k] = { player, ganho };
-      } else if (this.def.modo === 'compassos') (this.buffers[base] ??= [])[k] = buf;
-      else {
-        const ganho = new Tone.Gain(0).connect(this.mix);
-        const player = buf ? new Tone.Player({ url: buf, loop: true }).connect(ganho) : null;
-        this.bases[k] = { player, ganho };
-      }
+      if (voz) this.vozes[k] = this.criarLoop(buf);
+      else if (this.def.continuas?.includes(base)) (this.continuas[base] ??= [])[k] = this.criarLoop(buf);
+      else if (this.def.modo === 'compassos') (this.buffers[base] ??= [])[k] = buf;
+      else this.bases[k] = this.criarLoop(buf);
       aoArquivo();
     })), ...pontuaisDaCamada(this.def).map(({ nome, conjunto, tipo }) => carregarSom(pasta, nome).then((buf) => {
       (this.pontuais[conjunto] ??= {})[tipo] = buf;
@@ -118,25 +110,55 @@ export class Camada {
     }))]);
   }
 
-  /** Os loops andam presos ao relógio: começam no compasso 0 e pausam junto com ele. */
-  iniciar() {
-    for (const b of [...this.bases, ...this.vozes]) b.player?.sync().start(0);
-    for (const lista of Object.values(this.continuas)) for (const b of lista) b.player?.sync().start(0);
+  /** Loop: { buf, ganho, fonte }. fonte só existe enquanto ele pode ser ouvido. */
+  criarLoop(buf) { return { buf, ganho: new Tone.Gain(0).connect(this.mix), fonte: null }; }
+
+  todosOsLoops() { return [...this.bases, ...this.vozes, ...Object.values(this.continuas).flat()]; }
+
+  /**
+   * Leva o loop ao volume g a partir de `tempo` (rampa em s). Volume 0 (ou camada desligada): o loop
+   * some e PARA de tocar. Volume > 0 e parado: começa no ponto do relógio (segundos desde o início
+   * da música, dando a volta no tamanho do arquivo), como se nunca tivesse parado.
+   */
+  ajustarLoop(l, g, tempo, rampa) {
+    if (!l?.buf) return;
+    const ouvir = this.ligada && g > 0.001;
+    l.ganho.gain.cancelScheduledValues(tempo);
+    if (ouvir) {
+      if (!l.fonte) {
+        const dur = l.buf.duration;
+        const seg = Tone.getContext().transport.getSecondsAtTime(tempo);
+        let ponto = ((seg % dur) + dur) % dur;
+        if (dur - ponto < 0.002) ponto = 0;   // arredondamento: "quase no fim" é o começo da próxima volta
+        l.fonte = new Tone.ToneBufferSource({ url: l.buf, loop: true }).connect(l.ganho);
+        l.fonte.start(tempo, ponto);
+      }
+      l.ganho.gain.setTargetAtTime(g, tempo, rampa / 3);
+    } else if (l.fonte) {
+      l.ganho.gain.setTargetAtTime(0, tempo, rampa / 3);
+      const f = l.fonte;
+      l.fonte = null;
+      f.onended = () => f.dispose();
+      f.stop(tempo + rampa * 2);
+    }
   }
+
+  /** Para todos os loops (pausa, fita, fim). */
+  pararLoops(tempo, rampa = 0.1) { for (const l of this.todosOsLoops()) this.ajustarLoop(l, 0, tempo, rampa); }
 
   /**
    * Modo 'niveis': ajusta o volume dos níveis, posição 0..3 (ex.: 1,4 = 60% nível 2 + 40% nível 3).
    * Troca por potência constante, para o volume total não afundar no meio. null = silêncio.
    */
   definirPosicao(pos, tempo, rampa = RAMPA_NIVEL, voz = null) {
+    this.ultimo = { pos, voz };
     const comVozes = !!this.def.vozes?.[this.baseAtiva];
-    const ajustar = (b, g) => { b.ganho.gain.cancelScheduledValues(tempo); b.ganho.gain.setTargetAtTime(g, tempo, rampa / 3); };
     this.bases.forEach((b, i) => {
       const d = pos == null || comVozes ? 1 : Math.abs(pos - i);
-      ajustar(b, d >= 1 ? 0 : Math.cos((d * Math.PI) / 2));
+      this.ajustarLoop(b, d >= 1 ? 0 : Math.cos((d * Math.PI) / 2), tempo, rampa);
     });
     // vozes que se acumulam: da voz 1 até a voz do ano, todas inteiras (o código só liga e desliga)
-    this.vozes.forEach((b, i) => ajustar(b, comVozes && voz != null && i <= voz ? 1 : 0));
+    this.vozes.forEach((b, i) => this.ajustarLoop(b, comVozes && voz != null && i <= voz ? 1 : 0, tempo, rampa));
   }
 
   /**
@@ -147,13 +169,9 @@ export class Camada {
     this.soltar(tempo);
     // bases contínuas: abre só o loop do compasso k da base ativa (troca rápida, sem novo ataque)
     for (const [base, lista] of Object.entries(this.continuas)) {
-      lista.forEach((b, i) => {
-        const g = base === this.baseAtiva && i === k ? 1 : 0;
-        b.ganho.gain.cancelScheduledValues(tempo);
-        b.ganho.gain.setTargetAtTime(g, tempo, TROCA_CONTINUA);
-      });
+      lista.forEach((b, i) => this.ajustarLoop(b, base === this.baseAtiva && i === k ? 1 : 0, tempo, TROCA_CONTINUA * 3));
     }
-    if (this.continuas[this.baseAtiva]) return;
+    if (this.continuas[this.baseAtiva] || !this.ligada) return;
     const buf = k == null ? null : this.buffers[this.def.mesmosSons?.[this.baseAtiva] ?? this.baseAtiva]?.[k];
     if (!buf) return;
     const ganho = new Tone.Gain(1).connect(this.mix);
@@ -179,7 +197,7 @@ export class Camada {
 
   /** Som pontual no início do compasso ('pico' | 'vale' | null). Pode sobrepor a cauda do anterior. */
   dispararPontual(tipo, tempo) {
-    const buf = tipo && this.pontualAtivo ? this.pontuais[this.pontualAtivo]?.[tipo] : null;
+    const buf = tipo && this.pontualAtivo && this.ligada ? this.pontuais[this.pontualAtivo]?.[tipo] : null;
     if (!buf) return;
     const ganho = new Tone.Gain(1).connect(this.mix);
     const fonte = new Tone.ToneBufferSource(buf).connect(ganho);
@@ -203,14 +221,23 @@ export class Camada {
   silenciar() {
     const agora = Tone.now();
     this.soltar(agora);
+    this.pararLoops(agora, 0.3);
     for (const { fonte, ganho } of this.soandoPontuais ?? []) {
       ganho.gain.rampTo(0, 0.1, agora);
       try { fonte.stop(agora + 0.12); } catch { /* já parou */ }
     }
   }
 
+  /** Desligada: some em 0,4 s e os loops param. Religada com a música andando: volta já no ponto certo. */
   definirLigada(ligada) {
     this.ligada = ligada;
+    const agora = Tone.now();
     this.saida.gain.rampTo(ligada ? 1 : 0, 0.4);
+    if (!ligada) {
+      this.soltar(agora);
+      for (const l of this.todosOsLoops()) this.ajustarLoop(l, 0, agora + 0.4, 0.1);
+    } else if (this.ultimo && Tone.getContext().transport.state === 'started') {
+      this.definirPosicao(this.ultimo.pos, agora, RAMPA_NIVEL, this.ultimo.voz);
+    }
   }
 }

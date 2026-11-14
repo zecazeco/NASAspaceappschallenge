@@ -216,7 +216,7 @@ FIGURAS.forEach((fig, k) => compasso(`temp_base01_compasso_${k + 1}`, (b) => {
 }));
 
 // Base02: 1 nota sustentada, CONTÍNUA. Cada arquivo é um LOOP de exatamente 1 compasso, sem
-// envelope (o fim emenda no começo): os 6 tocam juntos e o site só abre o do ano. Assim, quando a
+// envelope (o fim emenda no começo): o site toca só o do ano. Assim, quando a
 // mesma nota se repete em anos seguidos, ela simplesmente continua, sem novo ataque.
 FIGURAS.forEach((fig, k) => loop(`temp_base02_compasso_${k + 1}`, (b) => sustentado(b, hz(M[fig.longa]), 1, fig.harm)));
 // Base03: 2 mínimas LIGADAS (1,09 s cada), mesmo timbre da Base02. Ataque suave em cada nota e

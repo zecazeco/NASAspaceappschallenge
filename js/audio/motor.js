@@ -7,7 +7,7 @@ import { Camada, nomesDosArquivos } from './camadas.js';
 export const BPM = 110;
 
 // IMPORTANTE: Tone.Transport e Tone.Draw apontam para o contexto PADRÃO do Tone, criado antes
-// do setContext abaixo. O relógio certo é o do contexto em uso (o mesmo dos Players sincronizados).
+// do setContext abaixo. O relógio certo é o do contexto em uso (o mesmo que posiciona os loops das camadas).
 const transporte = () => Tone.getContext().transport;
 
 // Usa um AudioContext NATIVO: o wrapper padrão do Tone (standardized-audio-context)
@@ -96,7 +96,6 @@ export class Motor {
       console.warn('AudioWorklet indisponível: o rebobinar terá só o chiado.', e);
       this.fita = null;
     }
-    Object.values(this.dims).forEach((d) => d.iniciar());
     this.chiado.start();
     transporte().bpm.value = BPM;
     transporte().timeSignature = 4;
@@ -152,6 +151,7 @@ export class Motor {
     this.pausa.gain.setValueAtTime(this.pausa.gain.getValueAtTime(tempo), tempo);
     this.pausa.gain.linearRampToValueAtTime(0, tempo + 3);
     transporte().pause(tempo + 3.1);
+    Object.values(this.dims).forEach((d) => d.pararLoops(tempo + 3, 0.1));
     // timer comum (não Tone.Draw): avisa a interface mesmo com a tela em segundo plano
     setTimeout(() => this.aoTerminar(), Math.max(0, (tempo - Tone.now()) * 1000));
   }
