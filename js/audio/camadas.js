@@ -13,6 +13,7 @@
 //       Base03 = 2 mínimas ligadas; como a Base01, cada compasso é um arquivo tocado do início.
 //       Base04 = movimento: 7 figuras (parado, sobe/desce pequena/média/grande) que começam e voltam
 //                para a mesma nota; escolhidas pela mudança até o ano seguinte (trilha.movimento).
+//       Base05 = os mesmos 7 sons da Base04, escolhidos pela mudança desde o ano anterior.
 //
 // Sons pontuais: tirados, exceto o teste da
 // temperatura (Pontual01: picos e vales da linha), ligado pelo seletor no topo da página.
@@ -24,8 +25,8 @@ import { NIVEIS, COMPASSOS_TEMP, FIGURAS_MOVIMENTO } from '../trilha.js';
 
 export const DEFINICAO = {
   co2: { pasta: 'co2', prefixo: 'co2', modo: 'niveis' },
-  temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', quantos: COMPASSOS_TEMP, bases: ['base01', 'base02', 'base03', 'base04'], continuas: ['base02'],
-    figuras: { base04: FIGURAS_MOVIMENTO },
+  temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', quantos: COMPASSOS_TEMP, bases: ['base01', 'base02', 'base03', 'base04', 'base05'], continuas: ['base02'],
+    figuras: { base04: FIGURAS_MOVIMENTO, base05: FIGURAS_MOVIMENTO }, mesmosSons: { base05: 'base04' },
     pontuais: { pontual01: ['pico', 'vale'] } },
   chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'niveis' },
   vegetacao: { pasta: 'vegetacao', prefixo: 'veg', modo: 'niveis' },
@@ -33,7 +34,7 @@ export const DEFINICAO = {
 
 /** Arquivos da camada, na ordem: { nome, base, k } (base só no modo 'compassos'). */
 const nomesDaCamada = (d) => (d.modo === 'compassos'
-  ? d.bases.flatMap((base) => (d.figuras?.[base] ?? Array.from({ length: d.quantos }, (_, k) => `compasso_${k + 1}`))
+  ? d.bases.filter((base) => !d.mesmosSons?.[base]).flatMap((base) => (d.figuras?.[base] ?? Array.from({ length: d.quantos }, (_, k) => `compasso_${k + 1}`))
     .map((fig, k) => ({ nome: `${d.prefixo}_${base}_${fig}`, base, k })))
   : Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k })));
 
@@ -141,7 +142,7 @@ export class Camada {
       });
     }
     if (this.continuas[this.baseAtiva]) return;
-    const buf = k == null ? null : this.buffers[this.baseAtiva]?.[k];
+    const buf = k == null ? null : this.buffers[this.def.mesmosSons?.[this.baseAtiva] ?? this.baseAtiva]?.[k];
     if (!buf) return;
     const ganho = new Tone.Gain(1).connect(this.mix);
     const fonte = new Tone.ToneBufferSource(buf).connect(ganho);
@@ -151,7 +152,7 @@ export class Camada {
     this.soando.push(voz);
   }
 
-  /** A base ativa escolhe pela mudança até o ano seguinte (Base04), e não pela altura do ano. */
+  /** A base ativa escolhe pela mudança entre anos (Base04: até o seguinte; Base05: desde o anterior), e não pela altura do ano. */
   usaMovimento() { return !!this.def.figuras?.[this.baseAtiva]; }
 
   /** Modo 'compassos' (teste): qual base toca a partir do próximo compasso. */

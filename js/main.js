@@ -30,7 +30,7 @@ let grafico = null, painel = null;
 const narrador = new Narrador();
 const motor = new Motor();
 
-// SÓ PARA TESTE: seletor Base01/02/03/04 da temperatura (sai na versão final, com o HTML e o CSS dele).
+// SÓ PARA TESTE: seletor Base01/02/03/04/05 da temperatura (sai na versão final, com o HTML e o CSS dele).
 // A troca vale a partir do próximo compasso; a escolha fica lembrada neste navegador.
 {
   const seletor = document.getElementById('seletor-base');
