@@ -37,12 +37,12 @@ const motor = new Motor();
   const escolher = (base) => {
     motor.dims.temperatura.definirBase(base);
     for (const b of seletor.querySelectorAll('button')) b.setAttribute('aria-checked', String(b.dataset.base === base));
-    try { localStorage.setItem('jukebox-base-temp', base); } catch { /* ok */ }
+    try { localStorage.setItem('jukebox-base-temp-04', base); } catch { /* ok */ }
   };
   seletor.addEventListener('click', (e) => { const b = e.target.closest('button[data-base]'); if (b) escolher(b.dataset.base); });
   let salva = null;
-  try { salva = localStorage.getItem('jukebox-base-temp'); } catch { /* ok */ }
-  escolher(motor.dims.temperatura.def.bases.includes(salva) ? salva : 'base01');
+  try { salva = localStorage.getItem('jukebox-base-temp-04'); } catch { /* ok */ }
+  escolher(motor.dims.temperatura.def.bases.includes(salva) ? salva : 'base04');
 }
 // SÓ PARA TESTE: seletor de som pontual da temperatura (Sem pontual / Pontual01). Começa sem pontual.
 {
@@ -79,12 +79,12 @@ async function iniciar() {
     const n = timeline().passos.length;
     $('#slider-tempo').max = n - 1;
     montarDimensoes();
-    painel = new PainelTemperatura({ tempo: () => motor.tempoContinuo(), passos: timeline().passos });
+    painel = new PainelTemperatura({ tempo: () => motor.tempoContinuo(), passos: timeline().passos, valorEm: tempEm });
     $('#mapa-temp').addEventListener('click', () => abrirFrame(DIMS.find((d) => d.id === 'temperatura')));
     grafico = new Grafico($('#grafico'), {
       anos: timeline().passos.map((p) => p.inicio),
       aoAnunciar: anunciar,
-      rotuloPonta: (id, idx) => `${DIMS.find((d) => d.id === id).sigla} ${curtos(idx)[id]}`,
+      rotuloPonta: (id, idx, t) => `${DIMS.find((d) => d.id === id).sigla} ${id === 'temperatura' && tempEm(t) != null ? `${sinalTemp(tempEm(t))} °C` : curtos(idx)[id]}`,
     });
     grafico.tempoAlvo = () => motor.tempoContinuo();
     window.jukebox.grafico = grafico;
@@ -287,6 +287,25 @@ function atualizarUI(idx) {
 
 /** Temperatura do ano (°C, lida do mapa da NASA), ou null. */
 const b0 = (idx) => valoresDoPasso(regiao, idx).bruto.temperatura ?? null;
+
+/**
+ * Temperatura no tempo contínuo t (em anos desde o início): anda do valor do ano até o do ano
+ * seguinte ao longo do compasso, de 0,1 em 0,1, e só chega ao valor seguinte quando o ano seguinte
+ * começa. Ex.: 0,0 e depois +0,5 → 0,0 · 0,1 · 0,2 · 0,3 · 0,4 (cada um 1/5 do compasso) → +0,5.
+ */
+function tempEm(t) {
+  if (!regiao || t == null) return null;
+  const n = timeline().passos.length;
+  const tt = Math.max(0, Math.min(n - 1, t));
+  const i = Math.floor(tt), f = tt - i;
+  const a = b0(i);
+  if (a == null) return null;
+  const b = i + 1 < n ? b0(i + 1) : null;
+  if (b == null) return a;
+  const passos = Math.round(Math.abs(b - a) * 10);           // quantos 0,1 até o ano seguinte
+  return Math.round(a * 10 + Math.sign(b - a) * Math.floor(passos * f + 1e-9)) / 10;
+}
+const sinalTemp = (x) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
 
 // ---------------------------------------------------------------- mapa ampliado
 async function abrirFrame(d) {

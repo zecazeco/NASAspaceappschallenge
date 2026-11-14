@@ -261,7 +261,7 @@ export class Grafico {
         ctx.strokeStyle = o.c.cor; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(o.p.x + o.r + 2, o.p.y); ctx.lineTo(x - 3, o.y - 4); ctx.stroke(); ctx.globalAlpha = 0.95;
       }
-      ctx.fillText(this.rotuloPonta(o.c.id, idx), x, o.y); ctx.restore();
+      ctx.fillText(this.rotuloPonta(o.c.id, idx, this.t), x, o.y); ctx.restore();
     }
   }
 

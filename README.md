@@ -93,7 +93,7 @@ Busca de cidades: lista local + Open-Meteo Geocoding e BigDataCloud (geocodifica
 
 - Os **sons são provisórios**, gerados por código (`tools/gerar-sons-provisorios.mjs`). Os arquivos definitivos serão gravados por um músico e colocados em `audio/<camada>/` com o mesmo nome; eles têm prioridade sobre os provisórios.
 - No topo da tela há dois **seletores só para teste**, que saem da versão final:
-  - **Base01 a Base05:** cinco versões dos compassos da temperatura. As três primeiras seguem a altura do ano (4 notas, 1 nota sustentada ou 2 notas por compasso); a Base04 segue a mudança até o ano seguinte: começa sempre na mesma nota, sobe ou desce (pequeno, médio ou grande, conforme a variação de 0,1 °C, 0,2 a 0,3 ou 0,4 ou mais) e volta; a Base05 usa os mesmos sons da Base04, mas segue a mudança desde o ano anterior;
+  - **Base01 a Base05:** cinco versões (a **Base04** é a escolhida por enquanto e já começa selecionada) dos compassos da temperatura. As três primeiras seguem a altura do ano (4 notas, 1 nota sustentada ou 2 notas por compasso); a Base04 segue a mudança até o ano seguinte: começa sempre na mesma nota, sobe ou desce (pequeno, médio ou grande, conforme a variação de 0,1 °C, 0,2 a 0,3 ou 0,4 ou mais) e volta; a Base05 usa os mesmos sons da Base04, mas segue a mudança desde o ano anterior;
   - **Sem pontual / Pontual01:** liga ou desliga o som de picos e vales.
 
 ---

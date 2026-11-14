@@ -14,8 +14,10 @@ const INICIO_FUSAO = 0.7; // a partir de 70% do compasso o mapa começa a virar 
 const num = (v) => Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export class PainelTemperatura {
-  constructor({ tempo, passos }) {
+  constructor({ tempo, passos, valorEm = () => null }) {
     this.tempo = tempo;
+    this.valorEm = valorEm;     // valor interpolado no tempo contínuo (ex.: 12,4 = 40% do caminho de 1962 a 1963)
+    this.textoValor = '';
     this.passos = passos;
     this.v = visualizacao('temperatura');
     this.botao = $('#mapa-temp');
@@ -29,7 +31,7 @@ export class PainelTemperatura {
     this.chave = '';
     const ro = new ResizeObserver(() => this.dimensionar());
     ro.observe(this.mapa); ro.observe(this.lente);
-    const quadro = () => { this.desenhar(); requestAnimationFrame(quadro); };
+    const quadro = () => { this.desenhar(); this.acompanharValor(); requestAnimationFrame(quadro); };
     requestAnimationFrame(quadro);
   }
 
@@ -40,10 +42,24 @@ export class PainelTemperatura {
     this.ligarFio();
   }
 
+  /**
+   * A cada quadro: o número grande e a seta andam do valor deste ano até o do ano seguinte ao longo
+   * do compasso (como a Base04, que mostra a mudança até o ano seguinte). O número muda de 0,1 em 0,1.
+   */
+  acompanharValor() {
+    if (!this.cidade || this.painel.closest('[hidden]')) return;
+    const valor = this.valorEm(this.tempo());
+    if (valor == null) return;
+    const texto = `${valor >= 0 ? '+' : '−'}${num(valor)}`;
+    if (texto !== this.textoValor) { this.textoValor = texto; $('#valor-temp').innerHTML = `${texto}<small>°C</small>`; }
+    $('#seta-temp').style.top = `${((2 - Math.max(-2, Math.min(2, valor))) / 4) * 100}%`;
+  }
+
   /** Texto, cor e seta do ano (chamado a cada compasso e ao rebobinar). */
   atualizar(idx, valor) {
     const ano = this.passos[idx].inicio;
     const temValor = valor != null;
+    this.textoValor = '';
     $('#valor-temp').innerHTML = temValor ? `${valor >= 0 ? '+' : '−'}${num(valor)}<small>°C</small>` : '—';
     $('#legenda-temp').textContent = temValor
       ? `${Math.abs(valor) < 0.05 ? 'igual à' : valor > 0 ? 'mais quente que a' : 'mais frio que a'} média de 1951–1980, em ${ano}`
