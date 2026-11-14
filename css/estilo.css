@@ -81,9 +81,10 @@ h2 { font-size: 1.4rem; margin: 0 0 8px; }
 .resultados .sub { display: block; font-weight: 400; font-size: 0.9rem; color: var(--texto-suave); }
 
 /* ---------- tela principal ---------- */
-/* celular: tudo numa coluna de altura fixa; o gráfico ocupa o espaço que sobra */
+/* celular: tudo numa coluna da altura da tela; o gráfico ocupa o espaço que sobra.
+   Altura MÍNIMA (e não fixa): se a tela for baixa demais, a página rola, mas nada fica por cima de nada. */
 #tela-principal {
-  display: flex; flex-direction: column; gap: 10px; height: 100dvh; min-height: 0;
+  display: flex; flex-direction: column; gap: 10px; min-height: 100dvh;
   max-width: 820px; margin: 0 auto;
 }
 #tela-principal[hidden] { display: none; }
@@ -181,23 +182,25 @@ h2 { font-size: 1.4rem; margin: 0 0 8px; }
   #tela-principal {
     max-width: 1400px; display: grid; gap: 14px 22px;
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(min(220px, 28dvh), 1fr) auto;   /* altura mínima do gráfico: 220 px (menos em telas baixas) */
     grid-template-areas: "topo topo" "mapa leitura" "grafico grafico" "tempo tempo";
   }
   .topo { grid-area: topo; }
   .painel-temp { display: contents; }
-  .mapa-nasa { grid-area: mapa; }
+  /* o mapa encolhe em telas largas e baixas, para sobrar altura para o gráfico e os controles
+     (≈ 510 px = topo + gráfico mínimo + linha do tempo + espaços); 2,02 = largura/altura do mapa */
+  .mapa-nasa { grid-area: mapa; justify-self: center; width: clamp(320px, (100dvh - 510px) * 2.02, 100%); }
   .leitura {
     grid-area: leitura; position: relative; grid-template-columns: auto 1fr; align-content: center;
     padding: 18px 90px 18px 22px; border-radius: 16px; background: rgba(12, 18, 32, 0.6); border: 1px solid var(--painel-borda);
   }
-  .lente { width: clamp(110px, 13vw, 190px); height: clamp(110px, 13vw, 190px); }
+  .lente { width: clamp(90px, min(13vw, 22dvh), 190px); height: clamp(90px, min(13vw, 22dvh), 190px); }
   .valor-temp { font-size: clamp(2.4rem, 4.2vw, 4.4rem); }
   .valor-temp small { font-size: clamp(1rem, 1.5vw, 1.6rem); }
   .valor-legenda { font-size: 0.95rem; }
   .escala { position: absolute; right: 22px; top: 22px; bottom: 22px; height: auto; width: 56px; }
   .fio-lente { display: none; }
-  .grafico { grid-area: grafico; min-height: 220px; }
+  .grafico { grid-area: grafico; min-height: 0; }
   .linha-tempo { grid-area: tempo; display: grid; grid-template-columns: 170px 1fr 420px; align-items: center; gap: 20px; }
   .linha-tempo .ano-grande { text-align: left; font-size: 3rem; }
   .linha-tempo .slider { margin: 0; }

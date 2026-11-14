@@ -27,6 +27,7 @@ export const DEFINICAO = {
   co2: { pasta: 'co2', prefixo: 'co2', modo: 'niveis' },
   temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', quantos: COMPASSOS_TEMP, bases: ['base01', 'base02', 'base03', 'base04', 'base05'], continuas: ['base02'],
     figuras: { base04: FIGURAS_MOVIMENTO, base05: FIGURAS_MOVIMENTO }, mesmosSons: { base05: 'base04' },
+    semBaseNoNome: ['base04'],   // a base escolhida: arquivos do músico sem o nome da base (temp_sobe_pequena.wav)
     pontuais: { pontual01: ['pico', 'vale'] } },
   tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis' },   // EM TESTE: tendência da temperatura (toca junto com a Base04)
   chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'niveis' },
@@ -36,7 +37,7 @@ export const DEFINICAO = {
 /** Arquivos da camada, na ordem: { nome, base, k } (base só no modo 'compassos'). */
 const nomesDaCamada = (d) => (d.modo === 'compassos'
   ? d.bases.filter((base) => !d.mesmosSons?.[base]).flatMap((base) => (d.figuras?.[base] ?? Array.from({ length: d.quantos }, (_, k) => `compasso_${k + 1}`))
-    .map((fig, k) => ({ nome: `${d.prefixo}_${base}_${fig}`, base, k })))
+    .map((fig, k) => ({ nome: d.semBaseNoNome?.includes(base) ? `${d.prefixo}_${fig}` : `${d.prefixo}_${base}_${fig}`, base, k })))
   : Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k })));
 
 /** Sons pontuais da camada: { nome, conjunto, tipo } (ex.: temp_pontual01_pico). */

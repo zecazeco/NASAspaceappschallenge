@@ -192,7 +192,7 @@ const FIG_MOV = {
   desce_grande: { notas: [['D4', 0], ['A3', 1], ['D3', 2], ['A3', 3]], pico: 0.6, brilho: [1, 0.5, 0.25, 0.1] },
 };
 for (const [nome, fig] of Object.entries(FIG_MOV)) {
-  compasso(`temp_base04_${nome}`, (b) => fig.notas.forEach(([n, q]) =>
+  compasso(`temp_${nome}`, (b) => fig.notas.forEach(([n, q]) =>
     nota(b, q * TEMPO, hz(M[n]), 0.55 * (ACENTO[Math.floor(q)] ?? 0.75), { decai: MOV.decai, harm: fig.brilho ?? MOV.harm, ataque: 0.012, circular: false, dur: 2 })), fig.pico ?? 0.5);
 }
 
