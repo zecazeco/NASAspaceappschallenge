@@ -18,7 +18,7 @@ const DIMS = [
 ];
 
 // Quem abre a página pela primeira vez: só a temperatura (e a tendência dela) ligada e sem narração (dá para mudar nos ajustes).
-const AJUSTES_PADRAO = { versao: 2, co2: false, temperatura: true, tendencia: true, chuva: false, vegetacao: false, narracao: 'off', tic: true, volume: 80 };
+const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, tendencia: true, chuva: false, vegetacao: false, narracao: 'off', tic: true, volume: 80 };
 let ajustes = { ...AJUSTES_PADRAO };
 try {
   const salvos = JSON.parse(localStorage.getItem('jukebox-ajustes') || '{}');
@@ -44,6 +44,19 @@ const motor = new Motor();
   let salva = null;
   try { salva = localStorage.getItem('jukebox-base-temp-04'); } catch { /* ok */ }
   escolher(motor.dims.temperatura.def.bases.includes(salva) ? salva : 'base04');
+}
+// SÓ PARA TESTE: seletor Base01/02 do CO₂ (Base02 = 5 vozes que se acumulam). Começa na Base02.
+{
+  const seletor = document.getElementById('seletor-base-co2');
+  const escolher = (base) => {
+    motor.dims.co2.definirBase(base);
+    for (const b of seletor.querySelectorAll('button')) b.setAttribute('aria-checked', String(b.dataset.base === base));
+    try { localStorage.setItem('jukebox-base-co2', base); } catch { /* ok */ }
+  };
+  seletor.addEventListener('click', (e) => { const b = e.target.closest('button[data-base]'); if (b) escolher(b.dataset.base); });
+  let salva = null;
+  try { salva = localStorage.getItem('jukebox-base-co2'); } catch { /* ok */ }
+  escolher(motor.dims.co2.def.bases.includes(salva) ? salva : 'base02');
 }
 // SÓ PARA TESTE: seletor de som pontual da temperatura (Sem pontual / Pontual01). Começa sem pontual.
 {

@@ -24,7 +24,7 @@ const N_PONTUAL = Math.round(2 * COMPASSO * SR);
 let semente = 7;
 const rnd = () => { semente = (semente * 1664525 + 1013904223) >>> 0; return semente / 4294967296; };
 const hz = (midi) => 440 * 2 ** ((midi - 69) / 12);
-const N = { D1: 26, A1: 33, D2: 38, F2: 41, A2: 45, C3: 48, D3: 50, F3: 53, G3: 55, A3: 57, C4: 60, D4: 62, E4: 64, F4: 65, G4: 67, A4: 69, C5: 72, D5: 74, F5: 77, G5: 79, A5: 81, C6: 84, D6: 86, F6: 89, A6: 93 };
+const N = { D1: 26, A1: 33, C2: 36, D2: 38, F2: 41, G2: 43, A2: 45, Bb2: 46, E3: 52, C3: 48, D3: 50, F3: 53, G3: 55, A3: 57, C4: 60, D4: 62, E4: 64, F4: 65, G4: 67, A4: 69, C5: 72, D5: 74, F5: 77, G5: 79, A5: 81, C6: 84, D6: 86, F6: 89, A6: 93 };
 const PENTA_AGUDA = [N.D5, N.F5, N.G5, N.A5, N.C6, N.D6, N.F6, N.A6];
 
 /** Ajusta a frequência para caber um número inteiro de ciclos no loop (emenda sem clique). */
@@ -105,6 +105,70 @@ loop('co2_base_1', (b) => { sustentado(b, hz(N.D2), 1, [1, 0.3]); });
 loop('co2_base_2', (b) => { sustentado(b, hz(N.D2), 1, [1, 0.4, 0.2]); sustentado(b, hz(N.A2), 0.5, [1, 0.3]); });
 loop('co2_base_3', (b) => { sustentado(b, hz(N.D1), 0.6, SAW(8)); sustentado(b, hz(N.D2), 0.8, [1, 0.5, 0.3]); sustentado(b, hz(N.A2), 0.5, [1, 0.4]); sustentado(b, hz(N.D3), 0.3, SAW(5)); });
 loop('co2_base_4', (b) => { sustentado(b, hz(N.D1), 0.7, SAW(12), 0.3); sustentado(b, hz(N.D2), 0.8, SAW(6), 0.3); sustentado(b, hz(N.A2), 0.5, SAW(5)); sustentado(b, hz(N.D3), 0.35, SAW(6)); sustentado(b, hz(N.F3), 0.2, SAW(4)); });
+// CO₂ Base02 (EM TESTE): 5 vozes que se acumulam. Cada arquivo é UMA voz; o site toca a voz 1,
+// depois 1+2, 1+2+3… Todas cabem juntas: cada uma soa bem sozinha e somada às anteriores.
+// Cada voz é uma FRASE de 4 compassos (loop de 8,73 s) com uma leve variação dentro dela, para o
+// som contínuo não ficar parado. O site não mexe em nada: só liga e desliga a voz no início do compasso.
+const COMPASSOS_FRASE = 4;
+const N_FRASE = COMPASSOS_FRASE * N_LOOP;
+const frase = (nome, desenhar, pico) => { const b = new Float64Array(N_FRASE); desenhar(b); arquivos[nome] = normalizar(b, pico); };
+const DUR_FRASE = N_FRASE / SR;
+/** Janela suave e circular entre os tempos ini e fim (em tempos de semínima, 0..16), rampa em s. */
+const janela = (t, ini, fim, rampa = 0.25) => {
+  const a = ini * TEMPO, z = fim * TEMPO;
+  let x = ((t - a) % DUR_FRASE + DUR_FRASE) % DUR_FRASE;     // tempo desde o início da janela, dando a volta
+  const largura = z - a;
+  if (x > largura + rampa) x -= DUR_FRASE;                   // ainda no fim da janela anterior
+  if (x < -rampa || x > largura + rampa) return 0;
+  const sobe = Math.min(1, (x + rampa) / (2 * rampa)), desce = Math.min(1, (largura + rampa - x) / (2 * rampa));
+  return Math.sin((Math.PI / 2) * Math.max(0, Math.min(sobe, desce))) ** 2;
+};
+/** Tom contínuo na frase inteira (ciclos inteiros: emenda sem clique), volume dado por env(t). */
+function tomFrase(buf, f, harm, env) {
+  for (let k = 0; k < harm.length; k++) {
+    const fk = Math.max(1, Math.round(f * (k + 1) * DUR_FRASE)) / DUR_FRASE;
+    if (fk > SR / 2.2) break;
+    for (let i = 0; i < buf.length; i++) { const t = i / SR; buf[i] += harm[k] * env(t) * Math.sin(2 * Math.PI * fk * t); }
+  }
+}
+const respira = (t, quanto, voltas = 1) => 1 - quanto * (0.5 + 0.5 * Math.cos(2 * Math.PI * voltas * t / DUR_FRASE)); // cresce e volta na frase
+const pulso4 = (t, fundo) => 1 - fundo * (0.5 + 0.5 * Math.cos(2 * Math.PI * t / TEMPO));                         // pulsa nos tempos
+
+/** Nota que sai da base e volta: base o tempo todo, menos nas trocas [[início, fim, midi], …] (em tempos, 0..16). */
+function comTrocas(buf, base, trocas, harm, extra = () => 1) {
+  const fora = (t) => trocas.reduce((s, [a, z]) => s + janela(t, a, z, 0.2), 0);
+  tomFrase(buf, hz(base), harm, (t) => extra(t) * (1 - fora(t)));
+  for (const [a, z, m] of trocas) tomFrase(buf, hz(m), harm, (t) => extra(t) * janela(t, a, z, 0.2));
+}
+
+// 1. Ré grave, a base: no compasso 2 desce para o Dó e volta; no 4 sobe para o Fá e volta. Respira na frase.
+frase('co2_voz_1', (b) => {
+  comTrocas(b, N.D2, [[6, 8, N.C2], [14, 16, N.F2]], [1, 0.45, 0.25], (t) => respira(t, 0.25));
+}, 0.25);
+// 2. Lá (a quinta): no compasso 3 desce para o Sol e volta; no 4 sobe meio tom para o Si♭ e volta
+frase('co2_voz_2', (b) => {
+  comTrocas(b, N.A2, [[10, 12, N.G2], [14, 16, N.Bb2]], [1, 0.3]);
+}, 0.2);
+// 3. Ré bem grave e áspero: um empurrão no 1º tempo de cada compasso; no compasso 3 o peso cai no Lá e volta
+frase('co2_voz_3', (b) => {
+  const empurrao = (t) => { const x = t % COMPASSO, n = Math.floor(t / COMPASSO); return (n % 2 === 0 ? 0.45 : 0.25) * Math.min(1, x / 0.04) * Math.exp(-x * 2.2); };
+  comTrocas(b, N.D1, [[8, 12, N.A1]], SAW(8), (t) => 0.65 + empurrao(t));
+}, 0.22);
+// 4. Ré + Fá pulsando nos 4 tempos; no compasso 3 o Fá desce para o Mi e volta
+frase('co2_voz_4', (b) => {
+  tomFrase(b, hz(N.D3), SAW(4), (t) => 0.6 * pulso4(t, 0.6));
+  tomFrase(b, hz(N.F3), SAW(4), (t) => pulso4(t, 0.6) * (1 - janela(t, 8, 12, 0.2)));
+  tomFrase(b, hz(N.E3), SAW(4), (t) => pulso4(t, 0.6) * janela(t, 8, 12, 0.2));
+}, 0.18);
+// 5. Mi + Fá colados (tensão); no compasso 2 o par sobe para Fá + Sol e no 4 cresce mais
+frase('co2_voz_5', (b) => {
+  const sobe = (t) => janela(t, 4, 8, 0.2);
+  const forte = (t) => 0.8 + 0.35 * janela(t, 12, 16, 0.8);
+  tomFrase(b, hz(N.E4), SAW(4), (t) => pulso4(t, 0.4) * forte(t) * (1 - sobe(t)));
+  tomFrase(b, hz(N.F4), SAW(4), (t) => pulso4(t, 0.4) * forte(t));
+  tomFrase(b, hz(N.G4), SAW(4), (t) => pulso4(t, 0.4) * forte(t) * sobe(t));
+}, 0.15);
+
 for (const [int, h] of [['p', 3], ['m', 6], ['f', 10]]) {
   pontual(`co2_recorde_${int}`, PICO[int], (b) => {
     // swell: cresce por ~1,2 s e se desfaz até o fim dos 2 compassos

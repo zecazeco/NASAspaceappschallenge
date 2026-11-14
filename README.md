@@ -60,7 +60,7 @@ Um som curto marca os **picos** e os **vales** da linha de temperatura: no pico 
 
 ### As outras camadas
 
-CO₂, chuva e vegetação têm **4 níveis** cada, do menos denso ao mais denso. O valor do ano decide quanto se ouve de cada nível.
+CO₂, chuva e vegetação têm **4 níveis** cada, do menos denso ao mais denso. O valor do ano decide quanto se ouve de cada nível. Em teste, o CO₂ tem também a **Base02** (a pré-escolhida, com botão para trocar): 5 vozes que se acumulam, uma entrando a cada quinto da faixa medida.
 
 ---
 

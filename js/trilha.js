@@ -3,11 +3,13 @@
 //   • temperatura: qual dos COMPASSOS_TEMP compassos toca em cada ano (0 = mais frio … 5 = mais quente)
 //   • temperatura: anos que são pico ou vale da linha (som pontual em teste)
 //   • temperatura, Base04 e Base05: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
+//   • CO₂ Base02 (em teste): quantas das 5 vozes tocam em cada ano
 //   • tendência da temperatura: média de 11 anos (linha do gráfico) e nível 1 a 4 (camada de som)
 //   • eventos de cada ano ({ nome, intensidade }): hoje só viram cartões no gráfico.
 // É calculada uma vez, ao escolher a cidade.
 
 export const NIVEIS = 4;
+export const VOZES_CO2 = 5;          // CO₂ Base02 (em teste): 5 vozes que se acumulam
 const INICIO_RECORDES = 1970;        // antes disso quase todo ano seria recorde
 const ANOS_MINIMOS_PARA_RECORDE = 10; // chuva e vegetação: "o mais extremo até então" só depois de 10 anos medidos
 const QUEDA_MINIMA_VEG = 0.03;        // queda de pelo menos 3% do verde dos anos 1980
@@ -204,12 +206,14 @@ export function calcularTrilha(local, passos, co2Global) {
     chuva: posicoes(chuva),
     vegetacao: posicoes(veg),
   };
+  // CO₂ Base02: quantas vozes tocam (0 = só a voz 1 … 4 = as 5); a faixa medida dividida em 5 partes iguais
+  const vozes = { co2: niveisFixos(co2, VOZES_CO2) };
   const compasso = { temperatura: compassos(temp, COMPASSOS_TEMP) };
   const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA) };
   const movimento = { temperatura: { base04: movimentos(temp, 1), base05: movimentos(temp, -1) } };
   // linha da tendência no gráfico: na mesma escala da linha da temperatura, para passar por dentro dela
   const linha = { tendencia: naEscalaDe(tendencia, temp) };
-  return { posicao, compasso, virada, movimento, tendencia, linha, eventos };
+  return { posicao, vozes, compasso, virada, movimento, tendencia, linha, eventos };
 }
 
 /** Resumo legível (para depurar no console ou mostrar à equipe). */

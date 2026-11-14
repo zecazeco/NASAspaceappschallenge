@@ -139,7 +139,7 @@ export class Motor {
           camada.dispararPontual(this.trilha.virada?.[id]?.[i], tempo);
         }
       }
-      else camada.definirPosicao(this.trilha.posicao[id][i], tempo);
+      else camada.definirPosicao(this.trilha.posicao[id][i], tempo, undefined, this.trilha.vozes?.[id]?.[i]);
     }
   }
 

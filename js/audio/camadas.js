@@ -21,10 +21,12 @@
 // Arquivos: primeiro audio/<pasta>/<nome>.wav (os do músico); se não existir,
 // audio/provisorio/<nome>.wav (gerados por tools/gerar-sons-provisorios.mjs).
 
-import { NIVEIS, COMPASSOS_TEMP, FIGURAS_MOVIMENTO } from '../trilha.js';
+import { NIVEIS, COMPASSOS_TEMP, FIGURAS_MOVIMENTO, VOZES_CO2 } from '../trilha.js';
 
 export const DEFINICAO = {
-  co2: { pasta: 'co2', prefixo: 'co2', modo: 'niveis' },
+  // EM TESTE: Base01 = 4 níveis completos trocados por volume (como a chuva);
+  // Base02 = 5 vozes que se acumulam (co2_voz_1..5): o nível do ano liga a voz 1 até a voz dele.
+  co2: { pasta: 'co2', prefixo: 'co2', modo: 'niveis', bases: ['base01', 'base02'], vozes: { base02: VOZES_CO2 } },
   temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', quantos: COMPASSOS_TEMP, bases: ['base01', 'base02', 'base03', 'base04', 'base05'], continuas: ['base02'],
     figuras: { base04: FIGURAS_MOVIMENTO, base05: FIGURAS_MOVIMENTO }, mesmosSons: { base05: 'base04' },
     semBaseNoNome: ['base04'],   // a base escolhida: arquivos do músico sem o nome da base (temp_sobe_pequena.wav)
@@ -38,7 +40,8 @@ export const DEFINICAO = {
 const nomesDaCamada = (d) => (d.modo === 'compassos'
   ? d.bases.filter((base) => !d.mesmosSons?.[base]).flatMap((base) => (d.figuras?.[base] ?? Array.from({ length: d.quantos }, (_, k) => `compasso_${k + 1}`))
     .map((fig, k) => ({ nome: d.semBaseNoNome?.includes(base) ? `${d.prefixo}_${fig}` : `${d.prefixo}_${base}_${fig}`, base, k })))
-  : Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k })));
+  : [...Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k })),
+    ...Object.values(d.vozes ?? {}).flatMap((n) => Array.from({ length: n }, (_, k) => ({ nome: `${d.prefixo}_voz_${k + 1}`, k, voz: true })))]);
 
 /** Sons pontuais da camada: { nome, conjunto, tipo } (ex.: temp_pontual01_pico). */
 const pontuaisDaCamada = (d) => Object.entries(d.pontuais ?? {})
@@ -85,6 +88,7 @@ export class Camada {
     this.baseAtiva = this.def.bases?.[0] ?? null;
     this.soando = [];      // modo 'compassos': { fonte, ganho } ainda tocando
     this.continuas = {};   // modo 'compassos', bases contínuas: base → [{ player, ganho }]
+    this.vozes = [];       // modo 'niveis' com vozes (CO₂ Base02): { player, ganho }, tocam juntas
     this.pontuais = {};    // conjunto → { pico: buffer, vale: buffer }
     this.pontualAtivo = null;   // ex.: 'pontual01'; null = sem pontual
   }
@@ -92,8 +96,12 @@ export class Camada {
   /** Baixa os arquivos da camada; aoArquivo() é chamado a cada arquivo pronto (para o progresso). */
   async carregar(aoArquivo = () => {}) {
     const { pasta } = this.def;
-    await Promise.all([...nomesDaCamada(this.def).map(({ nome, base, k }) => carregarSom(pasta, nome).then((buf) => {
-      if (this.def.continuas?.includes(base)) {
+    await Promise.all([...nomesDaCamada(this.def).map(({ nome, base, k, voz }) => carregarSom(pasta, nome).then((buf) => {
+      if (voz) {
+        const ganho = new Tone.Gain(0).connect(this.mix);
+        const player = buf ? new Tone.Player({ url: buf, loop: true }).connect(ganho) : null;
+        this.vozes[k] = { player, ganho };
+      } else if (this.def.continuas?.includes(base)) {
         const ganho = new Tone.Gain(0).connect(this.mix);
         const player = buf ? new Tone.Player({ url: buf, loop: true }).connect(ganho) : null;
         (this.continuas[base] ??= [])[k] = { player, ganho };
@@ -112,7 +120,7 @@ export class Camada {
 
   /** Os loops andam presos ao relógio: começam no compasso 0 e pausam junto com ele. */
   iniciar() {
-    for (const b of this.bases) b.player?.sync().start(0);
+    for (const b of [...this.bases, ...this.vozes]) b.player?.sync().start(0);
     for (const lista of Object.values(this.continuas)) for (const b of lista) b.player?.sync().start(0);
   }
 
@@ -120,13 +128,15 @@ export class Camada {
    * Modo 'niveis': ajusta o volume dos níveis, posição 0..3 (ex.: 1,4 = 60% nível 2 + 40% nível 3).
    * Troca por potência constante, para o volume total não afundar no meio. null = silêncio.
    */
-  definirPosicao(pos, tempo, rampa = RAMPA_NIVEL) {
+  definirPosicao(pos, tempo, rampa = RAMPA_NIVEL, voz = null) {
+    const comVozes = !!this.def.vozes?.[this.baseAtiva];
+    const ajustar = (b, g) => { b.ganho.gain.cancelScheduledValues(tempo); b.ganho.gain.setTargetAtTime(g, tempo, rampa / 3); };
     this.bases.forEach((b, i) => {
-      const d = pos == null ? 1 : Math.abs(pos - i);
-      const g = d >= 1 ? 0 : Math.cos((d * Math.PI) / 2);
-      b.ganho.gain.cancelScheduledValues(tempo);
-      b.ganho.gain.setTargetAtTime(g, tempo, rampa / 3);
+      const d = pos == null || comVozes ? 1 : Math.abs(pos - i);
+      ajustar(b, d >= 1 ? 0 : Math.cos((d * Math.PI) / 2));
     });
+    // vozes que se acumulam: da voz 1 até a voz do ano, todas inteiras (o código só liga e desliga)
+    this.vozes.forEach((b, i) => ajustar(b, comVozes && voz != null && i <= voz ? 1 : 0));
   }
 
   /**
@@ -157,7 +167,7 @@ export class Camada {
   /** A base ativa escolhe pela mudança entre anos (Base04: até o seguinte; Base05: desde o anterior), e não pela altura do ano. */
   usaMovimento() { return !!this.def.figuras?.[this.baseAtiva]; }
 
-  /** Modo 'compassos' (teste): qual base toca a partir do próximo compasso. */
+  /** Teste: qual base toca a partir do próximo compasso (temperatura e CO₂). */
   definirBase(base) {
     if (this.def.bases?.includes(base)) this.baseAtiva = base;
   }
