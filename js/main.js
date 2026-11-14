@@ -12,12 +12,13 @@ const $ = (s) => document.querySelector(s);
 const DIMS = [
   { id: 'co2', nome: 'Gás carbônico', sigla: 'CO₂', papel: 'base grave', cor: '#b98cff' },
   { id: 'temperatura', nome: 'Temperatura', sigla: 'Temperatura', papel: 'harmonia', cor: '#ff7a45' },
+  { id: 'tendencia', nome: 'Tendência da temperatura', sigla: 'Tendência', papel: 'média de 11 anos, pulso que sobe de nota', cor: '#ffd84d' },
   { id: 'chuva', nome: 'Chuva', sigla: 'Chuva', papel: 'gotas agudas', cor: '#4fc3ff' },
   { id: 'vegetacao', nome: 'Vegetação', sigla: 'Vegetação', papel: 'cordas dedilhadas', cor: '#55e08a' },
 ];
 
-// narração dos anos: desligada por padrão (pode ser ligada nos Ajustes)
-const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, chuva: true, vegetacao: true, narracao: 'off', tic: true, volume: 80 };
+// Quem abre a página pela primeira vez: só a temperatura (e a tendência dela) ligada e sem narração (dá para mudar nos ajustes).
+const AJUSTES_PADRAO = { versao: 2, co2: false, temperatura: true, tendencia: true, chuva: false, vegetacao: false, narracao: 'off', tic: true, volume: 80 };
 let ajustes = { ...AJUSTES_PADRAO };
 try {
   const salvos = JSON.parse(localStorage.getItem('jukebox-ajustes') || '{}');
@@ -252,6 +253,7 @@ function curtos(idx) {
   return {
     co2: b.co2 == null ? `desde ${ini.co2}` : `${Math.round(b.co2)} ppm`,
     temperatura: b.temperatura == null ? `desde ${ini.temperatura}` : `${sinal(b.temperatura, 1)} °C`,
+    tendencia: trilha?.tendencia?.[idx] == null ? `desde ${ini.temperatura}` : `média ${sinal(trilha.tendencia[idx], 1)} °C`,
     chuva: b.chuva == null ? `desde ${ini.chuva}` : `${sinal(b.chuva)}%`,
     vegetacao: v.vegetacao == null ? `desde ${ini.vegetacao}` : `${sinal((v.vegetacao.saude - 1) * 100)}%`,
   };
@@ -267,9 +269,12 @@ function atualizarUI(idx) {
 
   const v = valoresDoPasso(regiao, idx);
   const textos = textosDimensoes(regiao, idx);
+  const media = trilha?.tendencia?.[idx], nivelTend = trilha?.posicao.tendencia?.[idx];
+  textos.tendencia = media == null ? 'Ainda sem média.'
+    : `Média dos 11 anos em volta: ${media >= 0 ? '+' : '−'}${Math.abs(media).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} °C, nível ${nivelTend + 1} de 4`;
   const curto = curtos(idx);
   const nivel = {
-    co2: v.co2, temperatura: v.temperatura,
+    co2: v.co2, temperatura: v.temperatura, tendencia: nivelTend == null ? null : (nivelTend + 1) / 4,
     chuva: v.chuva == null ? null : Math.max(0, Math.min(1, (v.chuva + 50) / 100)),
     vegetacao: v.vegetacao == null ? null : 1 - v.vegetacao.perda,
   };

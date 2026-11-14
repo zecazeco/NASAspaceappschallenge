@@ -95,6 +95,7 @@ Busca de cidades: lista local + Open-Meteo Geocoding e BigDataCloud (geocodifica
 - No topo da tela há dois **seletores só para teste**, que saem da versão final:
   - **Base01 a Base05:** cinco versões (a **Base04** é a escolhida por enquanto e já começa selecionada) dos compassos da temperatura. As três primeiras seguem a altura do ano (4 notas, 1 nota sustentada ou 2 notas por compasso); a Base04 segue a mudança até o ano seguinte: começa sempre na mesma nota, sobe ou desce (pequeno, médio ou grande, conforme a variação de 0,1 °C, 0,2 a 0,3 ou 0,4 ou mais) e volta; a Base05 usa os mesmos sons da Base04, mas segue a mudança desde o ano anterior;
   - **Sem pontual / Pontual01:** liga ou desliga o som de picos e vales.
+- **Tendência da temperatura (em teste):** uma segunda base da temperatura, que toca junto com a Base04. Ela segue a média dos 11 anos em volta de cada ano, dividida em 4 níveis na escala da cidade, e por isso muda só poucas vezes na música (em São Paulo: 1973, 1987 e 1998). O som é um pulso de marimba com uma batida em cada tempo; a cada nível a nota sobe (Ré grave, Fá, Lá, Ré agudo) e fica um pouco mais forte e brilhante. Aparece como a linha amarela do gráfico e pode ser desligada nos Ajustes.
 
 ---
 
@@ -119,6 +120,10 @@ No celular, o GPS e o áudio exigem **HTTPS** quando o endereço não é `localh
 | `data/frames/` | os mapas de cada ano e o `manifesto.json`, que descreve projeção, recorte e legenda de cada mapa |
 | `audio/` | sons (provisórios em `audio/provisorio/`; os do músico em `audio/<camada>/`) e narração |
 | `tools/` | servidor local e scripts que geram os sons provisórios, os dados e os mapas |
+
+### Publicação
+
+Cada envio para a branch `main` publica o site no GitHub Pages sozinho (`.github/workflows/publicar.yml`). No rodapé aparece **Version N (código)**: N é o número de commits e o código é o do commit publicado. Se o número no celular for menor que o do GitHub, a página está vindo do cache: recarregue. No computador, com o servidor local, aparece "Version local".
 
 Para baixar de novo os mapas da NASA: `python -I tools/preparar-frames-nasa.py`.
 

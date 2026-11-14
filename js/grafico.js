@@ -11,10 +11,11 @@
 export const CAMADAS_GRAFICO = [
   { id: 'co2', nome: 'CO₂', cor: '#b98cff', z: 0.9, espessura: 1.3 },
   { id: 'temperatura', nome: 'Temperatura', cor: '#ff7a45', z: 0.6, espessura: 1.2 },
+  { id: 'tendencia', nome: 'Tendência', cor: '#ffd84d', z: 0.6, espessura: 1.6 },   // média de 11 anos, por dentro da temperatura
   { id: 'vegetacao', nome: 'Vegetação', cor: '#55e08a', z: 0.3, espessura: 1.05 },
   { id: 'chuva', nome: 'Chuva', cor: '#4fc3ff', z: 0.0, espessura: 0.8 },
 ];
-const TITULOS = { co2: 'CO₂', temperatura: 'Temperatura', chuva: 'Chuva', vegetacao: 'Vegetação' };
+const TITULOS = { co2: 'CO₂', temperatura: 'Temperatura', tendencia: 'Tendência', chuva: 'Chuva', vegetacao: 'Vegetação' };
 const num = (v, casas = 1) => v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
 
 const FRASES = {
@@ -108,7 +109,11 @@ export class Grafico {
     return { x: W / 2 + x * this.pxAno() * s, y: base - v * altura, base, s };
   }
 
-  valor(id, i) { const p = this.trilha?.posicao[id][i]; return p == null ? null : p / 3; }
+  valor(id, i) {
+    const linha = this.trilha?.linha?.[id];          // camadas com linha própria (tendência), já em 0..1
+    if (linha) return linha[i] ?? null;
+    const p = this.trilha?.posicao[id][i]; return p == null ? null : p / 3;
+  }
   valorEm(id, t) {
     const i = Math.floor(t), f = t - i;
     const a = this.valor(id, i), b = this.valor(id, Math.min(this.N - 1, i + 1));

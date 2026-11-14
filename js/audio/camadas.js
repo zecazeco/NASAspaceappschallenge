@@ -28,6 +28,7 @@ export const DEFINICAO = {
   temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', quantos: COMPASSOS_TEMP, bases: ['base01', 'base02', 'base03', 'base04', 'base05'], continuas: ['base02'],
     figuras: { base04: FIGURAS_MOVIMENTO, base05: FIGURAS_MOVIMENTO }, mesmosSons: { base05: 'base04' },
     pontuais: { pontual01: ['pico', 'vale'] } },
+  tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis' },   // EM TESTE: tendência da temperatura (toca junto com a Base04)
   chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'niveis' },
   vegetacao: { pasta: 'vegetacao', prefixo: 'veg', modo: 'niveis' },
 };

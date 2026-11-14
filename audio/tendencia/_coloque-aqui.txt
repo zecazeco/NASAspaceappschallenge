@@ -1,0 +1,3 @@
+Coloque aqui os arquivos do músico para a tendência da temperatura (mesmo nome dos provisórios, eles têm prioridade):
+tend_base_1.wav … tend_base_4.wav (loops de 1 compasso, sem clique; 1 = período mais frio da cidade, 4 = mais quente)
+Toca junto com a Base04 da temperatura. Ré menor, 110 BPM; mesma batida nos 4 (uma por tempo); a nota sobe a cada nível: Ré, Fá, Lá, Ré agudo.

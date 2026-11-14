@@ -95,7 +95,7 @@ function wav(buf) {
 }
 
 const arquivos = {};
-const loop = (nome, desenhar) => { const b = new Float64Array(N_LOOP); desenhar(b); arquivos[nome] = normalizar(b, 0.5); };
+const loop = (nome, desenhar, pico = 0.5) => { const b = new Float64Array(N_LOOP); desenhar(b); arquivos[nome] = normalizar(b, pico); };
 const pontual = (nome, pico, desenhar) => { const b = new Float64Array(N_PONTUAL); desenhar(b); arquivos[nome] = caudaFinal(normalizar(b, pico)); };
 const PICO = { p: 0.35, m: 0.55, f: 0.8 };
 
@@ -183,7 +183,7 @@ FIGURAS.forEach((fig, k) => compasso(`temp_base03_compasso_${k + 1}`, (b) => {
 // Timbre do nível 3 (neutro) das outras bases.
 const MOV = { harm: [1, 0.35, 0.12], decai: 2.6 };
 const FIG_MOV = {
-  parado: { notas: [['D4', 0]] },                                               // uma nota no tempo 1 e silêncio
+  parado: { notas: [['D4', 0], ['E4', 1], ['D4', 2], ['E4', 3]] },              // ida e volta duas vezes: Ré · Mi · Ré · Mi
   sobe_pequena: { notas: [['D4', 0], ['E4', 1], ['F4', 2], ['E4', 3]] },
   sobe_media: { notas: [['D4', 0], ['F4', 1], ['A4', 2], ['F4', 3]] },
   sobe_grande: { notas: [['D4', 0], ['A4', 1], ['D5', 2], ['A4', 3]], pico: 0.6, brilho: [1, 0.5, 0.25, 0.1] },
@@ -213,6 +213,15 @@ for (const int of ['p', 'm', 'f']) {
     notas.forEach((m, k) => nota(b, k * 0.09, hz(m), 1, { decai: 0.9, harm: [1, 0, 0.5, 0, 0, 0.25], circular: false, dur: 4.6 }));
   });
 }
+
+// ---------- Tendência da temperatura (EM TESTE): toca junto com a Base04 e mostra o aquecimento ao
+// longo das décadas (média de 11 anos, 4 níveis). Timbre de marimba (batida curta), diferente do drone
+// do CO₂. Todos os níveis têm o MESMO ritmo: uma batida em cada tempo. O que muda é a nota, que
+// "sobe de andar" pelas notas do acorde (as mais estáveis, que combinam com qualquer figura da Base04):
+// 1 = Ré grave · 2 = Fá · 3 = Lá · 4 = Ré uma oitava acima. A cada nível, um pouco mais forte e brilhante.
+const MARIMBA = (brilho) => ({ decai: 4, harm: [1, 0, 0.35 * brilho, 0, 0.15 * brilho], ataque: 0.003 });
+[[N.D3, 0.6, 0.30], [N.F3, 0.75, 0.34], [N.A3, 0.9, 0.38], [N.D4, 1.05, 0.42]].forEach(([m, brilho, pico], k) =>
+  loop(`tend_base_${k + 1}`, (b) => [0, 1, 2, 3].forEach((q) => nota(b, q * TEMPO, hz(m), q === 0 ? 1 : 0.8, MARIMBA(brilho))), pico));
 
 // ---------- Chuva: gotas agudas, mais densas a cada nível
 const gotas = (b, quantas, amp = 0.5) => {

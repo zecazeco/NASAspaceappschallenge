@@ -3,6 +3,7 @@
 //   • temperatura: qual dos COMPASSOS_TEMP compassos toca em cada ano (0 = mais frio … 5 = mais quente)
 //   • temperatura: anos que são pico ou vale da linha (som pontual em teste)
 //   • temperatura, Base04 e Base05: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
+//   • tendência da temperatura: média de 11 anos (linha do gráfico) e nível 1 a 4 (camada de som)
 //   • eventos de cada ano ({ nome, intensidade }): hoje só viram cartões no gráfico.
 // É calculada uma vez, ao escolher a cidade.
 
@@ -65,7 +66,7 @@ function picosEVales(serie, limiar) {
 // Base04 (EM TESTE): o compasso de cada ano mostra a MUDANÇA até o ano seguinte (para onde a
 // linha vai), e não a altura do ano. Todas as figuras começam na mesma nota e voltam para ela, então
 // nada acumula. A variação é a do valor arredondado (1 casa decimal, o mesmo da tela e da linha):
-//   0 = parado (uma nota e silêncio)   ±0,1 = pequena   ±0,2 a 0,3 = média   ±0,4 ou mais = grande.
+//   0 = parado (Ré · Mi · Ré · Mi: ida e volta duas vezes, sem sair do lugar)   ±0,1 = pequena   ±0,2 a 0,3 = média   ±0,4 ou mais = grande.
 // O último ano (sem ano seguinte) toca um parado.
 // Base05 (EM TESTE): igual, mas compara com o ANO ANTERIOR (de onde a linha veio); o 1º ano toca um parado.
 export const FIGURAS_MOVIMENTO = ['parado', 'sobe_pequena', 'sobe_media', 'sobe_grande', 'desce_pequena', 'desce_media', 'desce_grande'];
@@ -79,6 +80,35 @@ function movimentos(serie, sentido) {   // sentido: +1 = até o ano seguinte, �
     const tamanho = Math.abs(d) === 1 ? 'pequena' : Math.abs(d) <= 3 ? 'media' : 'grande';
     return FIGURAS_MOVIMENTO.indexOf(`${d > 0 ? 'sobe' : 'desce'}_${tamanho}`);
   });
+}
+
+// Tendência da temperatura (EM TESTE): segunda base da temperatura, tocando junto com a Base04.
+// Para cada ano, a média dos 11 anos em volta (5 antes, o próprio ano e 5 depois; nas pontas, o que
+// houver). Isso apaga o sobe e desce de um ano para o outro e deixa só o aquecimento ao longo das
+// décadas. O som usa essa média dividida em 4 níveis na escala da cidade: muda poucas vezes na
+// música (São Paulo: 1973, 1987 e 1998), como capítulos.
+export const LADO_TENDENCIA = 5;
+
+export function mediaMovel(serie, lado = LADO_TENDENCIA) {
+  return serie.map((v, i) => {
+    if (!valido(v)) return null;
+    const vs = serie.slice(Math.max(0, i - lado), i + lado + 1).filter(valido);
+    return vs.reduce((a, b) => a + b, 0) / vs.length;
+  });
+}
+
+function niveisFixos(serie, n) {
+  const vals = serie.filter(valido);
+  if (!vals.length) return serie.map(() => null);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  return serie.map((v) => (valido(v) ? Math.min(n - 1, Math.floor((max > min ? (v - min) / (max - min) : 0.5) * n)) : null));
+}
+
+/** Série na escala de outra (0..1 entre o mínimo e o máximo da referência): a linha da tendência no gráfico. */
+function naEscalaDe(serie, ref) {
+  const vals = ref.filter(valido);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  return serie.map((v) => (valido(v) && max > min ? (v - min) / (max - min) : null));
 }
 
 function compassos(serie, n) {
@@ -166,16 +196,20 @@ export function calcularTrilha(local, passos, co2Global) {
     }
   }
 
+  const tendencia = mediaMovel(temp);
   const posicao = {
     co2: posicoes(co2),
     temperatura: posicoes(temp),
+    tendencia: niveisFixos(tendencia, NIVEIS),
     chuva: posicoes(chuva),
     vegetacao: posicoes(veg),
   };
   const compasso = { temperatura: compassos(temp, COMPASSOS_TEMP) };
   const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA) };
   const movimento = { temperatura: { base04: movimentos(temp, 1), base05: movimentos(temp, -1) } };
-  return { posicao, compasso, virada, movimento, eventos };
+  // linha da tendência no gráfico: na mesma escala da linha da temperatura, para passar por dentro dela
+  const linha = { tendencia: naEscalaDe(tendencia, temp) };
+  return { posicao, compasso, virada, movimento, tendencia, linha, eventos };
 }
 
 /** Resumo legível (para depurar no console ou mostrar à equipe). */

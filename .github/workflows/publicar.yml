@@ -1,0 +1,42 @@
+# Publica o site no GitHub Pages a cada envio para a branch main.
+# Antes de publicar, troca "Version local" (rodapé do index.html) pelo número da versão:
+# quantidade de commits + código curto do commit (ex.: "Version 7 (ed98389)"). Assim dá para ver no
+# celular se a página aberta é a última publicada ou uma cópia antiga guardada pelo navegador.
+name: Publicar site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Marcar a versão no rodapé
+        run: |
+          N=$(git rev-list --count HEAD)
+          H=$(git rev-parse --short=7 HEAD)
+          sed -i "s/Version local/Version $N ($H)/" index.html
+          grep -o "Version [0-9]* ([0-9a-f]*)" index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deploy
+        uses: actions/deploy-pages@v4
