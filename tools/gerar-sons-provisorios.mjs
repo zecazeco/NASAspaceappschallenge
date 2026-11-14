@@ -131,8 +131,8 @@ for (const [int, h] of [['p', 3], ['m', 6], ['f', 10]]) {
 // Base01: o arquivo tem 1 compasso + cauda; a cauda some quando o próximo compasso começa.
 // (Sem acorde de fundo: soava como um grave contínuo por baixo.)
 const N_COMPASSO = Math.round((COMPASSO + 1.2) * SR);
-const compasso = (nome, desenhar) => { const b = new Float64Array(N_COMPASSO); desenhar(b); arquivos[nome] = caudaFinal(normalizar(b, 0.5), 0.6); };
-const M = { A3: 57, Bb3: 58, C4: 60, D4: 62, E4: 64, F4: 65, G4: 67, A4: 69, C5: 72, D5: 74, E5: 76, F5: 77, G5: 79, A5: 81 };
+const compasso = (nome, desenhar, pico = 0.5) => { const b = new Float64Array(N_COMPASSO); desenhar(b); arquivos[nome] = caudaFinal(normalizar(b, pico), 0.6); };
+const M = { D3: 50, G3: 55, A3: 57, Bb3: 58, C4: 60, D4: 62, E4: 64, F4: 65, G4: 67, A4: 69, C5: 72, D5: 74, E5: 76, F5: 77, G5: 79, A5: 81 };
 const FIGURAS = [
   // Base01: melodia (4 semínimas)  Base02: nota longa  Base03: 2 mínimas  timbre (igual nas 3 bases)
   { notas: ['D4', 'C4', 'Bb3', 'A3'], longa: 'A3', minimas: ['D4', 'A3'], harm: [1, 0.1],                  decai: 2.2 },  // 1 mais frio: grave, escuro
@@ -175,6 +175,26 @@ FIGURAS.forEach((fig, k) => compasso(`temp_base03_compasso_${k + 1}`, (b) => {
     }
   });
 }));
+
+// Base04 (EM TESTE): MOVIMENTO. O compasso mostra a mudança até o ano seguinte, não a altura do ano.
+// Todas as figuras começam no Ré4 (a "casa") e a 4ª nota é vizinha de uma nota do acorde, puxando
+// de volta para o Ré4 do compasso seguinte; por isso qualquer figura pode vir depois de qualquer outra.
+// Quanto maior a variação, mais longe a melodia vai antes de voltar. As grandes saem um pouco mais fortes.
+// Timbre do nível 3 (neutro) das outras bases.
+const MOV = { harm: [1, 0.35, 0.12], decai: 2.6 };
+const FIG_MOV = {
+  parado: { notas: [['D4', 0]] },                                               // uma nota no tempo 1 e silêncio
+  sobe_pequena: { notas: [['D4', 0], ['E4', 1], ['F4', 2], ['E4', 3]] },
+  sobe_media: { notas: [['D4', 0], ['F4', 1], ['A4', 2], ['F4', 3]] },
+  sobe_grande: { notas: [['D4', 0], ['A4', 1], ['D5', 2], ['A4', 3]], pico: 0.6, brilho: [1, 0.5, 0.25, 0.1] },
+  desce_pequena: { notas: [['D4', 0], ['C4', 1], ['Bb3', 2], ['C4', 3]] },
+  desce_media: { notas: [['D4', 0], ['Bb3', 1], ['G3', 2], ['Bb3', 3]] },
+  desce_grande: { notas: [['D4', 0], ['A3', 1], ['D3', 2], ['A3', 3]], pico: 0.6, brilho: [1, 0.5, 0.25, 0.1] },
+};
+for (const [nome, fig] of Object.entries(FIG_MOV)) {
+  compasso(`temp_base04_${nome}`, (b) => fig.notas.forEach(([n, q]) =>
+    nota(b, q * TEMPO, hz(M[n]), 0.55 * (ACENTO[Math.floor(q)] ?? 0.75), { decai: MOV.decai, harm: fig.brilho ?? MOV.harm, ataque: 0.012, circular: false, dur: 2 })), fig.pico ?? 0.5);
+}
 
 // Temperatura, Pontual01 (EM TESTE): picos e vales da linha do gráfico (ano mais alto / mais baixo de uma oscilação).
 // Arpejo rápido de Ré menor (Ré–Fá–Lá–Ré) em semicolcheias, uma oitava acima das bases, com timbre

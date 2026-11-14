@@ -134,7 +134,8 @@ export class Motor {
     for (const [id, camada] of Object.entries(this.dims)) {
       if (camada.def.modo === 'compassos') {
         if (noCompasso) {
-          camada.tocarCompasso(this.trilha.compasso[id][i], tempo);
+          const k = camada.usaMovimento() ? this.trilha.movimento?.[id]?.[i] : this.trilha.compasso[id][i];
+          camada.tocarCompasso(k, tempo);
           camada.dispararPontual(this.trilha.virada?.[id]?.[i], tempo);
         }
       }

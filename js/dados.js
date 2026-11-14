@@ -45,7 +45,9 @@ export async function prepararLocal(lat, lon, aoProgresso = () => {}) {
   if (!TIMELINE.frames) { aoProgresso(1); return base; }
   const serie = await lerSerieLocal(lat, lon, TIMELINE.passos, aoProgresso);
   const local = { ...base, fonte: 'frames', inicioMedicao: {} };
-  for (const [dim, valores] of Object.entries(serie)) {
+  for (const [dim, lidos] of Object.entries(serie)) {
+    // temperatura com 1 casa decimal: a linha, o número na tela e o som usam o mesmo valor
+    const valores = dim === 'temperatura' ? lidos.map((v) => (v == null ? null : Math.round(v * 10) / 10)) : lidos;
     local[dim] = valores;
     const i = valores.findIndex((v) => v != null);
     local.inicioMedicao[dim] = i < 0 ? null : TIMELINE.passos[i].inicio;

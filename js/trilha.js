@@ -2,6 +2,7 @@
 //   • posição na base de cada camada (0 = nível 1 … 3 = nível 4; null = silêncio)
 //   • temperatura: qual dos COMPASSOS_TEMP compassos toca em cada ano (0 = mais frio … 5 = mais quente)
 //   • temperatura: anos que são pico ou vale da linha (som pontual em teste)
+//   • temperatura, Base04: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
 //   • eventos de cada ano ({ nome, intensidade }): hoje só viram cartões no gráfico.
 // É calculada uma vez, ao escolher a cidade.
 
@@ -59,6 +60,24 @@ function picosEVales(serie, limiar) {
     }
   }
   return saida;
+}
+
+// Base04 (EM TESTE): o compasso de cada ano mostra a MUDANÇA até o ano seguinte (para onde a
+// linha vai), e não a altura do ano. Todas as figuras começam na mesma nota e voltam para ela, então
+// nada acumula. A variação é a do valor arredondado (1 casa decimal, o mesmo da tela e da linha):
+//   0 = parado (uma nota e silêncio)   ±0,1 = pequena   ±0,2 a 0,3 = média   ±0,4 ou mais = grande.
+// O último ano (sem ano seguinte) toca um parado.
+export const FIGURAS_MOVIMENTO = ['parado', 'sobe_pequena', 'sobe_media', 'sobe_grande', 'desce_pequena', 'desce_media', 'desce_grande'];
+
+function movimentos(serie) {
+  return serie.map((v, i) => {
+    if (!valido(v)) return null;
+    const prox = serie[i + 1];
+    const d = valido(prox) ? Math.round(prox * 10) - Math.round(v * 10) : 0;   // em décimos de grau
+    if (d === 0) return FIGURAS_MOVIMENTO.indexOf('parado');
+    const tamanho = Math.abs(d) === 1 ? 'pequena' : Math.abs(d) <= 3 ? 'media' : 'grande';
+    return FIGURAS_MOVIMENTO.indexOf(`${d > 0 ? 'sobe' : 'desce'}_${tamanho}`);
+  });
 }
 
 function compassos(serie, n) {
@@ -154,7 +173,8 @@ export function calcularTrilha(local, passos, co2Global) {
   };
   const compasso = { temperatura: compassos(temp, COMPASSOS_TEMP) };
   const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA) };
-  return { posicao, compasso, virada, eventos };
+  const movimento = { temperatura: movimentos(temp) };
+  return { posicao, compasso, virada, movimento, eventos };
 }
 
 /** Resumo legível (para depurar no console ou mostrar à equipe). */

@@ -11,6 +11,8 @@
 //       Base02 = 1 nota sustentada; os 6 arquivos são LOOPS que tocam juntos e o código só abre o
 //                do ano, então a mesma nota repetida em anos seguidos continua sem novo ataque.
 //       Base03 = 2 mínimas ligadas; como a Base01, cada compasso é um arquivo tocado do início.
+//       Base04 = movimento: 7 figuras (parado, sobe/desce pequena/média/grande) que começam e voltam
+//                para a mesma nota; escolhidas pela mudança até o ano seguinte (trilha.movimento).
 //
 // Sons pontuais: tirados, exceto o teste da
 // temperatura (Pontual01: picos e vales da linha), ligado pelo seletor no topo da página.
@@ -18,11 +20,12 @@
 // Arquivos: primeiro audio/<pasta>/<nome>.wav (os do músico); se não existir,
 // audio/provisorio/<nome>.wav (gerados por tools/gerar-sons-provisorios.mjs).
 
-import { NIVEIS, COMPASSOS_TEMP } from '../trilha.js';
+import { NIVEIS, COMPASSOS_TEMP, FIGURAS_MOVIMENTO } from '../trilha.js';
 
 export const DEFINICAO = {
   co2: { pasta: 'co2', prefixo: 'co2', modo: 'niveis' },
-  temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', quantos: COMPASSOS_TEMP, bases: ['base01', 'base02', 'base03'], continuas: ['base02'],
+  temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', quantos: COMPASSOS_TEMP, bases: ['base01', 'base02', 'base03', 'base04'], continuas: ['base02'],
+    figuras: { base04: FIGURAS_MOVIMENTO },
     pontuais: { pontual01: ['pico', 'vale'] } },
   chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'niveis' },
   vegetacao: { pasta: 'vegetacao', prefixo: 'veg', modo: 'niveis' },
@@ -30,7 +33,8 @@ export const DEFINICAO = {
 
 /** Arquivos da camada, na ordem: { nome, base, k } (base só no modo 'compassos'). */
 const nomesDaCamada = (d) => (d.modo === 'compassos'
-  ? d.bases.flatMap((base) => Array.from({ length: d.quantos }, (_, k) => ({ nome: `${d.prefixo}_${base}_compasso_${k + 1}`, base, k })))
+  ? d.bases.flatMap((base) => (d.figuras?.[base] ?? Array.from({ length: d.quantos }, (_, k) => `compasso_${k + 1}`))
+    .map((fig, k) => ({ nome: `${d.prefixo}_${base}_${fig}`, base, k })))
   : Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k })));
 
 /** Sons pontuais da camada: { nome, conjunto, tipo } (ex.: temp_pontual01_pico). */
@@ -146,6 +150,9 @@ export class Camada {
     fonte.start(tempo);
     this.soando.push(voz);
   }
+
+  /** A base ativa escolhe pela mudança até o ano seguinte (Base04), e não pela altura do ano. */
+  usaMovimento() { return !!this.def.figuras?.[this.baseAtiva]; }
 
   /** Modo 'compassos' (teste): qual base toca a partir do próximo compasso. */
   definirBase(base) {

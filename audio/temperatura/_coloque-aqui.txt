@@ -2,5 +2,7 @@ Coloque aqui os arquivos do músico para a temperatura (mesmo nome dos provisór
 temp_base01_compasso_1.wav … _6.wav (4 semínimas, 1 compasso + cauda)
 temp_base02_compasso_1.wav … _6.wav (1 nota sustentada, loop de 1 compasso sem clique)
 temp_base03_compasso_1.wav … _6.wav (2 mínimas ligadas, 1 compasso + cauda)
+temp_base04_parado.wav, _sobe_pequena, _sobe_media, _sobe_grande, _desce_pequena, _desce_media, _desce_grande
+  (Base04: começa e volta para a mesma nota; a figura mostra a mudança até o ano seguinte)
 temp_pontual01_pico.wav, temp_pontual01_vale.wav (sons pontuais)
 1 = ano mais frio da cidade, 6 = mais quente. Ré menor, 110 BPM.
