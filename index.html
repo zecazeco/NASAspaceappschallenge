@@ -2,18 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <!-- Idioma, antes de tudo: o HTML está em inglês. Se a pessoa escolheu português nos botões PT / EN
+       (salvo neste navegador) ou, sem escolha, o navegador está em português, a página fica escondida
+       até js/i18n.js traduzir (o primeiro script a rodar; reaparece sozinha em 3 s se algo falhar).
+       A mesma regra está em js/i18n.js: mantenha as duas iguais. -->
+  <style>html.traduzindo body { visibility: hidden; }</style>
+  <script>
+    (function () {
+      var s = null;
+      try { s = localStorage.getItem('jukebox-idioma'); } catch (e) { /* sem storage */ }
+      var nav = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+      var idioma = s === 'pt' || s === 'en' ? s : /^pt/i.test(nav) ? 'pt' : 'en';
+      if (idioma === 'pt') {
+        var h = document.documentElement;
+        h.lang = 'pt-BR';
+        h.classList.add('traduzindo');
+        setTimeout(function () { h.classList.remove('traduzindo'); }, 3000);
+      }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07070C">
-  <title>Jukebox da Terra</title>
-  <meta name="description" content="Ouça sua cidade esquentar: o clima de 1950 a 2023 em música, a partir do mapa de temperatura da NASA.">
+  <title>Earth Jukebox</title>
+  <meta name="description" content="Hear your city warm up: the climate from 1950 to 2023 as music, from NASA's temperature map.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600&family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@500&display=swap">
   <link rel="stylesheet" href="css/estilo.css">
+  <!-- Ordem de execução: todos são adiados (defer/module) e rodam nesta ordem depois que o HTML é lido,
+       sem segurar a página. A tradução (i18n.js) vem primeiro, então não espera as bibliotecas da internet. -->
+  <script type="module" src="js/i18n.js"></script>
   <!-- Bibliotecas (versões fixas) -->
-  <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/dist/d3-geo-projection.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/dist/d3-geo-projection.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
@@ -36,60 +58,60 @@
 
   <!-- 1. Tela inicial -->
   <section id="tela-inicio" class="tela tela-inicio" aria-labelledby="titulo-inicio">
-    <div class="topo-tele"><span aria-hidden="true">NASA Space Apps 2026</span><div class="idiomas" role="group" aria-label="Idioma" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div></div>
+    <div class="topo-tele"><span aria-hidden="true">NASA Space Apps 2026</span><div class="idiomas" role="group" aria-label="Language" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div></div>
     <div class="inicio-corpo">
-      <h1 id="titulo-inicio" data-i18n="inicio.titulo">Jukebox da Terra</h1>
-      <p class="lead" data-i18n="inicio.lead">Ouça o clima da sua cidade mudar de 1950 até hoje.</p>
-      <p data-i18n="inicio.dados">Cada som é um dado real: <strong>temperatura</strong> e <strong>chuva</strong> da NASA, <strong>gás carbônico</strong> da NOAA.</p>
+      <h1 id="titulo-inicio" data-i18n="inicio.titulo">Earth Jukebox</h1>
+      <p class="lead" data-i18n="inicio.lead">Hear your city’s climate change from 1950 to today.</p>
+      <p data-i18n="inicio.dados">Every sound is real data: <strong>temperature</strong> and <strong>rainfall</strong> from NASA, <strong>carbon dioxide</strong> from NOAA.</p>
     </div>
     <div class="inicio-acoes">
       <div class="inicio-notas">
-        <p class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6"/><rect x="17" y="14" width="4" height="6"/></svg><span data-i18n="inicio.fones">Use fones de ouvido.</span></p>
-        <p class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg><span data-i18n="inicio.local">Vamos pedir sua localização. Se preferir não compartilhar, você pode digitar a cidade.</span></p>
+        <p class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6"/><rect x="17" y="14" width="4" height="6"/></svg><span data-i18n="inicio.fones">Use headphones.</span></p>
+        <p class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg><span data-i18n="inicio.local">We’ll ask for your location. If you’d rather not share it, you can type your city.</span></p>
       </div>
-      <button id="btn-comecar" class="btn btn-primario btn-grande" type="button" disabled data-i18n="inicio.carregando">Carregando…</button>
+      <button id="btn-comecar" class="btn btn-primario btn-grande" type="button" disabled data-i18n="inicio.carregando">Loading…</button>
       <p id="status-carregamento" class="nota" aria-live="polite"></p>
     </div>
   </section>
 
   <!-- 2. Busca de cidade (aparece se o GPS falhar ou ao tocar em Trocar) -->
   <section id="tela-cidade" class="tela tela-coluna" aria-labelledby="titulo-cidade" hidden>
-    <h2 id="titulo-cidade" class="titulo-tela" data-i18n="busca.titulo">Qual é a sua cidade?</h2>
+    <h2 id="titulo-cidade" class="titulo-tela" data-i18n="busca.titulo">What’s your city?</h2>
     <p id="motivo-busca" class="apoio"></p>
     <form id="form-cidade" role="search" autocomplete="off">
-      <label for="campo-cidade" class="rotulo" data-i18n="busca.rotulo">Digite o nome de qualquer cidade do mundo</label>
+      <label for="campo-cidade" class="rotulo" data-i18n="busca.rotulo">Type the name of any city in the world</label>
       <div class="linha-busca">
         <div class="campo-terminal">
           <span class="canto c1" aria-hidden="true"></span><span class="canto c2" aria-hidden="true"></span>
           <span class="canto c3" aria-hidden="true"></span><span class="canto c4" aria-hidden="true"></span>
           <span class="prompt" aria-hidden="true">&gt;</span>
           <span class="campo-texto">
-            <input id="campo-cidade" type="search" inputmode="search" enterkeyhint="search" placeholder="sua cidade" data-i18n-attr="placeholder:busca.placeholder"
+            <input id="campo-cidade" type="search" inputmode="search" enterkeyhint="search" placeholder="your city" data-i18n-attr="placeholder:busca.placeholder"
                    aria-describedby="status-busca" spellcheck="false" required>
             <span class="cursor-bloco" aria-hidden="true"><span class="espelho"></span><i></i></span>
           </span>
         </div>
-        <button class="btn btn-primario btn-quadrado" type="submit" aria-label="Buscar" data-i18n-attr="aria-label:busca.buscar">
+        <button class="btn btn-primario btn-quadrado" type="submit" aria-label="Search" data-i18n-attr="aria-label:busca.buscar">
           <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-traco"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5.5 5.5"/></svg>
         </button>
       </div>
     </form>
     <p id="status-busca" class="status-terminal" aria-live="polite"></p>
     <div class="moldura-terminal lista-moldura">
-      <ul id="resultados-cidade" class="resultados" aria-label="Cidades encontradas" data-i18n-attr="aria-label:busca.lista"></ul>
+      <ul id="resultados-cidade" class="resultados" aria-label="Cities found" data-i18n-attr="aria-label:busca.lista"></ul>
     </div>
     <div class="busca-rodape">
       <button id="btn-usar-local" class="btn btn-secundario btn-largo" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-traco"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>
-        <span data-i18n="busca.usarLocal">Usar minha localização</span>
+        <span data-i18n="busca.usarLocal">Use my location</span>
       </button>
-      <button id="btn-cancelar-busca" class="btn btn-texto" type="button" hidden data-i18n="busca.cancelar">Cancelar</button>
+      <button id="btn-cancelar-busca" class="btn btn-texto" type="button" hidden data-i18n="busca.cancelar">Cancel</button>
     </div>
   </section>
 
   <!-- 2b. Preparando a cidade (lê os mapas da NASA e calcula a trilha) -->
   <section id="tela-carregando" class="tela tela-coluna tela-centro-v" aria-labelledby="titulo-carregando" hidden>
-    <h2 id="titulo-carregando" class="titulo-tela" tabindex="-1" data-i18n="prep.titulo">Preparando a música</h2>
+    <h2 id="titulo-carregando" class="titulo-tela" tabindex="-1" data-i18n="prep.titulo">Preparing the music</h2>
     <p id="carregando-cidade" class="cidade-carregando"></p>
     <progress id="progresso-cidade" max="100" value="0" aria-labelledby="titulo-carregando" aria-describedby="status-cidade"></progress>
     <p id="status-cidade" class="status-terminal" aria-live="polite">Lendo os mapas da NASA…</p>
@@ -104,9 +126,9 @@
       </div>
       <div class="acoes-topo">
         <!-- SÓ PARA TESTE: abre os seletores de som e de efeito (sai na versão final) -->
-        <button id="btn-teste" class="btn btn-teste" type="button" aria-expanded="false" aria-controls="barra-teste" data-i18n-attr="aria-label:teste.rotulo" aria-label="Modo de teste: mostrar seletores"><span data-i18n="teste.botao">Teste</span></button>
-        <button id="btn-trocar-cidade" class="btn btn-secundario" type="button" aria-label="Trocar cidade" data-i18n-attr="aria-label:topo.trocarCidade"><span data-i18n="topo.trocar">Cidade</span></button>
-        <button id="btn-ajustes" class="btn btn-secundario btn-icone" type="button" aria-label="Ajustes" data-i18n-attr="aria-label:topo.ajustes" aria-haspopup="dialog">
+        <button id="btn-teste" class="btn btn-teste" type="button" aria-expanded="false" aria-controls="barra-teste" data-i18n-attr="aria-label:teste.rotulo" aria-label="Test mode: show sound and effect selectors"><span data-i18n="teste.botao">Test</span></button>
+        <button id="btn-trocar-cidade" class="btn btn-secundario" type="button" aria-label="Change city" data-i18n-attr="aria-label:topo.trocarCidade"><span data-i18n="topo.trocar">City</span></button>
+        <button id="btn-ajustes" class="btn btn-secundario btn-icone" type="button" aria-label="Settings" data-i18n-attr="aria-label:topo.ajustes" aria-haspopup="dialog">
           <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-traco"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>
         </button>
       </div>
@@ -126,12 +148,12 @@
     <!-- A fonte do valor: o mapa de temperatura da NASA no ano que está tocando, com a cidade marcada.
          O número que você ouve é a cor deste mapa sobre a cidade. -->
     <section class="painel-temp" aria-labelledby="titulo-mapa-temp">
-      <h2 id="titulo-mapa-temp" class="sr-only" data-i18n="mapa.titulo">Mapa de temperatura da NASA</h2>
+      <h2 id="titulo-mapa-temp" class="sr-only" data-i18n="mapa.titulo">NASA temperature map</h2>
       <div class="moldura-mapa">
         <span class="canto c1" aria-hidden="true"></span><span class="canto c2" aria-hidden="true"></span>
         <span class="canto c3" aria-hidden="true"></span><span class="canto c4" aria-hidden="true"></span>
         <span class="regua-lateral esq" aria-hidden="true"></span><span class="regua-lateral dir" aria-hidden="true"></span>
-        <p class="rot-mapa topo" aria-hidden="true"><span class="rot-texto" data-i18n="mapa.rotulo">NASA · anomalia de temperatura</span><span class="rot-ano"> · <span id="ano-mapa">—</span></span></p>
+        <p class="rot-mapa topo" aria-hidden="true"><span class="rot-texto" data-i18n="mapa.rotulo">NASA · temperature anomaly</span><span class="rot-ano"> · <span id="ano-mapa">—</span></span></p>
         <button id="mapa-temp" class="mapa-nasa" type="button" aria-label="Ampliar o mapa de temperatura da NASA">
           <canvas aria-hidden="true"></canvas>
           <span class="crt" aria-hidden="true"></span>
@@ -173,22 +195,22 @@
 
     <!-- Valores do ano para leitores de tela (o gráfico é visual) -->
     <section class="dimensoes sr-only" aria-labelledby="titulo-dimensoes">
-      <h2 id="titulo-dimensoes" data-i18n="dims.titulo">O que você está ouvindo</h2>
+      <h2 id="titulo-dimensoes" data-i18n="dims.titulo">What you are hearing</h2>
       <ul id="lista-dimensoes"></ul>
     </section>
 
-    <section id="grafico" class="grafico" data-i18n-attr="aria-label:grafico.rotulo" aria-label="Gráfico das quatro camadas ao longo dos anos. Arraste para os lados para ver o passado e o futuro.">
+    <section id="grafico" class="grafico" data-i18n-attr="aria-label:grafico.rotulo" aria-label="Chart of the four layers over the years. Drag sideways to see the past and the future.">
       <span class="canto c1" aria-hidden="true"></span><span class="canto c2" aria-hidden="true"></span>
       <span class="canto c3" aria-hidden="true"></span><span class="canto c4" aria-hidden="true"></span>
     </section>
-    <p class="dica-grafico" data-i18n="grafico.dica">Arraste o gráfico para os lados para ver os eventos passados. Toque num ponto para ler o evento.</p>
+    <p class="dica-grafico" data-i18n="grafico.dica">Drag the chart sideways to see past events. Tap a point to read the event.</p>
 
     <section class="linha-tempo" aria-labelledby="titulo-tempo">
-      <h2 id="titulo-tempo" class="sr-only" data-i18n="tempo.titulo">Linha do tempo</h2>
+      <h2 id="titulo-tempo" class="sr-only" data-i18n="tempo.titulo">Timeline</h2>
       <div class="linha-ano">
         <p id="ano-grande" class="ano-grande" aria-hidden="true">—</p>
         <div class="slider-bloco">
-          <label for="slider-tempo" class="sr-only" data-i18n="tempo.ano">Ano</label>
+          <label for="slider-tempo" class="sr-only" data-i18n="tempo.ano">Year</label>
           <input id="slider-tempo" class="slider" type="range" min="0" max="1" step="1" value="0">
           <div class="regua-anos" aria-hidden="true"><span style="left:0%">1950</span><span style="left:27.4%">1970</span><span style="left:54.8%">1990</span><span style="left:100%">2023</span></div>
         </div>
@@ -197,7 +219,7 @@
       <div class="controles">
         <button id="btn-voltar" class="btn btn-controle" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6v12L2.5 12 11 6Zm10 0v12l-8.5-6L21 6Z"/></svg>
-          <span data-i18n="ctrl.voltar">Voltar</span>
+          <span data-i18n="ctrl.voltar">Rewind</span>
         </button>
         <button id="btn-tocar" class="btn btn-controle btn-tocar" type="button">
           <svg class="ic-tocar" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12 7 4.5Z"/></svg>
@@ -206,11 +228,11 @@
         </button>
         <button id="btn-avancar" class="btn btn-controle" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 6v12l8.5-6L13 6ZM3 6v12l8.5-6L3 6Z"/></svg>
-          <span data-i18n="ctrl.avancar">Avançar</span>
+          <span data-i18n="ctrl.avancar">Forward</span>
         </button>
       </div>
-      <div class="rodape"><div class="idiomas" role="group" aria-label="Idioma" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div><div class="idiomas unidades" role="group" aria-label="Unidade de temperatura" data-i18n-attr="aria-label:unidade.grupo"><button type="button" data-unidade="f" aria-pressed="true">°F</button><button type="button" data-unidade="c" aria-pressed="false">°C</button></div>
-      <p class="creditos"><span data-i18n="creditos">Temperatura: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · Chuva: <a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener">NASA POWER (MERRA-2)</a> · CO₂: <a href="https://gml.noaa.gov/ccgg/trends/" target="_blank" rel="noopener">NOAA GML, Mauna Loa</a> (Lan, NOAA/GML, e Keeling, Scripps)</span> · <span id="versao" title="Muda a cada publicação no GitHub (número de commits e código do commit). No computador aparece “local”.">Version local</span></p>
+      <div class="rodape"><div class="idiomas" role="group" aria-label="Language" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div><div class="idiomas unidades" role="group" aria-label="Temperature unit" data-i18n-attr="aria-label:unidade.grupo"><button type="button" data-unidade="f" aria-pressed="true">°F</button><button type="button" data-unidade="c" aria-pressed="false">°C</button></div>
+      <p class="creditos"><span data-i18n="creditos">Temperature: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · Rainfall: <a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener">NASA POWER (MERRA-2)</a> · CO₂: <a href="https://gml.noaa.gov/ccgg/trends/" target="_blank" rel="noopener">NOAA GML, Mauna Loa</a> (Lan, NOAA/GML, and Keeling, Scripps)</span> · <span id="versao" title="Muda a cada publicação no GitHub (número de commits e código do commit). No computador aparece “local”.">Version local</span></p>
       </div>
     </section>
   </main>
@@ -220,43 +242,43 @@
     <h2 id="titulo-frame"></h2>
     <canvas id="canvas-frame" width="720" height="360" role="img"></canvas>
     <p id="legenda-frame" class="apoio"></p>
-    <form method="dialog"><button class="btn btn-primario" data-i18n="fechar">Fechar</button></form>
+    <form method="dialog"><button class="btn btn-primario" data-i18n="fechar">Close</button></form>
   </dialog>
 
   <!-- Ajustes -->
   <dialog id="ajustes" aria-labelledby="titulo-ajustes">
     <form method="dialog" class="ajustes-form">
       <div class="ajustes-topo">
-        <h2 id="titulo-ajustes" class="titulo-tela" data-i18n="aj.titulo">Ajustes</h2>
-        <button class="btn btn-secundario btn-icone" value="fechar" aria-label="Fechar ajustes" data-i18n-attr="aria-label:aj.fechar">
+        <h2 id="titulo-ajustes" class="titulo-tela" data-i18n="aj.titulo">Settings</h2>
+        <button class="btn btn-secundario btn-icone" value="fechar" aria-label="Close settings" data-i18n-attr="aria-label:aj.fechar">
           <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-traco"><path d="M5 5l14 14M19 5 5 19"/></svg>
         </button>
       </div>
 
       <fieldset class="moldura-terminal">
-        <legend data-i18n="aj.camadas">Camadas (instrumentos)</legend>
-        <label class="opcao"><input type="checkbox" name="dim-temperatura" checked><i class="glifo temperatura" aria-hidden="true"></i> <span data-i18n="aj.temperatura">Temperatura: melodia</span></label>
-        <label class="opcao"><input type="checkbox" name="dim-co2" checked><i class="glifo co2" aria-hidden="true"></i> <span data-i18n="aj.co2">Gás carbônico: drone grave</span></label>
-        <label class="opcao"><input type="checkbox" name="dim-chuva" checked><i class="glifo chuva" aria-hidden="true"></i> <span data-i18n="aj.chuva">Chuva: gotas agudas</span></label>
+        <legend data-i18n="aj.camadas">Layers (instruments)</legend>
+        <label class="opcao"><input type="checkbox" name="dim-temperatura" checked><i class="glifo temperatura" aria-hidden="true"></i> <span data-i18n="aj.temperatura">Temperature: melody</span></label>
+        <label class="opcao"><input type="checkbox" name="dim-co2" checked><i class="glifo co2" aria-hidden="true"></i> <span data-i18n="aj.co2">Carbon dioxide: low drone</span></label>
+        <label class="opcao"><input type="checkbox" name="dim-chuva" checked><i class="glifo chuva" aria-hidden="true"></i> <span data-i18n="aj.chuva">Rainfall: high-pitched drops</span></label>
       </fieldset>
 
-      <p class="rotulo" id="aj-unidade-rotulo" data-i18n="aj.unidade">Unidade de temperatura</p>
+      <p class="rotulo" id="aj-unidade-rotulo" data-i18n="aj.unidade">Temperature unit</p>
       <div class="idiomas unidades unidades-ajustes" role="group" aria-labelledby="aj-unidade-rotulo"><button type="button" data-unidade="f" aria-pressed="true">°F</button><button type="button" data-unidade="c" aria-pressed="false">°C</button></div>
 
-      <label class="rotulo" for="aj-narracao" data-i18n="aj.narracao">Narração dos anos</label>
+      <label class="rotulo" for="aj-narracao" data-i18n="aj.narracao">Year narration</label>
       <select id="aj-narracao" name="narracao">
-        <option value="off" data-i18n="aj.narr.off">Desligada</option>
-        <option value="voz" data-i18n="aj.narr.voz">Voz do app</option>
-        <option value="leitor" data-i18n="aj.narr.leitor">Só pelo leitor de tela</option>
+        <option value="off" data-i18n="aj.narr.off">Off</option>
+        <option value="voz" data-i18n="aj.narr.voz">App voice</option>
+        <option value="leitor" data-i18n="aj.narr.leitor">Screen reader only</option>
       </select>
 
-      <label class="opcao"><input type="checkbox" name="tic" checked> <span data-i18n="aj.tic">Tic a cada ano ao rebobinar</span></label>
+      <label class="opcao"><input type="checkbox" name="tic" checked> <span data-i18n="aj.tic">Tick on each year while rewinding</span></label>
 
-      <label class="rotulo" for="aj-volume" data-i18n="aj.volume">Volume da música</label>
+      <label class="rotulo" for="aj-volume" data-i18n="aj.volume">Music volume</label>
       <input id="aj-volume" name="volume" type="range" min="0" max="100" value="80">
 
       <p class="apoio" id="aj-info"></p>
-      <button class="btn btn-primario" value="ok" data-i18n="fechar">Fechar</button>
+      <button class="btn btn-primario" value="ok" data-i18n="fechar">Close</button>
     </form>
   </dialog>
 </body>

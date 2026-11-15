@@ -2,7 +2,8 @@
 // • Textos fixos do HTML: atributo data-i18n="chave" (troca o conteúdo) e
 //   data-i18n-attr="aria-label:chave; placeholder:chave" (troca atributos).
 // • Textos montados no JavaScript: t('chave', { variáveis }).
-// • A escolha fica salva neste navegador; na primeira visita, abre em inglês.
+// • Na primeira visita, abre no idioma do navegador (português ou inglês); a escolha nos botões
+//   PT / EN fica salva neste navegador e passa a valer nas próximas visitas.
 
 const TEXTOS = {
   pt: {
@@ -235,9 +236,13 @@ const TEXTOS = {
   },
 };
 
+// Idioma: a escolha salva da pessoa (botões PT / EN); se não houver, o do navegador (português → pt,
+// qualquer outro → en). A mesma regra está no script do <head> do index.html, que roda antes de tudo
+// e esconde a página até ela estar traduzida — mantenha as duas iguais.
 let idioma = (() => {
   try { const s = localStorage.getItem('jukebox-idioma'); if (s === 'pt' || s === 'en') return s; } catch { /* sem storage */ }
-  return 'en';   // idioma principal do projeto: inglês (o português fica a um toque)
+  const nav = navigator.languages?.[0] || navigator.language || '';
+  return /^pt/i.test(nav) ? 'pt' : 'en';
 })();
 const ouvintes = [];
 
@@ -280,12 +285,13 @@ export const aoMudarIdioma = (f) => ouvintes.push(f);
 // ---------------------------------------------------------------- unidade de temperatura
 // Toda a lógica é em °C (os mapas da NASA que lemos são em °C); °F é só na hora de mostrar.
 // Os valores são ANOMALIAS (diferença em relação à média de 1951–1980): a conversão é só × 1,8, sem o +32.
-// Padrão: °F (o site abre em inglês e °F); a escolha da pessoa fica salva. O par aparece sempre: "+2,9 °F (+1,6 °C)".
+// Padrão: segue o idioma (português → °C, inglês → °F) até a pessoa escolher nos botões °C / °F;
+// a escolha fica salva e passa a valer em qualquer idioma. O par aparece sempre: "+2,9 °F (+1,6 °C)".
 let unidadeEscolhida = (() => {
   try { const s = localStorage.getItem('jukebox-unidade'); if (s === 'c' || s === 'f') return s; } catch { /* sem storage */ }
   return null;
 })();
-export const unidade = () => unidadeEscolhida ?? 'f';   // padrão do projeto: °F (e inglês); °C a um toque
+export const unidade = () => unidadeEscolhida ?? (idioma === 'pt' ? 'c' : 'f');
 const outra = (u) => (u === 'c' ? 'f' : 'c');
 const sinal = (v) => (v >= 0 ? '+' : '−');
 /** Anomalia em °C convertida para a unidade pedida, com sinal e uma casa: "+1,6". */
@@ -307,6 +313,11 @@ export function definirUnidade(u) {
   marcarUnidade();
   for (const f of ouvintes) f(idioma);
 }
+
+// Este módulo é o primeiro script da página (index.html): traduz assim que o HTML termina de ser lido,
+// sem esperar Tone.js, d3 e o resto do site, e mostra a página (o <head> a escondeu, se precisava traduzir).
+aplicarTextos();
+document.documentElement.classList.remove('traduzindo');
 
 // botões PT / EN (no início e no rodapé) e °C / °F (no rodapé)
 document.addEventListener('click', (e) => {
