@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <!-- Idioma, antes de tudo: o HTML está em inglês. Se a pessoa escolheu português nos botões PT / EN
-       (salvo neste navegador) ou, sem escolha, o navegador está em português, a página fica escondida
+       (salvo neste navegador), a página fica escondida
        até js/i18n.js traduzir (o primeiro script a rodar; reaparece sozinha em 3 s se algo falhar).
        A mesma regra está em js/i18n.js: mantenha as duas iguais. -->
   <style>html.traduzindo body { visibility: hidden; }</style>
@@ -11,9 +11,8 @@
     (function () {
       var s = null;
       try { s = localStorage.getItem('jukebox-idioma'); } catch (e) { /* sem storage */ }
-      var nav = (navigator.languages && navigator.languages[0]) || navigator.language || '';
-      var idioma = s === 'pt' || s === 'en' ? s : /^pt/i.test(nav) ? 'pt' : 'en';
-      if (idioma === 'pt') {
+      // sem escolha salva: sempre inglês (o idioma do navegador é ignorado)
+      if (s === 'pt') {
         var h = document.documentElement;
         h.lang = 'pt-BR';
         h.classList.add('traduzindo');
