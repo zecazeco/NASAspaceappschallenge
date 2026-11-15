@@ -58,6 +58,19 @@ const motor = new Motor();
   try { salva = localStorage.getItem('jukebox-base-co2'); } catch { /* ok */ }
   escolher(motor.dims.co2.def.bases.includes(salva) ? salva : 'base02');
 }
+// SÓ PARA TESTE: arquivos da tendência como o músico mandou ou com a emenda do loop refeita. Troca na hora.
+{
+  const seletor = document.getElementById('seletor-versao-tend');
+  const escolher = (versao) => {
+    motor.dims.tendencia.definirVersao(versao);
+    for (const b of seletor.querySelectorAll('button')) b.setAttribute('aria-checked', String(b.dataset.versao === versao));
+    try { localStorage.setItem('jukebox-versao-tend', versao); } catch { /* ok */ }
+  };
+  seletor.addEventListener('click', (e) => { const b = e.target.closest('button[data-versao]'); if (b) escolher(b.dataset.versao); });
+  let salva = null;
+  try { salva = localStorage.getItem('jukebox-versao-tend'); } catch { /* ok */ }
+  escolher(salva === 'emenda' ? 'emenda' : 'original');
+}
 // SÓ PARA TESTE: seletor de som pontual da temperatura (Sem pontual / Pontual01). Começa sem pontual.
 {
   const seletor = document.getElementById('seletor-pontual');

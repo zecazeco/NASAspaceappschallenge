@@ -1,2 +1,0 @@
-Coloque aqui os arquivos do músico para a chuva (mesmo nome dos provisórios, eles têm prioridade):
-chuva_base_1.wav … chuva_base_4.wav (loops de 1 compasso, 110 BPM)
