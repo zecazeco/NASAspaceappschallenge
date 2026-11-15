@@ -137,8 +137,8 @@ export class PainelTemperatura {
     const rc = this.v.recorte, base = this.painel.getBoundingClientRect();
     const m = this.mapa.getBoundingClientRect(), l = this.lente.getBoundingClientRect();
     const x1 = m.left - base.left + ((this.ponto.x - rc.x) / rc.largura) * m.width;
-    const y1 = m.top - base.top + ((this.ponto.y - rc.y) / rc.altura) * m.height + 14;
-    const x2 = l.left - base.left + l.width / 2, y2 = l.top - base.top + 3;
+    const y1 = m.top - base.top + ((this.ponto.y - rc.y) / rc.altura) * m.height;   // centro do marcador
+    const x2 = l.left - base.left + l.width / 2, y2 = l.top - base.top + l.height / 2;   // centro da lente (o dial fica por cima)
     Object.entries({ x1, y1, x2, y2 }).forEach(([k, v]) => linha.setAttribute(k, v.toFixed(1)));
   }
 
@@ -182,13 +182,12 @@ export class PainelTemperatura {
     this.marcador(g, x, y, this.dpr);
   }
 
-  /** Marcador da cidade no mapa: anel ciano e ponto creme com contorno escuro fino e meio transparente,
+  /** Marcador da cidade no mapa: anel ciano (sem preenchimento) com contorno escuro fino e meio transparente,
    *  para aparecer em qualquer cor do mapa (branco, azul, laranja) sem destacar demais. */
   marcador(g, x, y, d) {
     const borda = 'rgba(7,7,12,0.55)';
     const anel = (r, cor, larg) => { g.beginPath(); g.arc(x, y, r * d, 0, 7); g.strokeStyle = cor; g.lineWidth = larg * d; g.stroke(); };
     anel(11, borda, 2.8); anel(11, '#4FC6F5', 2);
-    g.beginPath(); g.arc(x, y, 3.4 * d, 0, 7); g.fillStyle = '#F2E9D0'; g.fill(); g.strokeStyle = borda; g.lineWidth = 1 * d; g.stroke();
   }
 
   desenharLente(camadas) {
