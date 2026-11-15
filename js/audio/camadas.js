@@ -7,9 +7,9 @@
 //   • 'niveis' (tendência): 4 loops de 1 compasso; o nível do ano decide qual se ouve
 //     (com troca suave; posição quebrada, ex. 1,4, mistura dois níveis). A tendência é o segundo som da
 //     temperatura (média de 11 anos em 4 níveis): não tem seletor nem linha própria, liga junto com ela.
-//   • 'vozes' (CO₂): 5 loops de 4 compassos que se acumulam; o ano liga da 1ª até a voz dele, na ordem de
-//     def.ordem (os números dos arquivos): 1, 2, 4, 5, 3. A voz 3 (o Ré bem grave) entra por último, quando o
-//     CO₂ já passou de 400 ppm, e a 4 e a 5 (a tensão) entram antes.
+//   • 'vozes' (CO₂): loops de 4 compassos que se acumulam; o ano liga da 1ª até a voz dele, na ordem de
+//     def.ordem (os números dos arquivos): 1, 2, 4, 5. São 5 faixas e 4 vozes: a voz 5 entra mais baixa na 4ª
+//     faixa e sobe na 5ª (def.volumeVozDb). A voz 3 (o Ré bem grave) só toca no fim (def.fim.arquivo).
 //   • 'troca' (chuva): 4 loops de 1 compasso, um por tipo de mudança até o ano seguinte (trilha.sons).
 //     O som novo entra rápido (a gota do começo fica inteira) e o anterior some devagar.
 // Loops só tocam enquanto podem ser ouvidos. Quando um entra, começa no ponto certo do relógio (como se
@@ -28,14 +28,19 @@
 // Arquivos: primeiro audio/<pasta>/<nome>.mp3 ou .wav (os do músico); se não existir,
 // audio/provisorio/<nome>.wav (gerados por tools/gerar-sons-provisorios.mjs).
 
-import { NIVEIS, FIGURAS_MOVIMENTO, VOZES_CO2 } from '../trilha.js';
+import { NIVEIS, FIGURAS_MOVIMENTO } from '../trilha.js';
 
 export const DEFINICAO = {
-  co2: { pasta: 'co2', prefixo: 'co2', modo: 'vozes', quantas: VOZES_CO2,
+  co2: { pasta: 'co2', prefixo: 'co2', modo: 'vozes',
     volumeDb: -2,   // a camada toda (vozes e final), somado aos ajustes abaixo (voz 5); os pontuais não mudam
-    ordem: [1, 2, 4, 5, 3],   // co2_voz_N na ordem em que entram (com os dados da NOAA: 1959, 1980, 1994, 2005 e 2015)
-    volumeVozDb: { 5: -1.5 },   // ajuste de volume por arquivo (co2_voz_N → dB); as outras vozes no volume do arquivo
-    fim: { voz: 4, ate: 4.2 },   // no fim: só a última a entrar (co2_voz_3), do começo do arquivo; some até 4,2 s (a nota seguinte dela entra em 4,36 s)
+    // co2_voz_N na ordem em que entram. O CO₂ tem 5 faixas (trilha.som.co2: 0 … 4; NOAA: 1959, 1980, 1994, 2005 e 2015)
+    // e 4 vozes: na 4ª faixa entra a voz 5 mais baixa, e na 5ª ela sobe (com fade), sem voz nova.
+    ordem: [1, 2, 4, 5],
+    // ajuste de volume por arquivo (co2_voz_N → dB, ou { faixa: dB }); as outras vozes no volume do arquivo
+    volumeVozDb: { 5: { 3: -4.5, 4: -1.5 } },
+    // no fim (2023): só a co2_voz_3 (não toca antes disso), do começo do arquivo, com o acorde forte do 1º tempo;
+    // some até 4,2 s (a nota seguinte dela entra em 4,36 s)
+    fim: { arquivo: 'co2_voz_3', ate: 4.2 },
     pontuais: { pontual: ['cresce', 'impacto'] }, pontualPadrao: 'pontual', volumePontualDb: -14 },
   temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', figuras: FIGURAS_MOVIMENTO,
     volumeDb: 1,    // a melodia toda, somado ao reforço por nível; os pontuais não mudam
@@ -51,7 +56,8 @@ export const DEFINICAO = {
 /** Arquivos da camada, na ordem: { nome, k }. */
 const nomesDaCamada = (d) => {
   if (d.modo === 'compassos') return d.figuras.map((fig, k) => ({ nome: `${d.prefixo}_${fig}`, k }));
-  if (d.modo === 'vozes') return Array.from({ length: d.quantas }, (_, k) => ({ nome: `${d.prefixo}_voz_${d.ordem?.[k] ?? k + 1}`, k }));
+  // vozes: os loops (k = 0, 1, …) e o arquivo do fim, se houver (k = 'fim')
+  if (d.modo === 'vozes') return [...d.ordem.map((n, k) => ({ nome: `${d.prefixo}_voz_${n}`, k })), ...(d.fim?.arquivo ? [{ nome: d.fim.arquivo, k: 'fim' }] : [])];
   return Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k }));
 };
 
@@ -117,7 +123,8 @@ export class Camada {
   }
 
   guardar(k, buf) {
-    if (this.def.modo === 'compassos') this.buffers[k] = buf;
+    if (k === 'fim') this.bufferFinal = buf;   // def.fim.arquivo: só toca no fim
+    else if (this.def.modo === 'compassos') this.buffers[k] = buf;
     else if (this.loops[k]) this.loops[k].buf = buf;
     else this.loops[k] = this.criarLoop(buf);
   }
@@ -125,7 +132,7 @@ export class Camada {
   /** Sons obrigatórios (não os pontuais, que são opcionais) que não baixaram. */
   faltando() {
     return nomesDaCamada(this.def)
-      .filter(({ k }) => !(this.def.modo === 'compassos' ? this.buffers[k] : this.loops[k]?.buf))
+      .filter(({ k }) => !(k === 'fim' ? this.bufferFinal : this.def.modo === 'compassos' ? this.buffers[k] : this.loops[k]?.buf))
       .map(({ nome }) => nome);
   }
 
@@ -179,8 +186,9 @@ export class Camada {
     const { modo } = this.def, tau = RAMPA_NIVEL / 3;
     this.loops.forEach((l, i) => {
       if (modo === 'vozes') {
-        const n = this.def.ordem?.[i] ?? i + 1;   // número do arquivo co2_voz_N
-        this.ajustarLoop(l, pos != null && i <= pos ? Tone.dbToGain(this.def.volumeVozDb?.[n] ?? 0) : 0, tempo, tau);
+        const n = this.def.ordem[i];   // número do arquivo co2_voz_N
+        const aj = this.def.volumeVozDb?.[n], db = typeof aj === 'object' ? aj[pos] ?? 0 : aj ?? 0;   // aj: dB, ou { faixa: dB }
+        this.ajustarLoop(l, pos != null && i <= pos ? Tone.dbToGain(db) : 0, tempo, tau);
       }
       else if (modo === 'troca') { const g = pos === i ? 1 : 0; this.ajustarLoop(l, g, tempo, g ? this.def.entra : this.def.sai); }
       else {   // 'niveis': troca por potência constante, para o volume total não afundar no meio
@@ -215,10 +223,10 @@ export class Camada {
     const g = this.saida.gain, v = g.getValueAtTime(tempo), fim = this.def.fim;
     g.cancelScheduledValues(tempo);
     g.setValueAtTime(v, tempo);
-    if (fim?.voz != null) {
+    if (fim?.voz != null || fim?.arquivo) {
       // só a voz escolhida, tocada do começo do arquivo (não do ponto do loop), com as outras cortadas
       for (const l of this.loops) this.ajustarLoop(l, 0, tempo, 0.01);
-      const buf = this.loops[fim.voz]?.buf;
+      const buf = fim.arquivo ? this.bufferFinal : this.loops[fim.voz]?.buf;
       if (!buf || !this.ligada) return tempo;
       const d = fim.ate;
       const fonte = new Tone.ToneBufferSource(buf).connect(this.mix);
