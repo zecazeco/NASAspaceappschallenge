@@ -54,6 +54,19 @@ const motor = new Motor();
   let salvo = null; try { salvo = localStorage.getItem('jukebox-crt'); } catch { /* ok */ }
   escolher(salvo === 'linha' ? 'linha' : 'fosforo');
 }
+// SÓ PARA TESTE: marcador da escala de cores. "Seta anual" (padrão) muda só na troca de ano;
+// "Seta contínua" anda junto com o número grande.
+{
+  const seletor = $('#seletor-seta');
+  const escolher = (modo) => {
+    document.body.dataset.seta = modo;
+    for (const b of seletor.querySelectorAll('button')) b.setAttribute('aria-checked', String(b.dataset.seta === modo));
+    try { localStorage.setItem('jukebox-seta', modo); } catch { /* ok */ }
+  };
+  seletor.addEventListener('click', (e) => { const b = e.target.closest('button[data-seta]'); if (b) escolher(b.dataset.seta); });
+  let salvo = null; try { salvo = localStorage.getItem('jukebox-seta'); } catch { /* ok */ }
+  escolher(salvo === 'continua' ? 'continua' : 'anual');
+}
 // SÓ PARA TESTE: liga e desliga os sons pontuais da temperatura (Sem pontuais / Pontuais). Começam ligados.
 {
   const seletor = document.getElementById('seletor-pontual');
