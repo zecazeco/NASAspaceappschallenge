@@ -62,7 +62,7 @@ const motor = new Motor();
     for (const x of seletor.querySelectorAll('button')) x.setAttribute('aria-checked', String(x === b));
   });
 }
-let regiao = null, cidade = null, primeiraCidade = true, trilha = null;
+let regiao = null, cidade = null, trilha = null;
 // sons: baixados em segundo plano desde a abertura; a tela "Preparando" espera por eles
 let somPronto = null, progressoSom = 0, somLigado = false, aoProgressoSom = () => {};
 
@@ -258,12 +258,10 @@ async function escolherCidade(c) {
   $('#nome-regiao').textContent = pais;
   mostrar('#tela-principal');
   $('#nome-cidade').focus();
-  if (primeiraCidade) {
-    primeiraCidade = false;
-    motor.irPara(0);          // começa em 1950 e para no último ano do mapa da NASA (2023)
-    motor.tocar();
-    atualizarBotaoTocar();
-  }
+  // toda cidade (a primeira e as trocas) começa a música em 1950 e para no último ano do mapa da NASA (2023)
+  motor.irPara(0);
+  motor.tocar();
+  atualizarBotaoTocar();
   painel.definirCidade(c, regiao);
   atualizarUI(motor.idx);
 }
