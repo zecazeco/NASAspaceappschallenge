@@ -20,7 +20,8 @@
 // curva suave antes da nota seguinte dela (passa do compasso de 2023: a música espera ele terminar); os outros (melodia, chuva) tocam só o 1º tempo e
 // somem antes do 2º. Quando 2024 chegaria, a música para.
 //
-// Som pontual (teste): picos e vales da temperatura, ligado pelo seletor no topo da página.
+// Sons pontuais da temperatura (teste; volumes em volumePontualDb): picos e vales (sobe/desce), recorde de calor (alerta) e troca de faixa
+// da tendência (sino). Ligados de saída; o seletor de teste no topo da página pode desligá-los.
 // CO₂ (teste), os dois a −14 dB (trilha.virada.co2): co2_pontual_cresce em cada ano em que a faixa das vozes muda;
 // co2_pontual_impacto em cada recorde de velocidade (o CO₂ subiu mais que em qualquer ano anterior).
 //
@@ -31,12 +32,19 @@ import { NIVEIS, FIGURAS_MOVIMENTO, VOZES_CO2 } from '../trilha.js';
 
 export const DEFINICAO = {
   co2: { pasta: 'co2', prefixo: 'co2', modo: 'vozes', quantas: VOZES_CO2,
+    volumeDb: -2,   // a camada toda (vozes e final), somado aos ajustes abaixo (voz 5); os pontuais não mudam
     ordem: [1, 2, 4, 5, 3],   // co2_voz_N na ordem em que entram (com os dados da NOAA: 1959, 1980, 1994, 2005 e 2015)
+    volumeVozDb: { 5: -1.5 },   // ajuste de volume por arquivo (co2_voz_N → dB); as outras vozes no volume do arquivo
     fim: { voz: 4, ate: 4.2 },   // no fim: só a última a entrar (co2_voz_3), do começo do arquivo; some até 4,2 s (a nota seguinte dela entra em 4,36 s)
     pontuais: { pontual: ['cresce', 'impacto'] }, pontualPadrao: 'pontual', volumePontualDb: -14 },
   temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', figuras: FIGURAS_MOVIMENTO,
-    pontuais: { pontual01: ['pico', 'vale'] } },
-  tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis', volume: 0.4, fim: 'sustenta' },   // 60% mais baixa que as outras
+    volumeDb: 1,    // a melodia toda, somado ao reforço por nível; os pontuais não mudam
+    pontuais: { pontual: ['alerta', 'sino', 'sobe', 'desce'] }, pontualPadrao: 'pontual',   // ver trilha.virada
+    volumePontualDb: { sobe: 0, desce: 0, sino: -16, alerta: -20 },   // sobe e desce a 0 dB: TESTE, para ouvir bem
+    // a melodia fica mais forte a cada nível da tendência (1 a 4), para não sumir debaixo da tendência e do
+    // CO₂, que ficam mais tensos no fim; a troca é sempre com fade (REFORCO_FADE), no início do ano em que o nível muda
+    reforcoPorNivelDb: [0, 1.5, 3, 6] },
+  tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis', volume: 0.4, volumeDb: -2, fim: 'sustenta' },   // 60% mais baixa que as outras, e mais 2 dB
   chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'troca', entra: 0.015, sai: 0.3 },   // s (constantes de tempo)
 };
 
@@ -47,7 +55,7 @@ const nomesDaCamada = (d) => {
   return Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k }));
 };
 
-/** Sons pontuais da camada: { nome, conjunto, tipo } (ex.: temp_pontual01_pico). */
+/** Sons pontuais da camada: { nome, conjunto, tipo } (ex.: temp_pontual_sino). */
 const pontuaisDaCamada = (d) => Object.entries(d.pontuais ?? {})
   .flatMap(([conjunto, tipos]) => tipos.map((tipo) => ({ nome: `${d.prefixo}_${conjunto}_${tipo}`, conjunto, tipo })));
 
@@ -77,20 +85,23 @@ async function carregarSom(pasta, nome) {
 
 const RAMPA_NIVEL = 0.6;   // s: troca suave de volume entre níveis (e entrada das vozes) no início do compasso
 const VOLUME_BASE = 0.5;   // −6 dB (mesmo equilíbrio entre camadas de antes)
+/** Volume da camada: VOLUME_BASE × def.volume × def.volumeDb (em dB). */
+const volumeDaCamada = (def) => VOLUME_BASE * (def.volume ?? 1) * Tone.dbToGain(def.volumeDb ?? 0);
 const SOLTAR = 0.6;        // s: quando o compasso seguinte começa, a cauda do anterior some nesse tempo
+const REFORCO_FADE = 2;    // s: fade da troca de volume da melodia (reforcoPorNivelDb), quase 1 compasso
 
 export class Camada {
   constructor(id) {
     this.id = id;
     this.def = DEFINICAO[id];
     this.saida = new Tone.Gain(1);
-    this.mix = new Tone.Gain(VOLUME_BASE * (this.def.volume ?? 1)).connect(this.saida);   // def.volume: ajuste da camada
+    this.mix = new Tone.Gain(volumeDaCamada(this.def)).connect(this.saida);   // def.volume / def.volumeDb: ajuste da camada
     this.ligada = true;
     this.loops = [];       // modos 'niveis', 'vozes' e 'troca': { buf, ganho, fonte } (criarLoop)
     this.buffers = [];     // modo 'compassos': um buffer por figura
     this.soando = [];      // modo 'compassos': { fonte, ganho } ainda tocando
     this.pontuais = {};    // conjunto → { pico: buffer, vale: buffer }
-    this.pontualAtivo = this.def.pontualPadrao ?? null;   // ex.: 'pontual01'; null = sem pontual
+    this.pontualAtivo = this.def.pontualPadrao ?? null;   // ex.: 'pontual'; null = sem pontual
   }
 
   /** Baixa os arquivos da camada; aoArquivo() é chamado a cada arquivo pronto (para o progresso). */
@@ -167,7 +178,10 @@ export class Camada {
     this.ultimo = pos;
     const { modo } = this.def, tau = RAMPA_NIVEL / 3;
     this.loops.forEach((l, i) => {
-      if (modo === 'vozes') this.ajustarLoop(l, pos != null && i <= pos ? 1 : 0, tempo, tau);
+      if (modo === 'vozes') {
+        const n = this.def.ordem?.[i] ?? i + 1;   // número do arquivo co2_voz_N
+        this.ajustarLoop(l, pos != null && i <= pos ? Tone.dbToGain(this.def.volumeVozDb?.[n] ?? 0) : 0, tempo, tau);
+      }
       else if (modo === 'troca') { const g = pos === i ? 1 : 0; this.ajustarLoop(l, g, tempo, g ? this.def.entra : this.def.sai); }
       else {   // 'niveis': troca por potência constante, para o volume total não afundar no meio
         const d = pos == null ? 1 : Math.abs(pos - i);
@@ -239,11 +253,15 @@ export class Camada {
     this.pontualAtivo = conjunto && this.def.pontuais?.[conjunto] ? conjunto : null;
   }
 
-  /** Som pontual no início do compasso (ex.: 'pico', 'vale', 'cresce', 'impacto'; null = nada). Pode sobrepor a cauda do anterior. */
+  /** Som(ns) pontual(is) no início do compasso (ex.: 'sino', ['desce', 'alerta'], 'impacto'; null = nada). Pode sobrepor a cauda do anterior. */
   dispararPontual(tipo, tempo) {
+    if (Array.isArray(tipo)) { for (const t of tipo) this.dispararPontual(t, tempo); return; }
     const buf = tipo && this.pontualAtivo && this.ligada ? this.pontuais[this.pontualAtivo]?.[tipo] : null;
     if (!buf) return;
-    const ganho = new Tone.Gain(Tone.dbToGain(this.def.volumePontualDb ?? 0)).connect(this.mix);
+    // volumePontualDb: um número (todos os pontuais da camada) ou { tipo: dB }
+    const vol = this.def.volumePontualDb, db = typeof vol === 'object' ? vol[tipo] : vol;
+    // direto na saída da camada (não pelo mix): o volumeDb da camada e o reforço da melodia não mudam os pontuais
+    const ganho = new Tone.Gain(VOLUME_BASE * (this.def.volume ?? 1) * Tone.dbToGain(db ?? 0)).connect(this.saida);
     const fonte = new Tone.ToneBufferSource(buf).connect(ganho);
     const voz = { fonte, ganho, pontual: true };
     fonte.onended = () => { ganho.dispose(); this.soandoPontuais = this.soandoPontuais.filter((v) => v !== voz); };
@@ -271,6 +289,17 @@ export class Camada {
       ganho.gain.rampTo(0, 0.1, agora);
       try { fonte.stop(agora + 0.12); } catch { /* já parou */ }
     }
+  }
+
+  /** Reforço de volume da camada (def.reforcoPorNivelDb[nivel]); muda com fade a partir de `tempo`. */
+  definirReforco(nivel, tempo) {
+    const db = this.def.reforcoPorNivelDb?.[nivel] ?? 0;
+    if (db === this.reforcoDb) return;
+    this.reforcoDb = db;
+    const g = this.mix.gain, alvo = volumeDaCamada(this.def) * Tone.dbToGain(db);
+    g.cancelScheduledValues(tempo);
+    g.setValueAtTime(g.getValueAtTime(tempo), tempo);
+    g.linearRampToValueAtTime(alvo, tempo + REFORCO_FADE);
   }
 
   /** Desligada: some em 0,4 s e os loops param. Religada com a música andando: volta já no ponto certo. */

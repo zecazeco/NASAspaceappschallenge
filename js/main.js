@@ -54,7 +54,7 @@ const motor = new Motor();
   let salvo = null; try { salvo = localStorage.getItem('jukebox-crt'); } catch { /* ok */ }
   escolher(salvo === 'linha' ? 'linha' : 'fosforo');
 }
-// SÓ PARA TESTE: seletor de som pontual da temperatura (Sem pontual / Pontual01). Começa sem pontual.
+// SÓ PARA TESTE: liga e desliga os sons pontuais da temperatura (Sem pontuais / Pontuais). Começam ligados.
 {
   const seletor = document.getElementById('seletor-pontual');
   seletor.addEventListener('click', (e) => {

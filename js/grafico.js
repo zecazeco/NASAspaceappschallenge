@@ -25,6 +25,7 @@ const sinal = (v) => `${v >= 0 ? '+' : '−'}${num(Math.abs(v))}`;
 const FRASES = {
   co2: { recorde: (e) => tr('ev.co2.recorde', { v: num(e.valor) }), faixa: (e) => tr('ev.co2.faixa', { n: e.quintos, v: Math.round(e.valor) }) },
   temperatura: { recorde: (e) => tr('ev.temperatura.recorde', { v: tempPar(e.valor) }) },
+  tendencia: { troca: (e) => tr(e.sobe ? 'ev.tendencia.sobe' : 'ev.tendencia.desce', { lim: e.limite }) },
   chuva: {
     seca: (e) => (e.intensidade === 'f' ? tr('ev.chuva.secaF') : tr('ev.chuva.seca', { v: Math.round(e.valor) })),
     extrema: (e) => (e.intensidade === 'f' ? tr('ev.chuva.extremaF') : tr('ev.chuva.extrema', { v: Math.round(e.valor) })),
@@ -34,9 +35,16 @@ const FRASES = {
 const RESUMOS = {
   co2: { recorde: () => tr('res.co2.recorde'), faixa: (e) => tr('res.co2.faixa', { n: e.quintos }) },
   temperatura: { recorde: () => tr('res.temperatura.recorde') },
+  tendencia: { troca: (e) => tr(e.sobe ? 'res.tendencia.sobe' : 'res.tendencia.desce') },
   chuva: { seca: (e) => tr(e.intensidade === 'f' ? 'res.chuva.secaF' : 'res.chuva.seca'), extrema: (e) => tr(e.intensidade === 'f' ? 'res.chuva.extremaF' : 'res.chuva.extrema') },
 };
 export const fraseDoEvento = (id, ev) => FRASES[id][ev.nome](ev);
+
+// Eventos que não têm linha própria: aparecem (ponto, card e etiqueta) na linha de outra camada.
+// A tendência é o segundo som da temperatura, então fica na linha da temperatura e liga e desliga com ela.
+const LINHA_DO_EVENTO = { tendencia: 'temperatura' };
+const linhaDe = (id) => LINHA_DO_EVENTO[id] ?? id;
+const eventosDaLinha = (id) => [id, ...Object.keys(LINHA_DO_EVENTO).filter((k) => LINHA_DO_EVENTO[k] === id)];
 
 const TETO = 1.15;   // altura máxima visível de uma linha (1 = o valor máximo normal); acima disso, corta
 /** Evento num ano fora da área: o marcador e o card ficam na borda por onde a linha saiu. */
@@ -248,10 +256,10 @@ export class Grafico {
     traco(passado, 0.9, 0, Math.max(0.5, c.espessura * 0.3));
     traco(futuro, 0.22, 0, 1, [3, 6]);
 
-    for (const ponto of pts) {   // pontos dos eventos (marcados desde já, acendem ao passar)
-      const ev = this.trilha.eventos[ponto.i][c.id];
+    for (const ponto of pts) for (const eid of eventosDaLinha(c.id)) {   // pontos dos eventos (marcados desde já, acendem ao passar)
+      const ev = this.trilha.eventos[ponto.i][eid];
       if (!ev) continue;
-      const p = { i: ponto.i, ...this.pontoDe(c.id, ponto.i) };   // fora da área: preso na borda
+      const p = { i: ponto.i, ...this.pontoDe(eid, ponto.i) };   // fora da área: preso na borda
       const ja = p.i <= t;
       const r = (ev.intensidade === 'f' ? 6 : ev.intensidade === 'm' ? 5 : 4) * p.s;
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -261,7 +269,7 @@ export class Grafico {
       const recente = ja && t - p.i < 1.5;
       if (recente) { ctx.beginPath(); ctx.arc(p.x, p.y, r * 2.3, 0, 7); ctx.strokeStyle = c.cor; ctx.lineWidth = 2; ctx.stroke(); }
       ctx.restore();
-      if (ja) this.alvos.push({ x: p.x, y: p.y, i: p.i, id: c.id, ev, cor: c.cor, chave: `${p.i}:${c.id}` });
+      if (ja) this.alvos.push({ x: p.x, y: p.y, i: p.i, id: eid, ev, cor: c.cor, chave: `${p.i}:${eid}` });
     }
     ctx.restore();
     // ponta fora da área: sem esfera nem rótulo até a linha voltar
@@ -377,16 +385,16 @@ export class Grafico {
     const ev = this.trilha.eventos[idx];
     this.pulsos ??= {};
     for (const id of Object.keys(ev)) {
-      if (!this.ligadas[id]) continue;
-      this.pulsos[id] = performance.now();
+      if (!this.ligadas[linhaDe(id)]) continue;
+      this.pulsos[linhaDe(id)] = performance.now();
       this.abrirCard(id, ev[id], idx, DURACAO_CARD);
     }
   }
 
   /** Posição atual do ponto de um evento (ou null se fora da tela/sem valor). */
   pontoDe(id, i) {
-    const c = CAMADAS_GRAFICO.find((k) => k.id === id);
-    const v = this.valor(id, i);
+    const c = CAMADAS_GRAFICO.find((k) => k.id === linhaDe(id));
+    const v = this.valor(c.id, i);
     return v == null ? null : this.proj(i - this.centro, c.z, naBorda(v));
   }
 
@@ -425,7 +433,7 @@ export class Grafico {
     if (this.cards.some((c) => c.chave === chave)) return;
     const p = this.pontoDe(id, i);
     if (!p) return;
-    const camada = CAMADAS_GRAFICO.find((k) => k.id === id);
+    const camada = CAMADAS_GRAFICO.find((k) => k.id === linhaDe(id));
     const el = document.createElement('div');
     el.className = 'card-evento'; el.style.setProperty('--cor', camada.cor);
     const frase = fraseDoEvento(id, ev);

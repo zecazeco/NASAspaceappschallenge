@@ -1,10 +1,10 @@
 // Trilha de uma cidade: transforma as séries anuais em
 //   • posição de cada camada na faixa da cidade (0 … 3; null = sem dado): linhas do gráfico e níveis
 //   • temperatura: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
-//   • temperatura: anos que são pico ou vale da linha (som pontual em teste)
+//   • sons pontuais de cada ano (virada): temperatura e CO₂, ver o fim de calcularTrilha
 //   • som dos loops quando não é a posição: CO₂ (quantas das 5 vozes) e chuva (tipo de mudança)
 //   • tendência da temperatura: média de 11 anos em faixas fixas de °C, nível 1 a 4 (o segundo som da temperatura)
-//   • eventos de cada ano ({ nome, intensidade }): hoje só viram cartões no gráfico.
+//   • eventos de cada ano ({ nome, intensidade }): viram cartões no gráfico (a tendência, na linha da temperatura).
 // É calculada uma vez, ao escolher a cidade.
 
 export const NIVEIS = 4;
@@ -23,7 +23,7 @@ function posicoes(serie) {
 }
 
 
-// Som pontual de picos e vales (EM TESTE): toca no início do compasso do ano que é
+// Picos e vales (som pontual EM TESTE, sem card): toca no início do compasso do ano que é
 // um PICO ou um VALE da linha do gráfico. Método ziguezague: a partir do ponto mais alto (ou mais
 // baixo) até ali, um pico (vale) só conta quando a linha já voltou mais de LIMIAR_VIRADA da faixa
 // da cidade (do ano mais frio ao mais quente), mesmo que leve vários anos para isso. Assim
@@ -240,7 +240,27 @@ export function calcularTrilha(local, passos, co2Global) {
     viradaCo2[i] = 'cresce';
     eventos[i].co2 = { nome: 'faixa', intensidade: 'm', quintos: nv, valor: co2[i] };
   });
-  const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA), co2: viradaCo2 };
+  // Temperatura (teste), sons pontuais (volumes em camadas.js); num mesmo ano podem tocar vários juntos:
+  //   • pico ou vale da linha (picosEVales) → o som diz para onde a linha VAI: no pico ela começa a descer
+  //     ("desce"), no vale começa a subir ("sobe"). Sem card nem ponto no gráfico.
+  //   • recorde de calor (eventos acima) → "alerta", com o card de sempre.
+  //   • a tendência (média de 11 anos) troca de faixa, para cima ou para baixo → "sino", com card na linha da temperatura.
+  const picos = picosEVales(temp, LIMIAR_VIRADA);
+  const viradaTemp = picos.map((pv, i) => {
+    const sons = [];
+    if (pv) sons.push(pv === 'pico' ? 'desce' : 'sobe');
+    if (eventos[i].temperatura?.nome === 'recorde') sons.push('alerta');
+    return sons;
+  });
+  posicao.tendencia.forEach((nv, i) => {
+    const antes = posicao.tendencia.slice(0, i).filter((x) => x != null).pop();
+    if (nv == null || antes == null || nv === antes) return;
+    const sobe = nv > antes;
+    viradaTemp[i].push('sino');
+    // limite cruzado (°C acima de 1951–1980): subindo, o que acabou de passar; descendo, o que deixou para trás
+    eventos[i].tendencia = { nome: 'troca', intensidade: 'm', sobe, limite: LIMITES_TENDENCIA[sobe ? nv - 1 : nv] };
+  });
+  const virada = { temperatura: viradaTemp.map((s) => (s.length ? s : null)), co2: viradaCo2 };
   const movimento = { temperatura: movimentos(temp) };
   return { posicao, som, virada, movimento, tendencia, eventos };
 }

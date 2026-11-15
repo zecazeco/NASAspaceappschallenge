@@ -150,6 +150,8 @@ export class Motor {
       }
       else camada.definirPosicao((this.trilha.som?.[id] ?? this.trilha.posicao[id])[i], tempo);
       if (noCompasso) camada.dispararPontual(this.trilha.virada?.[id]?.[i], tempo);
+      // melodia mais forte a cada nível da tendência (com fade; ver DEFINICAO.temperatura.reforcoPorNivelDb)
+      if (camada.def.reforcoPorNivelDb) camada.definirReforco(Math.round(this.trilha.posicao.tendencia?.[i] ?? 0), tempo);
     }
   }
 
