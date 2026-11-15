@@ -365,6 +365,35 @@ a.nota-ref:hover { text-decoration: underline; }
 .creditos { flex: 1; min-width: 0; margin: 0; font-size: 0.75rem; line-height: 1.35; color: var(--texto-suave); text-align: left; }
 
 /* ---------- monitor grande: tela principal em duas colunas (~80% da largura); início e busca numa coluna estreita ---------- */
+/* Celular: tudo, do topo até os controles, numa dobra só. Mapa e dial menores, slider e controles mais baixos;
+   o gráfico fica com a altura que sobra da tela (mínimo 160 px). */
+@media (max-width: 999px) {
+  #tela-principal { gap: 8px; padding-top: 8px; }
+  .moldura-mapa { padding: 24px 19px 30px; }
+  .mapa-nasa { width: 86%; margin: 0 auto; }
+  .leitura { padding: 8px 12px; gap: 10px; }
+  .dial { width: 112px; height: 112px; }
+  .dial .lente, .dial .crt-lente { left: 26px; top: 26px; width: 60px; height: 60px; }
+  .ouvindo-texto { margin: 2px 0 0; }
+  #tela-principal > .grafico { flex: none; min-height: 0; height: max(160px, calc(100dvh - 622px)); }
+  .dica-grafico { margin-top: -2px; font-size: 0.72rem; }
+  .linha-ano { gap: 10px; }
+  .ano-grande { font-size: 1.5rem; width: 64px; }
+  .slider, .slider::-webkit-slider-runnable-track { height: 40px; }
+  .slider::-webkit-slider-thumb { width: 19px; height: 34px; margin-top: 3px;
+    background: linear-gradient(to bottom left, var(--estrutura) 50%, transparent 50%) left bottom / 50% 9px no-repeat,
+                linear-gradient(to bottom right, var(--estrutura) 50%, transparent 50%) right bottom / 50% 9px no-repeat,
+                linear-gradient(var(--estrutura), var(--estrutura)) center top / 100% 25px no-repeat; }
+  .slider::-moz-range-thumb { width: 19px; height: 34px;
+    background: linear-gradient(to bottom left, var(--estrutura) 50%, transparent 50%) left bottom / 50% 9px no-repeat,
+                linear-gradient(to bottom right, var(--estrutura) 50%, transparent 50%) right bottom / 50% 9px no-repeat,
+                linear-gradient(var(--estrutura), var(--estrutura)) center top / 100% 25px no-repeat; }
+  .slider::-moz-range-track { height: 40px; }
+  .regua-anos { height: 22px; margin: -4px 9.5px 0; }
+  .regua-anos span { top: 11px; }
+  .btn-controle { min-height: 50px; padding: 4px; }
+  .btn-controle svg { width: 22px; height: 22px; }
+}
 @media (min-width: 1000px) {
   .tela { max-width: 760px; }
   .tela-coluna { max-width: 640px; }
