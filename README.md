@@ -1,79 +1,97 @@
-# Jukebox da Terra
+# Earth Jukebox
 
-**NASA Space Apps Challenge 2026 · desafio "The Earth Information Jukebox"**
+**NASA Space Apps Challenge 2026 · "The Earth Information Jukebox"**
+**Earth Jukebox: 74 Years of Your City's Temperature Change, in Sound**
 
-> **Ouça as mudanças climáticas na sua cidade.**
-> O som que você ouve é a cor do mapa da NASA sobre a sua cidade.
+> **Hear your city's climate change from 1950 to today.**
+> The sound you hear is the color NASA's map has over your city.
 
-Um site para celular que transforma as visualizações de clima do **NASA Earth Information Center (EIC)** em música. A pessoa escolhe a cidade dela (pelo GPS ou digitando o nome), e o site toca uma música de cerca de **2 min 40 s** que vai de **1950 a 2023**, um compasso por ano. Cada ano soa diferente porque cada ano tem uma cor diferente no mapa.
+Live site: https://zecazeco.github.io/NASAspaceappschallenge/ (use headphones; on iPhone, turn off silent mode)
 
-O projeto foi pensado desde o início para **pessoas com algum tipo de deficiência visual**: tudo o que o mapa e o gráfico mostram também pode ser ouvido.
-
----
-
-## A ideia
-
-Os mapas de clima da NASA são lindos, mas só funcionam para quem enxerga, e mesmo quem enxerga raramente sabe ler o que aconteceu **no lugar onde mora**. A Jukebox da Terra junta a imagem e o som: além de ver a linha do gráfico subindo, você **ouve** sua cidade esquentando, ano a ano.
-
-1. **Você escolhe a cidade.**
-2. **O site olha a cor do mapa da NASA sobre ela, em cada ano.** A cor vira um número (por exemplo, +1,6 °C acima da média de 1951–1980) usando a própria legenda impressa na imagem.
-3. **O número escolhe o som daquele ano.** Ano frio, som grave e escuro; ano quente, som agudo, brilhante e tenso.
-4. **A música avança sozinha de 1950 a 2023.** O mapa, a lente sobre a cidade, o valor e a seta na escala acompanham o que está tocando.
-
-O som nasce da **imagem**, não de uma tabela: se a NASA trocar os mapas, a música muda junto. Isso liga diretamente a sonificação aos frames visuais do EIC, que é o que o desafio pede.
+Earth Jukebox is a mobile-first web app that turns NASA's global temperature anomaly map into music. You pick a city by GPS or by typing its name, and hear 1950 to 2023 in about 2 minutes 40 seconds, one musical bar per year. Every year sounds different because every year has a different color on the map. It was designed from the start for **blind and low-vision people**: everything the map and the chart show can also be heard.
 
 ---
 
-## Acessibilidade
+## What you are hearing
 
-- Botões grandes, com rótulo em texto, e navegação completa por teclado (espaço toca ou pausa; setas movem o ano).
-- Leitor de tela: a cidade escolhida e o ano são anunciados, e o mapa da temperatura tem descrição em texto com o valor do ano.
-- A linha do tempo pode ser rebobinada e avançada como uma **fita**: a própria música toca de trás para a frente, com um "tic" a cada ano.
-- Respeita "reduzir movimento" do sistema.
+The **temperature anomaly** of your city: how much warmer or cooler each year was than the 1951–1980 average *of the same place*. In climate science, "anomaly" simply means a difference from a reference, which lets us compare very different cities (Manaus and Oslo can both be +1 °C above their own normal). Because it is a difference, +1 °C equals +1.8 °F (no +32).
 
----
+The map is a 24-month moving average, so each year is a smoothed value, not a single day's thermometer reading.
 
-## Dados e fontes
+## How it works
 
-| Camada | Situação | Fonte |
+1. **Frames.** The site ships one image per year of NASA's *Global Temperature Anomalies, 1880 to 2023* visualization (SVS 5207, NASA GISS GISTEMP v4), prepared from NASA's own frames (`tools/preparar-frames-nasa.py`).
+2. **Color to number, in your browser.** The city's latitude and longitude become a pixel on the Robinson-projected map. The site takes the median color of a 5×5 pixel window and matches it to the color legend printed inside the frame (−2 to +2 °C). If NASA swaps the images, the music changes with them. Reading the colors is accurate to about ±0.1 °C.
+3. **A track for your city.** The values of all years decide which sound plays each year and which events (record years, droughts) get a card and an accent.
+4. **Live mix.** Recorded loops and bars locked to 110 BPM in D minor are chosen and mixed live in the browser with Tone.js. The code only adjusts volume, never pitch or tempo, so any combination sounds like one piece. The sound is assembled in real time from the frame colors; it is not synthesized from scratch.
+5. **Context layers.** Carbon dioxide (NOAA, 1959–2023) and your city's rainfall (NASA POWER, from 1981) play alongside, so you can hear how they relate to the temperature.
+
+## The sounds, in short
+
+| Layer | Data | What you hear |
 |---|---|---|
-| Temperatura | **real** | NASA Scientific Visualization Studio, *Global Temperature Anomalies, 1880 to 2023* (SVS 5207), dados NASA GISS GISTEMP v4 · https://svs.gsfc.nasa.gov/5207/ |
-| CO₂ | fictícia (protótipo) | a definir, fonte da NASA |
-| Chuva | fictícia (protótipo) | a definir, fonte da NASA |
-| Vegetação | fictícia (protótipo) | a definir, fonte da NASA |
+| Temperature melody (piano) | change to next year, from the map color | 7 one-bar figures: flat, small / medium / large rise, small / medium / large fall. Every figure starts and ends near D |
+| Temperature level (piano) | the year's value, in fixed 1 °C bands | 4 loops (below −1, −1 to 0, 0 to +1, above +1 °C). Higher pitch = warmer |
+| Carbon dioxide (low organ and strings) | NOAA Mauna Loa annual mean | 5 voices that stack up as concentration grows; a single low D closes the piece in 2023 |
+| Rainfall (kalimba) | NASA POWER, change to next year | 4 loops from 2 to 5 notes: more rain rising = more notes. Extreme rain and drought have a short accent |
 
-Os mapas de CO₂, chuva e vegetação são **imagens fictícias** criadas só para testar o funcionamento, enquanto as fontes reais são escolhidas. A temperatura é a anomalia em relação à média de 1951–1980 **naquele lugar**, não a temperatura do termômetro.
+Short accents mark peaks and valleys of the temperature line and record-hot years.
 
-Busca de cidades: lista local + Open-Meteo Geocoding e BigDataCloud (geocodificação reversa do GPS). Áudio: Tone.js. Gráficos e projeção do mapa: d3 e d3-geo-projection.
+## Accessibility
 
----
+- Large buttons with text labels; full keyboard control (space plays or pauses, arrows move through the years).
+- Screen readers: a live region announces the city, the year, events and the end of the piece; the temperature map has a text description with the year's value.
+- Time travel works like **rewinding a tape**: the music itself plays backwards, with a tick for each year.
+- High-contrast retrofuturist design aiming at WCAG AA, 48 px touch targets, and reduced-motion support.
+- Opens in English and °F; Portuguese and °C are one tap away, and both units are shown side by side.
+- Not yet tested with blind and low-vision listeners. That is the next step.
 
-## Rodar no computador
+## Data and credits
+
+| Layer | Source | How it reaches the site |
+|---|---|---|
+| Temperature | NASA Scientific Visualization Studio, *Global Temperature Anomalies, 1880 to 2023* (SVS 5207), NASA GISS GISTEMP v4 · https://svs.gsfc.nasa.gov/5207/ | read from the color of the frame over your city, in the browser |
+| Rainfall | NASA POWER (MERRA-2 precipitation) · https://power.larc.nasa.gov | fetched live for your city's coordinates |
+| CO₂ | NOAA Global Monitoring Laboratory, Mauna Loa, annual mean · https://gml.noaa.gov/ccgg/trends/ | bundled in `data/co2-noaa.json` |
+
+CO₂ citation requested by NOAA: Dr. Xin Lan, NOAA/GML (gml.noaa.gov/ccgg/trends/) and Dr. Ralph Keeling, Scripps Institution of Oceanography (scrippsco2.ucsd.edu/).
+
+Also used: Open-Meteo Geocoding (city search; GeoNames data, CC BY 4.0), BigDataCloud (reverse geocoding of the GPS position), a small local list of cities (`data/cidades.json`), Tone.js 14.8.49 (MIT), d3 7.9.0 and d3-geo-projection 4.0.0 (ISC), and the fonts Atkinson Hyperlegible Next, Chakra Petch and IBM Plex Mono (SIL Open Font License). All music loops for the temperature and CO₂ layers were composed and recorded by a doctor of music on our team.
+
+## Honest limits
+
+- Only the temperature is read from NASA frames; CO₂ and rainfall come from data series and add context.
+- The audio is built from recorded loops, not synthesized from scratch. The rain sounds are still placeholders generated by script (`tools/gerar-sons-provisorios.mjs`).
+- If NASA POWER cannot be reached, the rainfall layer is switched off and the interface says so.
+- The repository still carries 21 placeholder climate regions from the first prototype (`data/timeline.json`). While the map frames and NASA POWER work, their values are not used. The name of the region nearest to your city is announced to screen readers (in Portuguese), and the placeholder values are the fallback if the map manifest fails to load.
+
+## Run it on your computer
 
 ```bash
 python tools/servidor.py
 ```
 
-Abra http://localhost:8080. É preciso um servidor: abrir o `index.html` direto não funciona.
+Open http://localhost:8080. A server is required: opening `index.html` directly does not work. On a phone, GPS and audio need HTTPS when the address is not `localhost` (for example `npx localtunnel --port 8080`, or GitHub Pages).
 
-No celular, o GPS e o áudio exigem **HTTPS** quando o endereço não é `localhost` (por exemplo, um túnel com `npx localtunnel --port 8080` ou o GitHub Pages). No iPhone, desligue a chave de silencioso.
+To download NASA's maps again: `python -I tools/preparar-frames-nasa.py`.
 
-### Pastas
+### Folders
 
-| Pasta | O que tem |
+| Folder | What is in it |
 |---|---|
-| `index.html`, `css/`, `js/` | o site |
-| `js/frames.js` | lê a cor do mapa sobre a cidade e transforma em número |
-| `js/trilha.js` | regras da música: qual compasso, nível e som pontual em cada ano |
-| `js/audio/` | motor de som (Tone.js), camadas e efeito de fita |
-| `data/frames/` | os mapas de cada ano e o `manifesto.json`, que descreve projeção, recorte e legenda de cada mapa |
-| `audio/` | sons (provisórios em `audio/provisorio/`; os do músico em `audio/<camada>/`) |
-| `tools/` | servidor local e scripts que geram os sons provisórios, os dados e os mapas |
+| `index.html`, `css/`, `js/` | the site |
+| `js/frames.js` | reads the map color over the city and turns it into a number |
+| `js/trilha.js` | the music rules: which bar, level and accent plays each year |
+| `js/audio/` | sound engine (Tone.js), layers and tape effect |
+| `data/frames/` | the map of each year and `manifesto.json` (projection, crop and legend of each map) |
+| `data/` | `co2-noaa.json`, `cidades.json`, `timeline.json` (list of years) |
+| `audio/` | the sounds, by layer: `temperatura/`, `tendencia/`, `co2/`, `chuva/` |
+| `tools/` | local server and scripts that prepare frames and placeholder sounds |
 
-Para baixar de novo os mapas da NASA: `python -I tools/preparar-frames-nasa.py`.
+## Use of AI
 
----
+The website code was developed with an AI assistant ("vibe coding": Claude, by Anthropic), under the direction of our team, who defined the concept, the musical mapping and the design decisions. The placeholder rain sounds were generated by script, small adjustments to the music files were made with AI help, and part of the documentation was written with AI assistance. The piano and CO₂ loops were composed and recorded by a human musician on our team.
 
-## Uso de inteligência artificial
+## License
 
-O código deste protótipo, os sons provisórios e parte da documentação foram desenvolvidos com a ajuda de um assistente de IA (Claude, da Anthropic), sob direção da equipe, que definiu o conceito, o mapeamento musical e as decisões de design.
+The Space Apps terms require original content to be freely available or open source (OSI). The code and all original text and design are released under the **MIT License** (see `LICENSE`). The music loops for the temperature and CO₂ layers were composed and recorded by a member of our team, who agreed to release them for anyone to use freely: they are released under **CC0** (public domain dedication). Third-party materials keep their own licenses, listed above.
