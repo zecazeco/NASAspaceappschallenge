@@ -10,8 +10,7 @@
 export const NIVEIS = 4;
 export const VOZES_CO2 = 5;          // CO₂: 5 vozes que se acumulam
 const INICIO_RECORDES = 1970;        // antes disso quase todo ano seria recorde
-const ANOS_MINIMOS_PARA_RECORDE = 10; // chuva e vegetação: "o mais extremo até então" só depois de 10 anos medidos
-const QUEDA_MINIMA_VEG = 0.03;        // queda de pelo menos 3% do verde dos anos 1980
+const ANOS_MINIMOS_PARA_RECORDE = 10; // chuva: "o mais extremo até então" só depois de 10 anos medidos
 
 const valido = (v) => v != null && Number.isFinite(v);
 
@@ -113,13 +112,15 @@ function niveisFixos(serie, n) {
 // Chuva: como a temperatura, o som de cada ano mostra a MUDANÇA até o ano seguinte (para onde a linha vai):
 //   0 = sobe muito (chuva_base_1, o mais forte) · 1 = sobe um pouco · 2 = desce um pouco · 3 = desce muito (o mais fraco).
 // "Muito" = o terço maior das mudanças da própria cidade. "Quase igual" (menos de QUASE_IGUAL_CHUVA da faixa
-// da cidade) mantém o som do ano anterior; o último ano (sem ano seguinte) também.
+// normal da cidade, faixaChuva) mantém o som do ano anterior; o último ano (sem ano seguinte) também.
+// Com dados reais (24 cidades), de 2 a 11 das 42 mudanças ficam "quase igual" (11 em Nova York).
 export const QUASE_IGUAL_CHUVA = 0.05;
 
 function mudancasChuva(serie) {
   const vals = serie.filter(valido);
   if (vals.length < 2) return serie.map(() => null);
-  const faixa = (Math.max(...vals) - Math.min(...vals)) || 1;
+  const { min, max } = faixaChuva(vals);
+  const faixa = (max - min) || 1;
   const d = serie.map((v, i) => (valido(v) && valido(serie[i + 1]) ? (serie[i + 1] - v) / faixa : null));
   const grandes = d.filter((x) => x != null && Math.abs(x) >= QUASE_IGUAL_CHUVA).map(Math.abs).sort((a, b) => a - b);
   const muito = grandes.length ? grandes[Math.floor((grandes.length * 2) / 3)] : Infinity;
@@ -139,6 +140,34 @@ function limites10(vals) {
   const s = [...vals].sort((a, b) => a - b);
   const k = Math.max(1, Math.round(s.length * 0.1));
   return { baixo: s[k - 1], alto: s[s.length - k] };
+}
+
+/** Seca / chuva extrema da cidade: os 10% de anos mais secos e mais chuvosos (null = sem dados). */
+export function limitesChuva(serie) {
+  const vals = serie.filter(valido);
+  return vals.length ? limites10(vals) : null;
+}
+
+// Faixa "normal" da chuva da cidade, para o gráfico e para o som: dos 10% mais secos aos 10% mais
+// chuvosos, com uma folga de 25% dessa largura para cada lado. Com dados reais, um ano muito fora
+// (ex.: Cairo, deserto, +590% em 2016) não achata mais todos os outros: a linha sai da área do
+// gráfico e volta depois. Nas cidades testadas, de 1 a 5 anos ficam fora.
+const FOLGA_CHUVA = 0.25;
+function quantil(ordenados, p) {
+  const k = (ordenados.length - 1) * p, i = Math.floor(k);
+  return ordenados[i] + ((ordenados[Math.min(i + 1, ordenados.length - 1)] - ordenados[i]) * (k - i));
+}
+function faixaChuva(vals) {
+  const s = [...vals].sort((a, b) => a - b);
+  const p10 = quantil(s, 0.1), p90 = quantil(s, 0.9), folga = (p90 - p10) * FOLGA_CHUVA;
+  return { min: p10 - folga, max: p90 + folga };
+}
+/** Como posicoes(), mas na faixa normal da chuva: pode passar de 0 … NIVEIS-1 (o gráfico corta). */
+function posicoesChuva(serie) {
+  const vals = serie.filter(valido);
+  if (!vals.length) return serie.map(() => null);
+  const { min, max } = faixaChuva(vals);
+  return serie.map((v) => (valido(v) ? (max > min ? (v - min) / (max - min) : 0.5) * (NIVEIS - 1) : null));
 }
 
 export function calcularTrilha(local, passos, co2Global) {
@@ -190,35 +219,12 @@ export function calcularTrilha(local, passos, co2Global) {
     }
   }
 
-  // ---- Vegetação: queda brusca (10% maiores quedas do lugar e pelo menos 3% do verde de referência)
-  const veg = local.vegetacao;
-  const base = local.vegetacaoBase;
-  const quedas = [];
-  for (let i = 1; i < n; i++) if (valido(veg[i]) && valido(veg[i - 1])) quedas.push(veg[i - 1] - veg[i]);
-  if (quedas.length && base) {
-    const s = [...quedas].sort((a, b) => b - a);
-    const limite = s[Math.max(1, Math.round(s.length * 0.1)) - 1];
-    let min = Infinity, medidos = 0;
-    for (let i = 0; i < n; i++) {
-      if (!valido(veg[i])) continue;
-      if (i > 0 && valido(veg[i - 1])) {
-        const queda = veg[i - 1] - veg[i];
-        if (queda > 0 && queda >= limite && queda >= QUEDA_MINIMA_VEG * base) {
-          const menosVerde = veg[i] < min && medidos >= ANOS_MINIMOS_PARA_RECORDE;
-          eventos[i].vegetacao = { nome: 'queda', intensidade: menosVerde ? 'f' : 'm', valor: queda / base };
-        }
-      }
-      min = Math.min(min, veg[i]); medidos++;
-    }
-  }
-
   const tendencia = mediaMovel(temp);
   const posicao = {
     co2: posicoes(co2),
     temperatura: posicoes(temp),
     tendencia: faixasTendencia(tendencia),
-    chuva: posicoes(chuva),
-    vegetacao: posicoes(veg),
+    chuva: posicoesChuva(chuva),
   };
   // som dos loops quando não é a posição: CO₂ = voz mais alta que toca (0 = só a voz 1 … 4 = as 5; a faixa
   // medida dividida em 5 partes iguais); chuva = tipo de mudança até o ano seguinte

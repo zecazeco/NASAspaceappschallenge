@@ -19,7 +19,7 @@ try {
 
 export class Motor {
   constructor() {
-    this.dims = { co2: new Camada('co2'), temperatura: new Camada('temperatura'), tendencia: new Camada('tendencia'), chuva: new Camada('chuva'), vegetacao: new Camada('vegetacao') };
+    this.dims = { co2: new Camada('co2'), temperatura: new Camada('temperatura'), tendencia: new Camada('tendencia'), chuva: new Camada('chuva') };
     this.idx = 0;
     this.nPassos = 1;
     this.trilha = null;         // níveis e compassos da cidade (trilha.js)

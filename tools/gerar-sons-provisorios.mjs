@@ -258,22 +258,6 @@ for (const int of ['m', 'f']) {
   });
 }
 
-// ---------- Vegetação: arpejo dedilhado no médio-agudo, mais notas a cada nível
-const ARP = [N.D4, N.A4, N.F5, N.D5, N.A4, N.F5, N.C5, N.A4];
-const DEDILHADO = { decai: 5, harm: [1, 0.6, 0.3, 0.15] };
-const arpejo = (b, posicoes) => posicoes.forEach((k) => nota(b, k * TEMPO / 2, hz(ARP[k]), 0.5, DEDILHADO));
-loop('veg_base_1', (b) => arpejo(b, [0, 4]));
-loop('veg_base_2', (b) => arpejo(b, [0, 2, 4, 6]));
-loop('veg_base_3', (b) => arpejo(b, [0, 1, 2, 4, 5, 6]));
-loop('veg_base_4', (b) => { arpejo(b, [0, 1, 2, 3, 4, 5, 6, 7]); [1, 3, 5, 7].forEach((k) => nota(b, k * TEMPO / 2 + TEMPO / 4, hz(ARP[k] + 12), 0.2, DEDILHADO)); });
-for (const int of ['m', 'f']) {
-  pontual(`veg_queda_${int}`, PICO[int], (b) => {
-    // queda: o acorde vai perdendo notas (5, depois 3, depois 1)
-    const acorde = [N.D4, N.F4, N.A4, N.C5, N.D5];
-    [acorde, [N.D4, N.A4, N.D5], [N.D4]].forEach((ns, k) => ns.forEach((m, j) => nota(b, k * TEMPO * 1.4 + j * 0.05, hz(m), 0.8, { ...DEDILHADO, decai: 2.2, circular: false })));
-  });
-}
-
 mkdirSync(SAIDA, { recursive: true });
 for (const [nome, b] of Object.entries(arquivos)) writeFileSync(join(SAIDA, `${nome}.wav`), wav(b));
 console.log(`OK: ${Object.keys(arquivos).length} sons provisórios em ${SAIDA} (loop = ${(N_LOOP / SR).toFixed(3)} s)`);

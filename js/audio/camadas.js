@@ -4,7 +4,7 @@
 //   • 'compassos' (temperatura): 7 figuras (parado, sobe/desce pequena/média/grande) que começam e voltam
 //     para a mesma nota, escolhidas pela mudança até o ano seguinte (trilha.movimento). Cada ano toca o
 //     arquivo inteiro do início do compasso; a cauda some quando o compasso seguinte começa.
-//   • 'niveis' (tendência, vegetação): 4 loops de 1 compasso; o nível do ano decide qual se ouve
+//   • 'niveis' (tendência): 4 loops de 1 compasso; o nível do ano decide qual se ouve
 //     (com troca suave; posição quebrada, ex. 1,4, mistura dois níveis). A tendência é o segundo som da
 //     temperatura (média de 11 anos em 4 níveis): não tem seletor nem linha própria, liga junto com ela.
 //   • 'vozes' (CO₂): 5 loops de 4 compassos que se acumulam; o ano liga da voz 1 até a voz dele.
@@ -15,7 +15,7 @@
 //
 // Fim da música (o compasso de 2023): a tendência (fim: 'sustenta') some devagar ao longo do compasso
 // inteiro; o CO₂ toca só a voz 3 do começo (a nota grave do 1º tempo), igual em toda cidade, e some com uma
-// curva suave antes da nota seguinte dela (passa do compasso de 2023: a música espera ele terminar); os outros (melodia, chuva, vegetação) tocam só o 1º tempo e
+// curva suave antes da nota seguinte dela (passa do compasso de 2023: a música espera ele terminar); os outros (melodia, chuva) tocam só o 1º tempo e
 // somem antes do 2º. Quando 2024 chegaria, a música para.
 //
 // Som pontual (teste): picos e vales da temperatura, ligado pelo seletor no topo da página.
@@ -32,7 +32,6 @@ export const DEFINICAO = {
     pontuais: { pontual01: ['pico', 'vale'] } },
   tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis', volume: 0.4, fim: 'sustenta' },   // 60% mais baixa que as outras
   chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'troca', entra: 0.015, sai: 0.3 },   // s (constantes de tempo)
-  vegetacao: { pasta: 'vegetacao', prefixo: 'veg', modo: 'niveis' },
 };
 
 /** Arquivos da camada, na ordem: { nome, k }. */
