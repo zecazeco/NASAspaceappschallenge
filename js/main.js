@@ -435,7 +435,7 @@ function passoScrub() {
   const novo = motor.idx + scrub.dir;
   if (novo < 0 || novo > ultimo()) return false;
   motor.irPara(novo);
-  if (ajustes.tic) motor.tique(valoresDoPasso(regiao, novo).temperatura ?? 0.2);
+  if (ajustes.tic) motor.tique();
   atualizarUI(novo);
   return true;
 }
@@ -494,7 +494,7 @@ slider.addEventListener('input', () => {
   if (alvo === motor.idx) return;
   iniciarScrub(alvo < motor.idx ? -1 : 1);
   motor.irPara(alvo);
-  if (ajustes.tic) motor.tique(valoresDoPasso(regiao, alvo).temperatura ?? 0.2);
+  if (ajustes.tic) motor.tique();
   atualizarUI(alvo);
   clearTimeout(fimSlider);
   fimSlider = setTimeout(terminarScrub, 1500);

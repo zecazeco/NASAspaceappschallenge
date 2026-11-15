@@ -82,8 +82,9 @@ export class Motor {
       const af = new Tone.AutoFilter({ frequency: 7, baseFrequency: 900, octaves: 2.5, depth: 0.7 }).connect(this.gChiado).start();
       this.chiado = new Tone.Noise({ type: 'pink', volume: -30 }).connect(af);
     }
-    if (tic) this.tic = new Tone.Player(tic).connect(this.efeitos);
-    else this.tic = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.03 }, volume: -10 }).connect(this.efeitos);
+    // tic discreto: −12 dB (¼ do volume original) e meia oitava mais grave (playbackRate 0,7)
+    if (tic) this.tic = new Tone.Player({ url: tic, volume: -12, playbackRate: 0.7 }).connect(this.efeitos);
+    else this.tic = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.03 }, volume: -22 }).connect(this.efeitos);
     this.tapeStart = tapeStart ? new Tone.Player(tapeStart).connect(this.efeitos) : null;
   }
 
@@ -228,11 +229,11 @@ export class Motor {
 
   irPara(idx) { this.terminou = false; this.tCongelado = null; this.inicioCompasso = null; this.idx = Math.max(0, Math.min(this.nPassos - 1, idx)); }
 
-  /** Tic a cada passo; mais agudo quanto mais quente. */
-  tique(tensao = 0.3) {
+  /** Tic a cada passo: sempre o mesmo som, não depende dos dados. */
+  tique() {
     const agora = Tone.now();
-    if (this.tic instanceof Tone.Player) { this.tic.playbackRate = Math.pow(2, tensao); this.tic.start(agora); }
-    else this.tic.triggerAttackRelease(Tone.Frequency(84 + Math.round(tensao * 12), 'midi'), 0.03, agora);
+    if (this.tic instanceof Tone.Player) this.tic.start(agora);
+    else this.tic.triggerAttackRelease(Tone.Frequency(78, 'midi'), 0.03, agora);
   }
 
   terminarFita(continuarTocando = true) {
