@@ -58,7 +58,7 @@ NASA POWER acknowledgement: The data was obtained from National Aeronautics and 
 
 CO₂ citation requested by NOAA: Dr. Xin Lan, NOAA/GML (gml.noaa.gov/ccgg/trends/) and Dr. Ralph Keeling, Scripps Institution of Oceanography (scrippsco2.ucsd.edu/).
 
-Also used: Open-Meteo Geocoding (city search; GeoNames data, CC BY 4.0), BigDataCloud (reverse geocoding of the GPS position), a small local list of cities (`data/cidades.json`), Tone.js 14.8.49 (MIT), d3 7.9.0 and d3-geo-projection 4.0.0 (ISC), and the fonts Atkinson Hyperlegible Next, Chakra Petch and IBM Plex Mono (SIL Open Font License). All music loops for the temperature and CO₂ layers were composed and recorded by a doctor of music on our team.
+Also used: Open-Meteo Geocoding (city search; GeoNames data, CC BY 4.0), BigDataCloud (reverse geocoding of the GPS position), a small local list of cities (`data/cidades.json`, a fallback used only if the city search fails, created with AI assistance from the city-search API data), Tone.js 14.8.49 (MIT), d3 7.9.0 and d3-geo-projection 4.0.0 (ISC), and the fonts Atkinson Hyperlegible Next, Chakra Petch and IBM Plex Mono (SIL Open Font License). All music loops for the temperature and CO₂ layers were composed and recorded by a doctor of music on our team.
 
 ## Honest limits
 
@@ -92,7 +92,7 @@ To download NASA's maps again: `python -I tools/preparar-frames-nasa.py`.
 
 ## Use of AI
 
-The website code was developed with AI assistance (Claude, by Anthropic), directed by our team, who defined the concept, the musical mapping and the design decisions. The rain sounds were synthesized by a script written with AI assistance, small adjustments to the music files were made with AI help, and part of the documentation was written with AI assistance. The piano and CO₂ loops were composed and recorded by a human musician on our team.
+The website code was developed with AI assistance (Claude, by Anthropic), directed by our team, who defined the concept, the musical mapping and the design decisions. The rain sounds were synthesized by a script written with AI assistance, the music loops were spliced with AI help, the fallback list of cities (`data/cidades.json`) was created with AI assistance, and part of the documentation was written with AI assistance. The piano and CO₂ loops were composed and recorded by a human musician on our team.
 
 ## License
 
