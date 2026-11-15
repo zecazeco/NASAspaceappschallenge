@@ -384,7 +384,7 @@ export class Grafico {
     for (const { lados, soEsquerda } of tentativas) {
       for (const lado of lados) {
         for (const dy of [-h - 30, -h / 2, 30, -h - 100, 100]) {
-          for (const dist of [22, 60, 120]) {
+          for (const dist of [22, 60]) {
             const r = { x: prende(lado > 0 ? p.x + dist : p.x - dist - w, m, this.W - m - w), y: prende(p.y + dy, topo, baixo - h), w, h };
             if (soEsquerda && r.x + w > centro) continue;
             if (sobrepoe(r, ponto, 2) || ocupados.some((o) => sobrepoe(r, o))) continue;
@@ -426,7 +426,8 @@ export class Grafico {
   }
 
   posicionarCard(card, p) {
-    card.x = p.x + card.dx; card.y = p.y + card.dy;
+    // o card anda junto com o ponto; ao chegar na margem esquerda ele para ali e só o fio segue o ponto
+    card.x = Math.max(8, p.x + card.dx); card.y = p.y + card.dy;
     card.el.style.transform = `translate(${card.x}px, ${card.y}px)`;
     // o fio sai da borda do card mais próxima do ponto
     const ax = Math.abs(p.x - card.x) < Math.abs(p.x - (card.x + card.w)) ? card.x : card.x + card.w;
