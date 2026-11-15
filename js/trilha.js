@@ -3,15 +3,14 @@
 //   • temperatura: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
 //   • temperatura: anos que são pico ou vale da linha (som pontual em teste)
 //   • som dos loops quando não é a posição: CO₂ (quantas das 5 vozes) e chuva (tipo de mudança)
-//   • tendência da temperatura: média de 11 anos (linha do gráfico) e nível 1 a 4 (camada de som)
+//   • tendência da temperatura: média de 11 anos em faixas fixas de °C, nível 1 a 4 (o segundo som da temperatura)
 //   • eventos de cada ano ({ nome, intensidade }): hoje só viram cartões no gráfico.
 // É calculada uma vez, ao escolher a cidade.
 
 export const NIVEIS = 4;
 export const VOZES_CO2 = 5;          // CO₂: 5 vozes que se acumulam
 const INICIO_RECORDES = 1970;        // antes disso quase todo ano seria recorde
-const ANOS_MINIMOS_PARA_RECORDE = 10; // chuva e vegetação: "o mais extremo até então" só depois de 10 anos medidos
-const QUEDA_MINIMA_VEG = 0.03;        // queda de pelo menos 3% do verde dos anos 1980
+const ANOS_MINIMOS_PARA_RECORDE = 10; // chuva: "o mais extremo até então" só depois de 10 anos medidos
 
 const valido = (v) => v != null && Number.isFinite(v);
 
@@ -78,12 +77,22 @@ function movimentos(serie) {
   });
 }
 
-// Tendência da temperatura: segunda camada da temperatura, tocando junto com a melodia.
+// Tendência da temperatura: o segundo som da temperatura, tocando junto com a melodia.
 // Para cada ano, a média dos 11 anos em volta (5 antes, o próprio ano e 5 depois; nas pontas, o que
 // houver). Isso apaga o sobe e desce de um ano para o outro e deixa só o aquecimento ao longo das
-// décadas. O som usa essa média dividida em 4 níveis na escala da cidade: muda poucas vezes na
-// música (São Paulo: 1973, 1987 e 1998), como capítulos.
+// décadas. O som usa FAIXAS FIXAS dessa média, iguais em todas as cidades (mesma régua do mapa da NASA):
+//   nível 1 = na média de 1951–1980 ou abaixo (o clima de antes) · 2 = 0 a +0,5 °C · 3 = +0,5 a +1 °C · 4 = +1 °C ou mais.
+// A escala vai numa direção só, do frio para o quente, porque mostra a tendência de aquecimento; os anos
+// frios ou quentes isolados aparecem na melodia. Sem folga nos limites: quando a média passa de um lado
+// para o outro, o som troca, mesmo que volte logo (é o que o dado mostra). Muda poucas vezes, como capítulos
+// (São Paulo: 1973 passa da média, 1986 meio grau, 1997 passa de +1 °C; Nova York passa de +1 °C em 2003,
+// volta em 2004 e passa de novo em 2006).
 export const LADO_TENDENCIA = 5;
+export const LIMITES_TENDENCIA = [0, 0.5, 1.0];   // °C
+
+function faixasTendencia(media) {
+  return media.map((x) => (valido(x) ? LIMITES_TENDENCIA.filter((l) => x >= l).length : null));
+}
 
 export function mediaMovel(serie, lado = LADO_TENDENCIA) {
   return serie.map((v, i) => {
@@ -100,23 +109,18 @@ function niveisFixos(serie, n) {
   return serie.map((v) => (valido(v) ? Math.min(n - 1, Math.floor((max > min ? (v - min) / (max - min) : 0.5) * n)) : null));
 }
 
-/** Série na escala de outra (0..1 entre o mínimo e o máximo da referência): a linha da tendência no gráfico. */
-function naEscalaDe(serie, ref) {
-  const vals = ref.filter(valido);
-  const min = Math.min(...vals), max = Math.max(...vals);
-  return serie.map((v) => (valido(v) && max > min ? (v - min) / (max - min) : null));
-}
-
 // Chuva: como a temperatura, o som de cada ano mostra a MUDANÇA até o ano seguinte (para onde a linha vai):
 //   0 = sobe muito (chuva_base_1, o mais forte) · 1 = sobe um pouco · 2 = desce um pouco · 3 = desce muito (o mais fraco).
 // "Muito" = o terço maior das mudanças da própria cidade. "Quase igual" (menos de QUASE_IGUAL_CHUVA da faixa
-// da cidade) mantém o som do ano anterior; o último ano (sem ano seguinte) também.
+// normal da cidade, faixaChuva) mantém o som do ano anterior; o último ano (sem ano seguinte) também.
+// Com dados reais (24 cidades), de 2 a 11 das 42 mudanças ficam "quase igual" (11 em Nova York).
 export const QUASE_IGUAL_CHUVA = 0.05;
 
 function mudancasChuva(serie) {
   const vals = serie.filter(valido);
   if (vals.length < 2) return serie.map(() => null);
-  const faixa = (Math.max(...vals) - Math.min(...vals)) || 1;
+  const { min, max } = faixaChuva(vals);
+  const faixa = (max - min) || 1;
   const d = serie.map((v, i) => (valido(v) && valido(serie[i + 1]) ? (serie[i + 1] - v) / faixa : null));
   const grandes = d.filter((x) => x != null && Math.abs(x) >= QUASE_IGUAL_CHUVA).map(Math.abs).sort((a, b) => a - b);
   const muito = grandes.length ? grandes[Math.floor((grandes.length * 2) / 3)] : Infinity;
@@ -136,6 +140,34 @@ function limites10(vals) {
   const s = [...vals].sort((a, b) => a - b);
   const k = Math.max(1, Math.round(s.length * 0.1));
   return { baixo: s[k - 1], alto: s[s.length - k] };
+}
+
+/** Seca / chuva extrema da cidade: os 10% de anos mais secos e mais chuvosos (null = sem dados). */
+export function limitesChuva(serie) {
+  const vals = serie.filter(valido);
+  return vals.length ? limites10(vals) : null;
+}
+
+// Faixa "normal" da chuva da cidade, para o gráfico e para o som: dos 10% mais secos aos 10% mais
+// chuvosos, com uma folga de 25% dessa largura para cada lado. Com dados reais, um ano muito fora
+// (ex.: Cairo, deserto, +590% em 2016) não achata mais todos os outros: a linha sai da área do
+// gráfico e volta depois. Nas cidades testadas, de 1 a 5 anos ficam fora.
+const FOLGA_CHUVA = 0.25;
+function quantil(ordenados, p) {
+  const k = (ordenados.length - 1) * p, i = Math.floor(k);
+  return ordenados[i] + ((ordenados[Math.min(i + 1, ordenados.length - 1)] - ordenados[i]) * (k - i));
+}
+function faixaChuva(vals) {
+  const s = [...vals].sort((a, b) => a - b);
+  const p10 = quantil(s, 0.1), p90 = quantil(s, 0.9), folga = (p90 - p10) * FOLGA_CHUVA;
+  return { min: p10 - folga, max: p90 + folga };
+}
+/** Como posicoes(), mas na faixa normal da chuva: pode passar de 0 … NIVEIS-1 (o gráfico corta). */
+function posicoesChuva(serie) {
+  const vals = serie.filter(valido);
+  if (!vals.length) return serie.map(() => null);
+  const { min, max } = faixaChuva(vals);
+  return serie.map((v) => (valido(v) ? (max > min ? (v - min) / (max - min) : 0.5) * (NIVEIS - 1) : null));
 }
 
 export function calcularTrilha(local, passos, co2Global) {
@@ -187,44 +219,19 @@ export function calcularTrilha(local, passos, co2Global) {
     }
   }
 
-  // ---- Vegetação: queda brusca (10% maiores quedas do lugar e pelo menos 3% do verde de referência)
-  const veg = local.vegetacao;
-  const base = local.vegetacaoBase;
-  const quedas = [];
-  for (let i = 1; i < n; i++) if (valido(veg[i]) && valido(veg[i - 1])) quedas.push(veg[i - 1] - veg[i]);
-  if (quedas.length && base) {
-    const s = [...quedas].sort((a, b) => b - a);
-    const limite = s[Math.max(1, Math.round(s.length * 0.1)) - 1];
-    let min = Infinity, medidos = 0;
-    for (let i = 0; i < n; i++) {
-      if (!valido(veg[i])) continue;
-      if (i > 0 && valido(veg[i - 1])) {
-        const queda = veg[i - 1] - veg[i];
-        if (queda > 0 && queda >= limite && queda >= QUEDA_MINIMA_VEG * base) {
-          const menosVerde = veg[i] < min && medidos >= ANOS_MINIMOS_PARA_RECORDE;
-          eventos[i].vegetacao = { nome: 'queda', intensidade: menosVerde ? 'f' : 'm', valor: queda / base };
-        }
-      }
-      min = Math.min(min, veg[i]); medidos++;
-    }
-  }
-
   const tendencia = mediaMovel(temp);
   const posicao = {
     co2: posicoes(co2),
     temperatura: posicoes(temp),
-    tendencia: niveisFixos(tendencia, NIVEIS),
-    chuva: posicoes(chuva),
-    vegetacao: posicoes(veg),
+    tendencia: faixasTendencia(tendencia),
+    chuva: posicoesChuva(chuva),
   };
   // som dos loops quando não é a posição: CO₂ = voz mais alta que toca (0 = só a voz 1 … 4 = as 5; a faixa
   // medida dividida em 5 partes iguais); chuva = tipo de mudança até o ano seguinte
   const som = { co2: niveisFixos(co2, VOZES_CO2), chuva: mudancasChuva(chuva) };
   const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA) };
   const movimento = { temperatura: movimentos(temp) };
-  // linha da tendência no gráfico: na mesma escala da linha da temperatura, para passar por dentro dela
-  const linha = { tendencia: naEscalaDe(tendencia, temp) };
-  return { posicao, som, virada, movimento, tendencia, linha, eventos };
+  return { posicao, som, virada, movimento, tendencia, eventos };
 }
 
 /** Resumo legível (para depurar no console ou mostrar à equipe). */

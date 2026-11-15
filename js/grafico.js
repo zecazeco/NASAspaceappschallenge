@@ -1,5 +1,8 @@
-// Gráfico das 4 camadas: linhas sobrepostas em perspectiva (sensação 3D), com brilho,
+// Gráfico das 3 camadas: linhas sobrepostas em perspectiva (sensação 3D), com brilho,
 // esferas na ponta, cursor do ano atual e cards dos sons pontuais.
+// • A escala vertical de cada linha é fixa para a cidade (não dá zoom nem acompanha a linha).
+//   A chuva usa uma faixa "normal" (trilha.js, faixaChuva): um ano muito fora some acima do
+//   teto da área (ou abaixo do chão) e a linha reaparece quando volta para a faixa.
 //
 // • O gráfico segue a música (tempo contínuo vindo do motor), mas pode ser ARRASTADO
 //   (swipe no celular, clicar e arrastar no PC) para ver o passado e o futuro. Arrastar
@@ -11,8 +14,6 @@
 export const CAMADAS_GRAFICO = [
   { id: 'co2', nome: 'CO₂', cor: '#C77DFF', z: 0.9, espessura: 1.3 },
   { id: 'temperatura', nome: 'Temperatura', cor: '#FF5C9E', z: 0.6, espessura: 1.2 },
-  { id: 'tendencia', nome: 'Tendência', cor: '#7E8A99', z: 0.6, espessura: 1.6 },   // média de 11 anos, por dentro da temperatura
-  { id: 'vegetacao', nome: 'Vegetação', cor: '#C6F06B', z: 0.3, espessura: 1.05 },
   { id: 'chuva', nome: 'Chuva', cor: '#53E2FF', z: 0.0, espessura: 0.8 },
 ];
 import { t as tr, localidade, tempPar } from './i18n.js';
@@ -28,28 +29,28 @@ const FRASES = {
     seca: (e) => (e.intensidade === 'f' ? tr('ev.chuva.secaF') : tr('ev.chuva.seca', { v: Math.round(e.valor) })),
     extrema: (e) => (e.intensidade === 'f' ? tr('ev.chuva.extremaF') : tr('ev.chuva.extrema', { v: Math.round(e.valor) })),
   },
-  vegetacao: { queda: (e) => (e.intensidade === 'f' ? tr('ev.vegetacao.quedaF') : tr('ev.vegetacao.queda', { v: Math.round(e.valor * 100) })) },
 };
 /** Resumo de 2 ou 3 palavras: a etiqueta que fica presa ao ponto depois que o card fecha. */
 const RESUMOS = {
   co2: { recorde: () => tr('res.co2.recorde') },
   temperatura: { recorde: () => tr('res.temperatura.recorde') },
   chuva: { seca: (e) => tr(e.intensidade === 'f' ? 'res.chuva.secaF' : 'res.chuva.seca'), extrema: (e) => tr(e.intensidade === 'f' ? 'res.chuva.extremaF' : 'res.chuva.extrema') },
-  vegetacao: { queda: (e) => tr(e.intensidade === 'f' ? 'res.vegetacao.quedaF' : 'res.vegetacao.queda') },
 };
 export const fraseDoEvento = (id, ev) => FRASES[id][ev.nome](ev);
 
+const TETO = 1.15;   // altura máxima visível de uma linha (1 = o valor máximo normal); acima disso, corta
+/** Evento num ano fora da área: o marcador e o card ficam na borda por onde a linha saiu. */
+const naBorda = (v) => Math.max(0.02, Math.min(TETO - 0.03, v));
 const DURACAO_CARD = 3200, DURACAO_REABERTO = 4500, VOLTA_SOZINHO = 8000;
 const sobrepoe = (a, b, folga = 8) => !(a.x + a.w + folga < b.x || b.x + b.w + folga < a.x || a.y + a.h + folga < b.y || b.y + b.h + folga < a.y);
 const reduzMovimento = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/** Forma de cada camada (a cor nunca vem sozinha): losango, círculo, triângulo, cruz. */
+/** Forma de cada camada (a cor nunca vem sozinha): losango, círculo, triângulo. */
 function glifo(ctx, id, x, y, r) {
   ctx.beginPath();
   if (id === 'co2') { ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
   else if (id === 'temperatura') ctx.arc(x, y, r * 0.85, 0, 7);
   else if (id === 'chuva') { ctx.moveTo(x - r, y - r * 0.7); ctx.lineTo(x + r, y - r * 0.7); ctx.lineTo(x, y + r); ctx.closePath(); }
-  else { const a = r * 0.36; ctx.moveTo(x - a, y - r); ctx.lineTo(x + a, y - r); ctx.lineTo(x + a, y - a); ctx.lineTo(x + r, y - a); ctx.lineTo(x + r, y + a); ctx.lineTo(x + a, y + a); ctx.lineTo(x + a, y + r); ctx.lineTo(x - a, y + r); ctx.lineTo(x - a, y + a); ctx.lineTo(x - r, y + a); ctx.lineTo(x - r, y - a); ctx.lineTo(x - a, y - a); ctx.closePath(); }
   ctx.fill();
 }
 
@@ -129,8 +130,6 @@ export class Grafico {
   }
 
   valor(id, i) {
-    const linha = this.trilha?.linha?.[id];          // camadas com linha própria (tendência), já em 0..1
-    if (linha) return linha[i] ?? null;
     const p = this.trilha?.posicao[id][i]; return p == null ? null : p / 3;
   }
   valorEm(id, t) {
@@ -160,9 +159,7 @@ export class Grafico {
     if (!this.trilha) return;
     this.chao();
     const pontas = {};
-    // a tendência é desenhada primeiro, por trás de todas as camadas (os dados do ano ficam na frente)
-    const ordem = [...CAMADAS_GRAFICO].sort((a, b) => (b.id === 'tendencia') - (a.id === 'tendencia'));
-    for (const c of ordem) if (this.ligadas[c.id]) pontas[c.id] = this.camada(c);
+    for (const c of CAMADAS_GRAFICO) if (this.ligadas[c.id]) pontas[c.id] = this.camada(c);
     this.cursor();
     this.etiquetas(agora);
     this.bordasEsfumadas();
@@ -220,6 +217,13 @@ export class Grafico {
     const futuro = pts.filter((p) => p.i > t);
     if (ponta && futuro.length) futuro.unshift(ponta);
 
+    // área da linha: do chão desta camada até um pouco acima do valor máximo normal (TETO);
+    // o que passa disso é cortado (só acontece na chuva, num ano muito fora da faixa da cidade)
+    const dentro = (v) => v >= -0.01 && v <= TETO;
+    const teto = this.proj(0, c.z, TETO).y, chao = this.proj(0, c.z, 0).base;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(-50, teto, this.W + 100, chao - teto + 2); ctx.clip();
+
     if (passado.length > 1) {   // cortina translúcida até o chão: dá o volume
       const g = ctx.createLinearGradient(0, Math.min(...passado.map((p) => p.y)), 0, passado[0].base);
       g.addColorStop(0, c.cor + '50'); g.addColorStop(1, c.cor + '00');
@@ -243,9 +247,10 @@ export class Grafico {
     traco(passado, 0.9, 0, Math.max(0.5, c.espessura * 0.3));
     traco(futuro, 0.22, 0, 1, [3, 6]);
 
-    for (const p of pts) {   // pontos dos eventos (marcados desde já, acendem ao passar)
-      const ev = this.trilha.eventos[p.i][c.id];
+    for (const ponto of pts) {   // pontos dos eventos (marcados desde já, acendem ao passar)
+      const ev = this.trilha.eventos[ponto.i][c.id];
       if (!ev) continue;
+      const p = { i: ponto.i, ...this.pontoDe(c.id, ponto.i) };   // fora da área: preso na borda
       const ja = p.i <= t;
       const r = (ev.intensidade === 'f' ? 6 : ev.intensidade === 'm' ? 5 : 4) * p.s;
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -257,7 +262,9 @@ export class Grafico {
       ctx.restore();
       if (ja) this.alvos.push({ x: p.x, y: p.y, i: p.i, id: c.id, ev, cor: c.cor, chave: `${p.i}:${c.id}` });
     }
-    return ponta;
+    ctx.restore();
+    // ponta fora da área: sem esfera nem rótulo até a linha voltar
+    return ponta && dentro(vAgora) ? ponta : null;
   }
 
   esfera(c, p, pulso) {
@@ -379,7 +386,7 @@ export class Grafico {
   pontoDe(id, i) {
     const c = CAMADAS_GRAFICO.find((k) => k.id === id);
     const v = this.valor(id, i);
-    return v == null ? null : this.proj(i - this.centro, c.z, v);
+    return v == null ? null : this.proj(i - this.centro, c.z, naBorda(v));
   }
 
   /**

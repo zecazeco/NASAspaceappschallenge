@@ -1,2 +1,0 @@
-Coloque aqui os arquivos do músico para a vegetação (mesmo nome dos provisórios, eles têm prioridade):
-veg_base_1.wav … veg_base_4.wav (loops de 1 compasso, 110 BPM)
