@@ -112,7 +112,7 @@ const TEXTOS = {
     // eventos do gráfico
     'ev.co2.recorde': ({ v }) => `O CO₂ subiu ${v} ppm: mais rápido que em qualquer ano anterior`,
     'ev.co2.faixa': ({ n, v }) => `O CO₂ já percorreu ${['', 'um quinto', 'dois quintos', 'três quintos', 'quatro quintos'][n]} de toda a subida até 2023 (${v} ppm)`,
-    'ev.temperatura.recorde': ({ v }) => `O ano mais quente já medido aqui (${v})`,
+    'ev.temperatura.recorde': ({ v }) => `O ano mais quente desde 1950 até aqui: ${v} acima da sua média¹`,
     'ev.chuva.seca': ({ v }) => `Seca: ${v}% de chuva`,
     'ev.chuva.extrema': ({ v }) => `Chuva extrema: +${v}%`,
     'res.co2.recorde': 'Recorde CO₂',
@@ -224,7 +224,7 @@ const TEXTOS = {
     'anuncio.semDados': ({ camadas }) => `No ${camadas} data right now; that layer was turned off.`,
     'ev.co2.recorde': ({ v }) => `CO₂ rose ${v} ppm: faster than in any previous year`,
     'ev.co2.faixa': ({ n, v }) => `CO₂ has now covered ${['', 'one fifth', 'two fifths', 'three fifths', 'four fifths'][n]} of its whole rise up to 2023 (${v} ppm)`,
-    'ev.temperatura.recorde': ({ v }) => `The hottest year on record here (${v})`,
+    'ev.temperatura.recorde': ({ v }) => `Hottest year since 1950 so far: ${v} above its average¹`,
     'ev.chuva.seca': ({ v }) => `Drought: ${v}% rainfall`,
     'ev.chuva.extrema': ({ v }) => `Extreme rain: +${v}%`,
     'res.co2.recorde': 'Record CO₂ rise',
