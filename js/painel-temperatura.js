@@ -58,8 +58,8 @@ export class PainelTemperatura {
   definirCidade(cidade) {
     this.cidade = cidade;
     this.ponto = this.v ? pontoNoFrame('temperatura', cidade.lat, cidade.lon) : null;
-    const lat = Math.abs(cidade.lat).toLocaleString(localidade(), { maximumFractionDigits: 1 });
-    $('#cidade-mapa').textContent = `${cidade.nome} · ${lat}° ${cidade.lat < 0 ? 'S' : 'N'}`;
+    const grau = (v) => Math.abs(v).toLocaleString(localidade(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    $('#cidade-mapa').textContent = `${cidade.nome} · ${grau(cidade.lat)}° ${cidade.lat < 0 ? 'S' : 'N'} · ${grau(cidade.lon)}° ${cidade.lon < 0 ? 'W' : 'E'}`;
     this.chave = '';
     this.ligarFio();
   }
@@ -96,8 +96,14 @@ export class PainelTemperatura {
     this.textoValor = '';
     $('#valor-temp').innerHTML = temValor ? textoTemp(valor) : '—';
     $('#ano-mapa').textContent = ano;
+    // o > da frase "You're hearing…" pisca uma vez a cada ano novo, junto com a música
+    if (ano !== this.anoPrompt) {
+      this.anoPrompt = ano;
+      const p = document.querySelector('.prompt-ouvindo');
+      if (p) { p.classList.remove('pisca'); void p.offsetWidth; p.classList.add('pisca'); }
+    }
     this.arco(temValor ? valor : 0);
-    $('#legenda-temp').textContent = temValor
+    $('#legenda-temp').innerHTML = temValor
       ? t(Math.abs(valor) < 0.05 ? 'temp.igual' : valor > 0 ? 'temp.quente' : 'temp.frio', { ano })
       : t('temp.semDado', { ano });
     const seta = $('#seta-temp');

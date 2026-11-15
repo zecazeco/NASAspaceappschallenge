@@ -12,7 +12,7 @@ const $ = (s) => document.querySelector(s);
 // nome, sigla e papel vêm do idioma escolhido (js/i18n.js)
 const DIMS = [
   { id: 'temperatura', cor: '#FF5C9E' },
-  { id: 'co2', cor: '#C77DFF' },
+  { id: 'co2', cor: '#C6F06B' },
   { id: 'chuva', cor: '#53E2FF' },
 ].map((d) => Object.defineProperties(d, {
   nome: { get: () => t(`nome.${d.id}`) },
@@ -213,6 +213,7 @@ $('#btn-trocar-cidade').addEventListener('click', () => mostrarBusca('', true));
 
 async function escolherCidade(c) {
   cidade = c;
+  textoOuvindo();
   // Tela "Preparando": AQUI é feita toda a verificação. O play e a tela do gráfico só aparecem quando
   // tudo chegou e está completo: dados, d3, o mapa da cidade em todos os anos, a chuva (se a NASA POWER
   // falhar, só a camada de chuva fica desligada) e todos os sons obrigatórios. Uma porcentagem só soma tudo.
@@ -554,8 +555,17 @@ form.addEventListener('change', () => {
 form.elements.volume.addEventListener('input', () => motor.definirVolume(form.elements.volume.value / 100));
 
 // ---------------------------------------------------------------- idioma
+/** "O que você está ouvindo", com o nome da cidade. */
+function textoOuvindo() {
+  const el = $('#texto-ouvindo .txt');
+  el.textContent = '';
+  if (!cidade) return;
+  el.innerHTML = t('ouvindo.texto', { cidade: '<span class="cid"></span>' });
+  el.querySelector('.cid').textContent = cidade.nome;   // o nome da cidade entra como texto, nunca como HTML
+}
 aplicarTextos();
 aoMudarIdioma(() => {
+  textoOuvindo();
   const btn = $('#btn-comecar');
   btn.textContent = t(btn.dataset.chave || 'inicio.comecar');
   if ($('#lista-dimensoes').children.length) nomearDimensoes();
