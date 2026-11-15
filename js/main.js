@@ -21,15 +21,20 @@ const DIMS = [
   papel: { get: () => t(`papel.${d.id}`) },
 }));
 
-// Quem abre a página pela primeira vez: temperatura e CO₂ ligados e sem narração (dá para mudar nos ajustes).
-const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, chuva: false, narracao: 'off', tic: true, volume: 80 };
+// Padrão: todas as camadas ligadas e sem narração (dá para mudar nos ajustes).
+// As camadas NÃO ficam salvas: toda vez que a pessoa abre o site, todas voltam ligadas (quem desligou
+// uma e esqueceu não fica sem ouvir parte da música). Narração, tic e volume continuam salvos.
+const CAMADAS = ['co2', 'temperatura', 'chuva'];
+const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, chuva: true, narracao: 'off', tic: true, volume: 80 };
+// só guarda o que existe hoje e não é camada (some também o que sobrou de versões antigas, ex. vegetacao)
+const semCamadas = (a) => Object.fromEntries(Object.entries(a).filter(([k]) => k in AJUSTES_PADRAO && !CAMADAS.includes(k)));
 let ajustes = { ...AJUSTES_PADRAO };
 try {
-  const salvos = JSON.parse(localStorage.getItem('jukebox-ajustes') || '{}');
+  const salvos = semCamadas(JSON.parse(localStorage.getItem('jukebox-ajustes') || '{}'));
   if (salvos.versao !== 2) delete salvos.narracao;   // ajustes antigos: a narração vinha ligada sem a pessoa escolher
   ajustes = { ...AJUSTES_PADRAO, ...salvos, versao: 2 };
 } catch { /* sem storage */ }
-const salvarAjustes = () => { try { localStorage.setItem('jukebox-ajustes', JSON.stringify(ajustes)); } catch { /* ok */ } };
+const salvarAjustes = () => { try { localStorage.setItem('jukebox-ajustes', JSON.stringify(semCamadas(ajustes))); } catch { /* ok */ } };
 
 let grafico = null, painel = null;
 const narrador = new Narrador();

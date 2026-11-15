@@ -43,26 +43,30 @@ export async function nomeDaCidade(lat, lon) {
     : { nome: t('local.sua'), detalhe: `${la}, ${lo}` };
 }
 
-/** Busca por nome: primeiro a lista local (instantânea, offline), depois o Open-Meteo. */
+/**
+ * Busca por nome no Open-Meteo (ordenado por população, no idioma da tela). Se ele falhar (sem
+ * internet, fora do ar, erro), usa a lista local de data/cidades.json.
+ */
 export async function buscarCidades(texto) {
   const q = semAcento(texto);
   if (q.length < 2) return [];
-  const locais = CIDADES_LOCAIS
-    .filter((c) => semAcento(c.nome).startsWith(q))
-    .map((c) => ({ nome: c.nome, detalhe: c.pais, lat: c.lat, lon: c.lon }));
-  let remotas = [];
   try {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(texto.trim())}&count=8&language=${lingua()}&format=json`;
-    const d = await comTempo(fetch(url).then((r) => r.json()), 6000);
-    remotas = (d.results || []).map((c) => ({
-      nome: c.name,
-      detalhe: [c.admin1, c.country].filter(Boolean).join(', '),
-      lat: c.latitude, lon: c.longitude,
-    }));
-  } catch { /* sem internet: fica só com a lista local */ }
-  const vistas = new Set();
-  return [...locais, ...remotas].filter((c) => {
-    const k = `${semAcento(c.nome)}|${c.lat.toFixed(1)}|${c.lon.toFixed(1)}`;
-    if (vistas.has(k)) return false; vistas.add(k); return true;
-  }).slice(0, 8);
+    // pede 20 porque parte é filtrada: só lugares habitados (código GeoNames PPL…: cidade, capital,
+    // vila), sem aeroporto, morro, parque, bairro (PPLX) nem lugares abandonados/destruídos/históricos
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(texto.trim())}&count=20&language=${lingua()}&format=json`;
+    const d = await comTempo(fetch(url).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }), 6000);
+    if (d.error) throw new Error(d.reason);
+    const lista = [];
+    for (const c of (d.results || []).filter((c) => /^PPL/.test(c.feature_code || '') && !/^PPL(X|H|Q|W|CH)$/.test(c.feature_code))) {
+      const cidade = { nome: c.name, detalhe: [c.admin1, c.country].filter(Boolean).join(', '), lat: c.latitude, lon: c.longitude };
+      // vilarejos homônimos no mesmo estado teriam o mesmo texto na lista: fica o primeiro (o mais populoso)
+      if (!lista.some((x) => x.nome === cidade.nome && x.detalhe === cidade.detalhe)) lista.push(cidade);
+    }
+    return lista.slice(0, 8);
+  } catch {
+    return CIDADES_LOCAIS
+      .filter((c) => semAcento(c.nome).startsWith(q))
+      .map((c) => ({ nome: c.nome, detalhe: c.pais, lat: c.lat, lon: c.lon }))
+      .slice(0, 8);
+  }
 }
