@@ -12,7 +12,7 @@ const $ = (s) => document.querySelector(s);
 // nome, sigla e papel vêm do idioma escolhido (js/i18n.js)
 const DIMS = [
   { id: 'temperatura', cor: '#FF5C9E' },
-  { id: 'co2', cor: '#C77DFF' },
+  { id: 'co2', cor: '#C6F06B' },
   { id: 'chuva', cor: '#53E2FF' },
 ].map((d) => Object.defineProperties(d, {
   nome: { get: () => t(`nome.${d.id}`) },

@@ -15,7 +15,7 @@
   --ambar: #FFB547;               /* cantos do bloco do dial */
   --erro: #FF7A8A;
   /* as 3 camadas (paleta Neon): cor + forma + nome, nunca só a cor */
-  --camada-co2: #C77DFF;          /* losango */
+  --camada-co2: #C6F06B;          /* losango (verde: antes era roxo #C77DFF) */
   --camada-temperatura: #FF5C9E;  /* círculo */
   --camada-chuva: #53E2FF;        /* triângulo */
   /* escala da NASA (lida da legenda do frame SVS 5207): não alterar */

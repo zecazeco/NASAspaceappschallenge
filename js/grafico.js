@@ -11,10 +11,13 @@
 //   o ponto e vira uma etiqueta curta. Tocar no ponto ou na etiqueta reabre o card.
 // • Tudo que é dito pelos cards também vai para o leitor de tela (callback aoAnunciar).
 
+// Ordem de desenho = do fundo para a frente. A temperatura é o eixo do projeto e fica na frente
+// (mais perto, linha mais grossa); CO₂ e chuva são contexto e ficam atrás.
 export const CAMADAS_GRAFICO = [
-  { id: 'co2', nome: 'CO₂', cor: '#C77DFF', z: 0.9, espessura: 1.3 },
-  { id: 'temperatura', nome: 'Temperatura', cor: '#FF5C9E', z: 0.6, espessura: 1.2 },
-  { id: 'chuva', nome: 'Chuva', cor: '#53E2FF', z: 0.0, espessura: 0.8 },
+// CO₂ e chuva também ficam mais transparentes (alfa < 1).
+  { id: 'co2', nome: 'CO₂', cor: '#C6F06B', z: 0.9, espessura: 1.0, alfa: 0.6 },
+  { id: 'chuva', nome: 'Chuva', cor: '#53E2FF', z: 0.6, espessura: 0.8, alfa: 0.6 },
+  { id: 'temperatura', nome: 'Temperatura', cor: '#FF5C9E', z: 0.0, espessura: 1.5, alfa: 1 },
 ];
 import { t as tr, localidade, tempPar } from './i18n.js';
 
@@ -243,6 +246,7 @@ export class Grafico {
     ctx.save();
     ctx.beginPath(); ctx.rect(-50, teto, this.W + 100, chao - teto + 2); ctx.clip();
 
+    ctx.globalAlpha = c.alfa ?? 1;   // camadas de contexto mais fracas
     if (passado.length > 1) {   // cortina translúcida até o chão: dá o volume
       const g = ctx.createLinearGradient(0, Math.min(...passado.map((p) => p.y)), 0, passado[0].base);
       g.addColorStop(0, c.cor + '50'); g.addColorStop(1, c.cor + '00');
@@ -255,7 +259,7 @@ export class Grafico {
       if (lista.length < 2) return;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = alpha; ctx.strokeStyle = c.cor; ctx.lineWidth = largura;
+      ctx.globalAlpha = alpha * (c.alfa ?? 1); ctx.strokeStyle = c.cor; ctx.lineWidth = largura;
       ctx.shadowColor = c.cor; ctx.shadowBlur = brilho; ctx.setLineDash(tracejado);
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       ctx.beginPath(); lista.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
@@ -265,6 +269,7 @@ export class Grafico {
     traco(passado, 1, 6, c.espessura);
     traco(passado, 0.9, 0, Math.max(0.5, c.espessura * 0.3));
     traco(futuro, 0.22, 0, 1, [3, 6]);
+    ctx.restore();   // fim do recorte: os pontos e anéis dos eventos podem passar da borda da área
 
     for (const ponto of pts) for (const eid of eventosDaLinha(c.id)) {   // pontos dos eventos (marcados desde já, acendem ao passar)
       const ev = this.trilha.eventos[ponto.i][eid];
@@ -281,7 +286,6 @@ export class Grafico {
       ctx.restore();
       if (ja) this.alvos.push({ x: p.x, y: p.y, i: p.i, id: eid, ev, cor: c.cor, chave: `${p.i}:${eid}` });
     }
-    ctx.restore();
     this.foraDaEscala(c, pts, t);
     // ponta fora da área: sem esfera nem rótulo até a linha voltar
     return ponta && dentro(vAgora) ? ponta : null;
