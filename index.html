@@ -132,7 +132,7 @@
       <div class="acoes-topo">
         <!-- SÓ PARA TESTE: abre os seletores de som e de efeito (sai na versão final) -->
         <button id="btn-teste" class="btn btn-teste" type="button" aria-expanded="false" aria-controls="barra-teste" data-i18n-attr="aria-label:teste.rotulo" aria-label="Test mode: show sound and effect selectors"><span data-i18n="teste.botao">Test</span></button>
-        <button id="btn-trocar-cidade" class="btn btn-secundario" type="button" aria-label="Change city" data-i18n-attr="aria-label:topo.trocarCidade"><span data-i18n="topo.trocar">City</span></button>
+        <button id="btn-trocar-cidade" class="btn btn-secundario" type="button" aria-label="Change city" data-i18n-attr="aria-label:topo.trocarCidade"><svg class="ic-trocar" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13M14 4.5 17.5 8 14 11.5M20 16H7M10 12.5 6.5 16 10 19.5"/></svg><span data-i18n="topo.trocar">City</span></button>
         <button id="btn-ajustes" class="btn btn-secundario btn-icone" type="button" aria-label="Settings" data-i18n-attr="aria-label:topo.ajustes" aria-haspopup="dialog">
           <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-traco"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>
         </button>
@@ -158,7 +158,7 @@
         <span class="canto c1" aria-hidden="true"></span><span class="canto c2" aria-hidden="true"></span>
         <span class="canto c3" aria-hidden="true"></span><span class="canto c4" aria-hidden="true"></span>
         <span class="regua-lateral esq" aria-hidden="true"></span><span class="regua-lateral dir" aria-hidden="true"></span>
-        <p class="rot-mapa topo" aria-hidden="true"><span class="rot-texto" data-i18n="mapa.rotulo">NASA · temperature anomaly</span><span class="rot-ano"> · <span id="ano-mapa">—</span></span></p>
+        <p class="rot-mapa topo" aria-hidden="true"><span class="rot-texto" data-i18n="mapa.rotulo">NASA · temperature anomaly</span><sup class="nota-ref">³</sup><span class="rot-ano"> · <span id="ano-mapa">—</span></span></p>
         <button id="mapa-temp" class="mapa-nasa" type="button" aria-label="Enlarge the NASA temperature map">
           <canvas aria-hidden="true"></canvas>
           <span class="crt" aria-hidden="true"></span>
@@ -195,6 +195,8 @@
           <span class="unid c">°C</span><span class="unid f">°F</span>
           <div id="seta-temp" class="seta"></div>
         </div>
+        <!-- o que a pessoa está ouvindo, em linguagem simples, com > piscando como na busca -->
+        <p id="texto-ouvindo" class="ouvindo-texto"><span class="prompt-ouvindo" aria-hidden="true">&gt;</span> <span class="txt"></span></p>
       </div>
     </section>
 
@@ -236,7 +238,16 @@
           <span data-i18n="ctrl.avancar">Forward</span>
         </button>
       </div>
-      <div class="rodape"><div class="idiomas" role="group" aria-label="Language" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div><div class="idiomas unidades" role="group" aria-label="Temperature unit" data-i18n-attr="aria-label:unidade.grupo"><button type="button" data-unidade="f" aria-pressed="true">°F</button><button type="button" data-unidade="c" aria-pressed="false">°C</button></div>
+      <!-- notas: explicação para leigos; ¹ ² ³ no texto da tela apontam para cá -->
+      <section class="notas moldura-terminal" aria-labelledby="titulo-notas">
+        <h2 id="titulo-notas" class="notas-titulo" data-i18n="notas.titulo">About the data</h2>
+        <ol class="notas-lista">
+          <li id="nota-1" data-i18n="nota.1"></li>
+          <li id="nota-2" data-i18n="nota.2"></li>
+          <li id="nota-3" data-i18n="nota.3"></li>
+        </ol>
+      </section>
+      <div class="rodape"><div class="idiomas" role="group" aria-label="Language" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div>
       <p class="creditos"><span data-i18n="creditos">Temperature: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · Rainfall: <a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener">NASA POWER (MERRA-2)</a> · CO₂: <a href="https://gml.noaa.gov/ccgg/trends/" target="_blank" rel="noopener">NOAA GML, Mauna Loa</a> (Lan, NOAA/GML, and Keeling, Scripps)</span> · <span id="versao" title="Muda a cada publicação no GitHub (número de commits e código do commit). No computador aparece “local”.">Version local</span></p>
       </div>
     </section>

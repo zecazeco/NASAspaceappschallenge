@@ -522,7 +522,7 @@ export class Grafico {
     const fio = document.createElement('div');
     fio.className = 'card-fio'; fio.style.setProperty('--cor', camada.cor);
     // cabe na metade esquerda do gráfico (ver posicionar)
-    el.style.maxWidth = `${Math.max(150, this.W / 2 - 26)}px`;
+    el.style.maxWidth = `${Math.min(240, Math.max(150, this.W / 2 - 26))}px`;   // estreito: card mais perto de um quadrado
     this.camadaCards.append(fio, el);
     const w = el.offsetWidth, h = el.offsetHeight;
     const r = this.posicionar(w, h, p);

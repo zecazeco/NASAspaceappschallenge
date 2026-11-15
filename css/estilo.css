@@ -340,6 +340,27 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
 .idiomas button:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; z-index: 1; }
 /* dica abaixo do gráfico: dá para arrastar e tocar nos pontos */
 .dica-grafico { margin: -4px 0 0; font-size: 0.78rem; line-height: 1.35; color: var(--texto-suave); text-align: center; }
+/* ícone de trocar (duas setas) no botão City / Cidade */
+#btn-trocar-cidade { display: inline-flex; align-items: center; gap: 6px; }
+.btn svg.ic-trocar { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; }
+/* o que você está ouvindo: dentro do bloco do dial, embaixo, em ciano, com > piscando */
+.leitura { flex-wrap: wrap; align-content: center; }
+.ouvindo-texto { flex-basis: 100%; margin: 4px 0 0; padding-left: 2ch; text-indent: -2ch;   /* recuo: a 2ª linha alinha depois do > */ font: 500 0.85rem/1.45 var(--fonte-dado); color: var(--estrutura); }
+/* o > pisca uma vez a cada ano novo (sincronizado com a música), em vez de piscar sem parar */
+.prompt-ouvindo.pisca { animation: piscar-ano 0.7s steps(1) 1; }
+@keyframes piscar-ano { 0%, 50% { opacity: 0; } }
+.ouvindo-texto .nota-ref { color: var(--estrutura); }
+/* ¹ ² ³ no texto (links para as notas) e a seção "Sobre os dados" abaixo dos controles */
+/* colado na palavra e na cor do texto em volta */
+.nota-ref { font-size: max(0.7em, 10px); vertical-align: super; line-height: 0; margin-left: 0.5px; color: inherit; text-decoration: none; }
+a.nota-ref:hover { text-decoration: underline; }
+.notas { margin-top: 22px; padding-top: 10px; padding-bottom: 10px; }
+.notas-titulo { margin: 0 0 6px; font: 600 0.81rem var(--fonte-titulo); letter-spacing: 0.08em; text-transform: uppercase; color: var(--estrutura); }
+.notas-titulo::before { content: '> '; font-family: var(--fonte-dado); }
+.notas-lista { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; font-size: 0.8rem; line-height: 1.45; color: var(--texto-suave); }
+.notas-lista li::marker { color: var(--estrutura); font-family: var(--fonte-dado); }
+.notas-lista strong { color: var(--texto); font-weight: 600; }
+.notas-lista li:target { color: var(--texto); }
 /* rodapé: idioma no canto esquerdo, créditos ao lado */
 .rodape { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; margin-top: 22px; padding-bottom: 8px; }
 .creditos { flex: 1; min-width: 0; margin: 0; font-size: 0.75rem; line-height: 1.35; color: var(--texto-suave); text-align: left; }
@@ -363,7 +384,7 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
   #tela-principal > .painel-temp > .leitura { height: 100%; }
   .rodape { margin-top: 36px; }
   /* cards de evento maiores no monitor (a tela fica mais longe) */
-  .card-evento { font-size: 1rem; max-width: 300px; }
+  .card-evento { font-size: 1rem; }
   .card-evento b { font-size: 0.8rem; }
   #tela-principal > .grafico { grid-area: grafico; min-height: clamp(280px, 36vh, 420px); }
   #tela-principal > .linha-tempo { grid-area: tempo; }
@@ -378,7 +399,7 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
   .valor-legenda { font-size: 0.9rem; }
   .escala { height: 120px; }
   .linha-tempo { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 8px 24px; align-items: center; }
-  .rodape { grid-column: 1 / -1; }
+  .rodape, .notas { grid-column: 1 / -1; }
   /* início e busca: uma coluna de leitura (~45–75 caracteres por linha), centralizada */
   .tela-inicio, #tela-cidade { max-width: 520px; }
   .tela-inicio { min-height: min(100dvh, 760px); margin-top: max(0px, calc((100dvh - 760px) / 2)); }
@@ -387,11 +408,10 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
 /* monitor com altura suficiente: tudo numa tela só, sem rolar até os controles.
    Mapa e dial ficam com no máximo ~40% da altura; o gráfico ocupa o que sobra (mínimo 220 px). */
 @media (min-width: 1000px) and (min-height: 700px) {
-  #tela-principal {
-    height: 100dvh; padding-bottom: 12px; gap: 14px 40px;
-    grid-template-rows: auto auto minmax(220px, 1fr) auto auto;
-  }
-  #tela-principal > .grafico { min-height: 0; }
+  /* tudo até os controles cabe na tela; "Sobre os dados" e o rodapé ficam logo abaixo da dobra.
+     O gráfico fica com a altura que sobra (≈ 60% da tela menos o resto, mínimo 220 px). */
+  #tela-principal { padding-bottom: 12px; gap: 14px 40px; }
+  #tela-principal > .grafico { min-height: 0; height: max(220px, calc(60dvh - 260px)); }
   #tela-principal > .painel-temp .moldura-mapa { max-width: calc((40dvh - 56px) * 2.02 + 60px); margin: 0 auto; }
   #tela-principal > .painel-temp .leitura { max-height: 40dvh; }
   .rodape { margin-top: 14px; padding-bottom: 0; }
