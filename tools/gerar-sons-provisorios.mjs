@@ -99,13 +99,9 @@ const loop = (nome, desenhar, pico = 0.5) => { const b = new Float64Array(N_LOOP
 const pontual = (nome, pico, desenhar) => { const b = new Float64Array(N_PONTUAL); desenhar(b); arquivos[nome] = caudaFinal(normalizar(b, pico)); };
 const PICO = { p: 0.35, m: 0.55, f: 0.8 };
 
-// ---------- CO₂: drone grave; cada nível é a versão completa, mais densa
+// ---------- CO₂
 const SAW = (n) => Array.from({ length: n }, (_, k) => 1 / (k + 1));
-loop('co2_base_1', (b) => { sustentado(b, hz(N.D2), 1, [1, 0.3]); });
-loop('co2_base_2', (b) => { sustentado(b, hz(N.D2), 1, [1, 0.4, 0.2]); sustentado(b, hz(N.A2), 0.5, [1, 0.3]); });
-loop('co2_base_3', (b) => { sustentado(b, hz(N.D1), 0.6, SAW(8)); sustentado(b, hz(N.D2), 0.8, [1, 0.5, 0.3]); sustentado(b, hz(N.A2), 0.5, [1, 0.4]); sustentado(b, hz(N.D3), 0.3, SAW(5)); });
-loop('co2_base_4', (b) => { sustentado(b, hz(N.D1), 0.7, SAW(12), 0.3); sustentado(b, hz(N.D2), 0.8, SAW(6), 0.3); sustentado(b, hz(N.A2), 0.5, SAW(5)); sustentado(b, hz(N.D3), 0.35, SAW(6)); sustentado(b, hz(N.F3), 0.2, SAW(4)); });
-// CO₂ Base02 (EM TESTE): 5 vozes que se acumulam. Cada arquivo é UMA voz; o site toca a voz 1,
+// 5 vozes que se acumulam. Cada arquivo é UMA voz; o site toca a voz 1,
 // depois 1+2, 1+2+3… Todas cabem juntas: cada uma soa bem sozinha e somada às anteriores.
 // Cada voz é uma FRASE de 4 compassos (loop de 8,73 s) com uma leve variação dentro dela, para o
 // som contínuo não ficar parado. O site não mexe em nada: só liga e desliga a voz no início do compasso.
@@ -183,68 +179,17 @@ for (const [int, h] of [['p', 3], ['m', 6], ['f', 10]]) {
   });
 }
 
-// ---------- Temperatura: 6 COMPASSOS, do ano mais frio (1) ao mais quente (6)
-// Duas bases em teste (o site tem um seletor Base01/Base02 no topo; na versão final fica só uma):
-//   Base01 = 4 semínimas por compasso (melodia)
-//   Base02 = 1 nota sustentada o compasso inteiro (semibreve), em loop contínuo
-//   Base03 = 2 mínimas ligadas (legato), as duas do acorde; a 2ª aponta para a faixa seguinte
-// Regras comuns: Ré menor, mesmo timbre por nível; nota inicial e final do compasso sempre do
-// acorde (Ré, Fá ou Lá), para que qualquer compasso possa vir depois de qualquer outro. Do frio ao
-// quente sobem o registro, o brilho (mais harmônicos) e, na Base01, a tensão (notas fora do
-// acorde, saltos). O 3 (perto da média) é o mais cantável.
-// Base01: o arquivo tem 1 compasso + cauda; a cauda some quando o próximo compasso começa.
-// (Sem acorde de fundo: soava como um grave contínuo por baixo.)
+// ---------- Temperatura
+// O arquivo tem 1 compasso + cauda; a cauda some quando o próximo compasso começa.
 const N_COMPASSO = Math.round((COMPASSO + 1.2) * SR);
 const compasso = (nome, desenhar, pico = 0.5) => { const b = new Float64Array(N_COMPASSO); desenhar(b); arquivos[nome] = caudaFinal(normalizar(b, pico), 0.6); };
 const M = { D3: 50, G3: 55, A3: 57, Bb3: 58, C4: 60, D4: 62, E4: 64, F4: 65, G4: 67, A4: 69, C5: 72, D5: 74, E5: 76, F5: 77, G5: 79, A5: 81 };
-const FIGURAS = [
-  // Base01: melodia (4 semínimas)  Base02: nota longa  Base03: 2 mínimas  timbre (igual nas 3 bases)
-  { notas: ['D4', 'C4', 'Bb3', 'A3'], longa: 'A3', minimas: ['D4', 'A3'], harm: [1, 0.1],                  decai: 2.2 },  // 1 mais frio: grave, escuro
-  { notas: ['A3', 'C4', 'E4', 'D4'],  longa: 'D4', minimas: ['A3', 'D4'], harm: [1, 0.25, 0.05],           decai: 2.4 },
-  { notas: ['D4', 'E4', 'F4', 'A4'],  longa: 'F4', minimas: ['D4', 'F4'], harm: [1, 0.35, 0.12],           decai: 2.6 },  // 3 "neutro"
-  { notas: ['A4', 'G4', 'F4', 'A4'],  longa: 'A4', minimas: ['F4', 'A4'], harm: [1, 0.45, 0.2, 0.08],      decai: 2.8 },
-  { notas: ['A4', 'C5', 'E5', 'D5'],  longa: 'D5', minimas: ['A4', 'D5'], harm: [1, 0.55, 0.3, 0.15],      decai: 3.0 },
-  { notas: ['D5', 'F5', 'E5', 'A5'],  longa: 'F5', minimas: ['D5', 'F5'], harm: [1, 0.6, 0.4, 0.25, 0.12], decai: 3.2 },  // 6 mais quente: agudo, brilhante
-];
 const ACENTO = [1, 0.7, 0.85, 0.75];   // tempo 1 forte, 3 meio-forte
 
-// Base01: 4 semínimas
-FIGURAS.forEach((fig, k) => compasso(`temp_base01_compasso_${k + 1}`, (b) => {
-  fig.notas.forEach((n, q) => nota(b, q * TEMPO, hz(M[n]), 0.55 * ACENTO[q], { decai: fig.decai, harm: fig.harm, ataque: 0.012, circular: false, dur: 2 }));
-  // compassos 5 e 6: um brilho uma oitava acima no contratempo
-  if (k >= 4) [0, 2].forEach((q) => nota(b, q * TEMPO + TEMPO / 2, hz(M[fig.notas[q]] + 12), 0.12 * (k - 3), { decai: 7, harm: [1, 0.3], circular: false }));
-}));
-
-// Base02: 1 nota sustentada, CONTÍNUA. Cada arquivo é um LOOP de exatamente 1 compasso, sem
-// envelope (o fim emenda no começo): o site toca só o do ano. Assim, quando a
-// mesma nota se repete em anos seguidos, ela simplesmente continua, sem novo ataque.
-FIGURAS.forEach((fig, k) => loop(`temp_base02_compasso_${k + 1}`, (b) => sustentado(b, hz(M[fig.longa]), 1, fig.harm)));
-// Base03: 2 mínimas LIGADAS (1,09 s cada), mesmo timbre da Base02. Ataque suave em cada nota e
-// a 1ª se desfaz enquanto a 2ª entra (legato). 1 compasso + cauda, como a Base01.
-const LIGA = 0.08;   // s: sobreposição entre as duas notas
-FIGURAS.forEach((fig, k) => compasso(`temp_base03_compasso_${k + 1}`, (b) => {
-  const MINIMA = 2 * TEMPO;
-  fig.minimas.forEach((n, q) => {
-    const f = hz(M[n]), ini = q * MINIMA, fim = ini + MINIMA;
-    for (let i = Math.round(ini * SR); i < b.length; i++) {
-      const t = i / SR, u = t - ini;
-      // ataque de 50 ms, leve queda enquanto segura; depois do fim da mínima: solta (curto se vem
-      // outra nota, longo na cauda do compasso)
-      let env = Math.min(1, u / 0.05) * (1 - 0.2 * Math.min(1, u / MINIMA));
-      if (t > fim) env *= q === 0 ? Math.max(0, 1 - (t - fim) / LIGA) : Math.exp(-(t - fim) * fig.decai);
-      if (env < 1e-4 && t > fim) break;
-      let v = 0;
-      for (let h = 0; h < fig.harm.length; h++) v += fig.harm[h] * Math.sin(2 * Math.PI * f * (h + 1) * u);
-      b[i] += (q === 0 ? 1 : 0.92) * env * v;
-    }
-  });
-}));
-
-// Base04 (EM TESTE): MOVIMENTO. O compasso mostra a mudança até o ano seguinte, não a altura do ano.
+// MOVIMENTO: o compasso mostra a mudança até o ano seguinte, não a altura do ano.
 // Todas as figuras começam no Ré4 (a "casa") e a 4ª nota é vizinha de uma nota do acorde, puxando
 // de volta para o Ré4 do compasso seguinte; por isso qualquer figura pode vir depois de qualquer outra.
 // Quanto maior a variação, mais longe a melodia vai antes de voltar. As grandes saem um pouco mais fortes.
-// Timbre do nível 3 (neutro) das outras bases.
 const MOV = { harm: [1, 0.35, 0.12], decai: 2.6 };
 const FIG_MOV = {
   parado: { notas: [['D4', 0], ['E4', 1], ['D4', 2], ['E4', 3]] },              // ida e volta duas vezes: Ré · Mi · Ré · Mi
@@ -278,10 +223,10 @@ for (const int of ['p', 'm', 'f']) {
   });
 }
 
-// ---------- Tendência da temperatura (EM TESTE): toca junto com a Base04 e mostra o aquecimento ao
+// ---------- Tendência da temperatura: toca junto com a melodia e mostra o aquecimento ao
 // longo das décadas (média de 11 anos, 4 níveis). Timbre de marimba (batida curta), diferente do drone
 // do CO₂. Todos os níveis têm o MESMO ritmo: uma batida em cada tempo. O que muda é a nota, que
-// "sobe de andar" pelas notas do acorde (as mais estáveis, que combinam com qualquer figura da Base04):
+// "sobe de andar" pelas notas do acorde (as mais estáveis, que combinam com qualquer figura da melodia):
 // 1 = Ré grave · 2 = Fá · 3 = Lá · 4 = Ré uma oitava acima. A cada nível, um pouco mais forte e brilhante.
 const MARIMBA = (brilho) => ({ decai: 4, harm: [1, 0, 0.35 * brilho, 0, 0.15 * brilho], ataque: 0.003 });
 [[N.D3, 0.6, 0.30], [N.F3, 0.75, 0.34], [N.A3, 0.9, 0.38], [N.D4, 1.05, 0.42]].forEach(([m, brilho, pico], k) =>

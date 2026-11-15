@@ -93,7 +93,7 @@ h2 { font-size: 1.4rem; margin: 0 0 8px; }
 .topo h1 { font-size: 1.3rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topo .pequeno { margin: 1px 0 0; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .acoes-topo { display: flex; gap: 8px; flex-shrink: 0; }
-/* SÓ PARA TESTE: seletores Base / Pontual da temperatura (saem na versão final) */
+/* SÓ PARA TESTE: seletor do som pontual da temperatura (sai na versão final) */
 .barra-teste { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
 .seletor-base { display: flex; align-self: center; border: 1px dashed var(--painel-borda); border-radius: 999px; padding: 2px; }
 .seletor-base button {

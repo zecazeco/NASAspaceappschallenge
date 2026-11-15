@@ -44,7 +44,7 @@ export class PainelTemperatura {
 
   /**
    * A cada quadro: o número grande e a seta andam do valor deste ano até o do ano seguinte ao longo
-   * do compasso (como a Base04, que mostra a mudança até o ano seguinte). O número muda de 0,1 em 0,1.
+   * do compasso (como a melodia, que mostra a mudança até o ano seguinte). O número muda de 0,1 em 0,1.
    */
   acompanharValor() {
     if (!this.cidade || this.painel.closest('[hidden]')) return;
