@@ -54,6 +54,8 @@ Short accents mark peaks and valleys of the temperature line and record-hot year
 | Rainfall | NASA POWER (MERRA-2 precipitation) · https://power.larc.nasa.gov | fetched live for your city's coordinates |
 | CO₂ | NOAA Global Monitoring Laboratory, Mauna Loa, annual mean · https://gml.noaa.gov/ccgg/trends/ | bundled in `data/co2-noaa.json` |
 
+NASA POWER acknowledgement: The data was obtained from National Aeronautics and Space Administration (NASA) Langley Research Center's Prediction Of Worldwide Energy Resources (POWER) project funded through the NASA Earth Science Division. Rainfall data accessed 2026/11/15 through the POWER monthly point API (https://power.larc.nasa.gov/api/temporal/monthly/point).
+
 CO₂ citation requested by NOAA: Dr. Xin Lan, NOAA/GML (gml.noaa.gov/ccgg/trends/) and Dr. Ralph Keeling, Scripps Institution of Oceanography (scrippsco2.ucsd.edu/).
 
 Also used: Open-Meteo Geocoding (city search; GeoNames data, CC BY 4.0), BigDataCloud (reverse geocoding of the GPS position), a small local list of cities (`data/cidades.json`), Tone.js 14.8.49 (MIT), d3 7.9.0 and d3-geo-projection 4.0.0 (ISC), and the fonts Atkinson Hyperlegible Next, Chakra Petch and IBM Plex Mono (SIL Open Font License). All music loops for the temperature and CO₂ layers were composed and recorded by a doctor of music on our team.
