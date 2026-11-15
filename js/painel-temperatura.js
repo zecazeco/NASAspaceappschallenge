@@ -74,7 +74,9 @@ export class PainelTemperatura {
     if (valor == null) return;
     const texto = `${valorNa(valor)}${unidade()}`;
     if (texto !== this.textoValor) { this.textoValor = texto; $('#valor-temp').innerHTML = textoTemp(valor); this.arco(valor); }
-    $('#seta-temp').style.top = `${((2 - Math.max(-2, Math.min(2, valor))) / 4) * 100}%`;
+    // EM TESTE: com a seta "anual" (padrão), a linha da escala só muda na troca de ano, junto com a
+    // base grave da melodia; a seta "contínua" anda junto com o número grande ao longo do compasso.
+    if (document.body.dataset.seta !== 'anual') $('#seta-temp').style.top = `${((2 - Math.max(-2, Math.min(2, valor))) / 4) * 100}%`;
   }
 
   /** Ao trocar o idioma: refaz o rótulo da cidade (o resto vem com atualizar). */
