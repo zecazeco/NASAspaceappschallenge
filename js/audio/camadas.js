@@ -5,12 +5,18 @@
 //     para a mesma nota, escolhidas pela mudança até o ano seguinte (trilha.movimento). Cada ano toca o
 //     arquivo inteiro do início do compasso; a cauda some quando o compasso seguinte começa.
 //   • 'niveis' (tendência, vegetação): 4 loops de 1 compasso; o nível do ano decide qual se ouve
-//     (com troca suave; posição quebrada, ex. 1,4, mistura dois níveis).
+//     (com troca suave; posição quebrada, ex. 1,4, mistura dois níveis). A tendência é o segundo som da
+//     temperatura (média de 11 anos em 4 níveis): não tem seletor nem linha própria, liga junto com ela.
 //   • 'vozes' (CO₂): 5 loops de 4 compassos que se acumulam; o ano liga da voz 1 até a voz dele.
 //   • 'troca' (chuva): 4 loops de 1 compasso, um por tipo de mudança até o ano seguinte (trilha.sons).
 //     O som novo entra rápido (a gota do começo fica inteira) e o anterior some devagar.
 // Loops só tocam enquanto podem ser ouvidos. Quando um entra, começa no ponto certo do relógio (como se
 // tivesse tocado desde o início), então as frases ficam sempre alinhadas.
+//
+// Fim da música (o compasso de 2023): a tendência (fim: 'sustenta') some devagar ao longo do compasso
+// inteiro; o CO₂ toca só a voz 3 do começo (a nota grave do 1º tempo), igual em toda cidade, e some com uma
+// curva suave antes da nota seguinte dela (passa do compasso de 2023: a música espera ele terminar); os outros (melodia, chuva, vegetação) tocam só o 1º tempo e
+// somem antes do 2º. Quando 2024 chegaria, a música para.
 //
 // Som pontual (teste): picos e vales da temperatura, ligado pelo seletor no topo da página.
 //
@@ -20,10 +26,11 @@
 import { NIVEIS, FIGURAS_MOVIMENTO, VOZES_CO2 } from '../trilha.js';
 
 export const DEFINICAO = {
-  co2: { pasta: 'co2', prefixo: 'co2', modo: 'vozes', quantas: VOZES_CO2 },
+  co2: { pasta: 'co2', prefixo: 'co2', modo: 'vozes', quantas: VOZES_CO2,
+    fim: { voz: 2, ate: 4.2 } },   // no fim: só a voz 3, do começo do arquivo; some até 4,2 s (a nota seguinte dela entra em 4,36 s)
   temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', figuras: FIGURAS_MOVIMENTO,
     pontuais: { pontual01: ['pico', 'vale'] } },
-  tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis' },
+  tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis', volume: 0.4, fim: 'sustenta' },   // 60% mais baixa que as outras
   chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'troca', entra: 0.015, sai: 0.3 },   // s (constantes de tempo)
   vegetacao: { pasta: 'vegetacao', prefixo: 'veg', modo: 'niveis' },
 };
@@ -72,7 +79,7 @@ export class Camada {
     this.id = id;
     this.def = DEFINICAO[id];
     this.saida = new Tone.Gain(1);
-    this.mix = new Tone.Gain(VOLUME_BASE).connect(this.saida);
+    this.mix = new Tone.Gain(VOLUME_BASE * (this.def.volume ?? 1)).connect(this.saida);   // def.volume: ajuste da camada
     this.ligada = true;
     this.loops = [];       // modos 'niveis', 'vozes' e 'troca': { buf, ganho, fonte } (criarLoop)
     this.buffers = [];     // modo 'compassos': um buffer por figura
@@ -161,6 +168,48 @@ export class Camada {
     this.soando.push(voz);
   }
 
+  /**
+   * Fim da música, no início do último compasso (`tempo`, já com o som do ano disparado). dur = 1 compasso,
+   * umTempo = 1 tempo. Sustentados: somem ao longo do compasso. Os outros: só o 1º tempo, sumindo até o 2º.
+   * Devolve até quando esta camada ainda soa (s, tempo do áudio).
+   */
+  encerrar(tempo, dur, umTempo) {
+    const g = this.saida.gain, v = g.getValueAtTime(tempo), fim = this.def.fim;
+    g.cancelScheduledValues(tempo);
+    g.setValueAtTime(v, tempo);
+    if (fim?.voz != null) {
+      // só a voz escolhida, tocada do começo do arquivo (não do ponto do loop), com as outras cortadas
+      for (const l of this.loops) this.ajustarLoop(l, 0, tempo, 0.01);
+      const buf = this.loops[fim.voz]?.buf;
+      if (!buf || !this.ligada) return tempo;
+      const d = fim.ate;
+      const fonte = new Tone.ToneBufferSource(buf).connect(this.mix);
+      fonte.onended = () => fonte.dispose();
+      fonte.start(tempo);
+      fonte.stop(tempo + d + 0.02);
+      this.fonteFinal = fonte;
+      // curva suave (cosseno): segura a nota no começo, cai no meio e pousa em zero sem degrau
+      g.setValueCurveAtTime(Array.from({ length: 64 }, (_, i) => v * (0.5 + 0.5 * Math.cos((Math.PI * i) / 63))), tempo, d);
+      return tempo + d;
+    }
+    if (fim === 'sustenta') { g.setTargetAtTime(0, tempo, dur / 5); return tempo + dur; }   // ~1% no fim do compasso
+    g.setTargetAtTime(0, tempo, umTempo / 5);                                             // ~1% quando chega o 2º tempo
+    return tempo + umTempo;
+  }
+
+  /** Quando 2024 chegaria: corta o que restou (já está quase em silêncio). */
+  parar(tempo) {
+    this.soltar(tempo);
+    this.pararLoops(tempo, 0.01);
+  }
+
+  /** Depois do fim (tocar de novo): a camada volta ao volume dela. */
+  restaurar() {
+    const g = this.saida.gain, agora = Tone.now();
+    g.cancelScheduledValues(agora);
+    g.setValueAtTime(this.ligada ? 1 : 0, agora);
+  }
+
   /** Teste: qual conjunto de sons pontuais toca (null = sem pontual). */
   definirPontual(conjunto) {
     this.pontualAtivo = conjunto && this.def.pontuais?.[conjunto] ? conjunto : null;
@@ -193,6 +242,7 @@ export class Camada {
     const agora = Tone.now();
     this.soltar(agora);
     this.pararLoops(agora, 0.1);
+    try { this.fonteFinal?.stop(agora + 0.1); } catch { /* já parou */ }
     for (const { fonte, ganho } of this.soandoPontuais ?? []) {
       ganho.gain.rampTo(0, 0.1, agora);
       try { fonte.stop(agora + 0.12); } catch { /* já parou */ }

@@ -18,7 +18,6 @@
   --camada-temperatura: #FF5C9E;  /* círculo */
   --camada-vegetacao: #C6F06B;    /* cruz */
   --camada-chuva: #53E2FF;        /* triângulo */
-  --camada-tendencia: #7E8A99;    /* linha (média de 11 anos, por dentro da temperatura) */
   /* escala da NASA (lida da legenda do frame SVS 5207): não alterar */
   --nasa-escala: linear-gradient(#b21508, #d05e0c, #f1ab1f, #ffe946, #eceae8, #6b93d1, #3864a7, #1f4581, #0e2a55);
 
@@ -369,7 +368,6 @@ fieldset.moldura-terminal legend { font: 600 0.81rem var(--fonte-titulo); letter
 .glifo.co2 { background: var(--camada-co2); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 .glifo.temperatura { background: var(--camada-temperatura); border-radius: 50%; }
 .glifo.chuva { background: var(--camada-chuva); clip-path: polygon(0 10%, 100% 10%, 50% 95%); }
-.glifo.tendencia { background: var(--camada-tendencia); height: 4px; }
 .glifo.vegetacao { background: var(--camada-vegetacao); clip-path: polygon(33% 0, 67% 0, 67% 33%, 100% 33%, 100% 67%, 67% 67%, 67% 100%, 33% 100%, 33% 67%, 0 67%, 0 33%, 33% 33%); }
 select, dialog input[type="range"] { width: 100%; font: inherit; min-height: var(--toque); }
 select { background: var(--fundo); color: var(--texto); border: 2px solid var(--estrutura-fraca); border-radius: 0; padding: 8px; }

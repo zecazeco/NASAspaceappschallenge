@@ -3,7 +3,7 @@
 //   • temperatura: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
 //   • temperatura: anos que são pico ou vale da linha (som pontual em teste)
 //   • som dos loops quando não é a posição: CO₂ (quantas das 5 vozes) e chuva (tipo de mudança)
-//   • tendência da temperatura: média de 11 anos (linha do gráfico) e nível 1 a 4 (camada de som)
+//   • tendência da temperatura: média de 11 anos em faixas fixas de °C, nível 1 a 4 (o segundo som da temperatura)
 //   • eventos de cada ano ({ nome, intensidade }): hoje só viram cartões no gráfico.
 // É calculada uma vez, ao escolher a cidade.
 
@@ -78,12 +78,22 @@ function movimentos(serie) {
   });
 }
 
-// Tendência da temperatura: segunda camada da temperatura, tocando junto com a melodia.
+// Tendência da temperatura: o segundo som da temperatura, tocando junto com a melodia.
 // Para cada ano, a média dos 11 anos em volta (5 antes, o próprio ano e 5 depois; nas pontas, o que
 // houver). Isso apaga o sobe e desce de um ano para o outro e deixa só o aquecimento ao longo das
-// décadas. O som usa essa média dividida em 4 níveis na escala da cidade: muda poucas vezes na
-// música (São Paulo: 1973, 1987 e 1998), como capítulos.
+// décadas. O som usa FAIXAS FIXAS dessa média, iguais em todas as cidades (mesma régua do mapa da NASA):
+//   nível 1 = na média de 1951–1980 ou abaixo (o clima de antes) · 2 = 0 a +0,5 °C · 3 = +0,5 a +1 °C · 4 = +1 °C ou mais.
+// A escala vai numa direção só, do frio para o quente, porque mostra a tendência de aquecimento; os anos
+// frios ou quentes isolados aparecem na melodia. Sem folga nos limites: quando a média passa de um lado
+// para o outro, o som troca, mesmo que volte logo (é o que o dado mostra). Muda poucas vezes, como capítulos
+// (São Paulo: 1973 passa da média, 1986 meio grau, 1997 passa de +1 °C; Nova York passa de +1 °C em 2003,
+// volta em 2004 e passa de novo em 2006).
 export const LADO_TENDENCIA = 5;
+export const LIMITES_TENDENCIA = [0, 0.5, 1.0];   // °C
+
+function faixasTendencia(media) {
+  return media.map((x) => (valido(x) ? LIMITES_TENDENCIA.filter((l) => x >= l).length : null));
+}
 
 export function mediaMovel(serie, lado = LADO_TENDENCIA) {
   return serie.map((v, i) => {
@@ -98,13 +108,6 @@ function niveisFixos(serie, n) {
   if (!vals.length) return serie.map(() => null);
   const min = Math.min(...vals), max = Math.max(...vals);
   return serie.map((v) => (valido(v) ? Math.min(n - 1, Math.floor((max > min ? (v - min) / (max - min) : 0.5) * n)) : null));
-}
-
-/** Série na escala de outra (0..1 entre o mínimo e o máximo da referência): a linha da tendência no gráfico. */
-function naEscalaDe(serie, ref) {
-  const vals = ref.filter(valido);
-  const min = Math.min(...vals), max = Math.max(...vals);
-  return serie.map((v) => (valido(v) && max > min ? (v - min) / (max - min) : null));
 }
 
 // Chuva: como a temperatura, o som de cada ano mostra a MUDANÇA até o ano seguinte (para onde a linha vai):
@@ -213,7 +216,7 @@ export function calcularTrilha(local, passos, co2Global) {
   const posicao = {
     co2: posicoes(co2),
     temperatura: posicoes(temp),
-    tendencia: niveisFixos(tendencia, NIVEIS),
+    tendencia: faixasTendencia(tendencia),
     chuva: posicoes(chuva),
     vegetacao: posicoes(veg),
   };
@@ -222,9 +225,7 @@ export function calcularTrilha(local, passos, co2Global) {
   const som = { co2: niveisFixos(co2, VOZES_CO2), chuva: mudancasChuva(chuva) };
   const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA) };
   const movimento = { temperatura: movimentos(temp) };
-  // linha da tendência no gráfico: na mesma escala da linha da temperatura, para passar por dentro dela
-  const linha = { tendencia: naEscalaDe(tendencia, temp) };
-  return { posicao, som, virada, movimento, tendencia, linha, eventos };
+  return { posicao, som, virada, movimento, tendencia, eventos };
 }
 
 /** Resumo legível (para depurar no console ou mostrar à equipe). */

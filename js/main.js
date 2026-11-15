@@ -13,7 +13,6 @@ const $ = (s) => document.querySelector(s);
 // nome, sigla e papel vêm do idioma escolhido (js/i18n.js)
 const DIMS = [
   { id: 'temperatura', cor: '#FF5C9E' },
-  { id: 'tendencia', cor: '#7E8A99' },
   { id: 'co2', cor: '#C77DFF' },
   { id: 'chuva', cor: '#53E2FF' },
   { id: 'vegetacao', cor: '#C6F06B' },
@@ -23,8 +22,8 @@ const DIMS = [
   papel: { get: () => t(`papel.${d.id}`) },
 }));
 
-// Quem abre a página pela primeira vez: só a temperatura (e a tendência dela) ligada e sem narração (dá para mudar nos ajustes).
-const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, tendencia: true, chuva: false, vegetacao: false, narracao: 'off', tic: true, volume: 80 };
+// Quem abre a página pela primeira vez: temperatura e CO₂ ligados e sem narração (dá para mudar nos ajustes).
+const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, chuva: false, vegetacao: false, narracao: 'off', tic: true, volume: 80 };
 let ajustes = { ...AJUSTES_PADRAO };
 try {
   const salvos = JSON.parse(localStorage.getItem('jukebox-ajustes') || '{}');
@@ -289,7 +288,6 @@ function curtos(idx) {
   return {
     co2: b.co2 == null ? desde(ini.co2) : `${Math.round(b.co2)} ppm`,
     temperatura: b.temperatura == null ? desde(ini.temperatura) : `${sinal(b.temperatura, 1)} °C`,
-    tendencia: trilha?.tendencia?.[idx] == null ? desde(ini.temperatura) : t('media', { v: `${sinal(trilha.tendencia[idx], 1)} °C` }),
     chuva: b.chuva == null ? desde(ini.chuva) : `${sinal(b.chuva)}%`,
     vegetacao: v.vegetacao == null ? desde(ini.vegetacao) : `${sinal((v.vegetacao.saude - 1) * 100)}%`,
   };
@@ -306,12 +304,9 @@ function atualizarUI(idx) {
 
   const v = valoresDoPasso(regiao, idx);
   const textos = textosDimensoes(regiao, idx);
-  const media = trilha?.tendencia?.[idx], nivelTend = trilha?.posicao.tendencia?.[idx];
-  textos.tendencia = media == null ? t('tend.sem')
-    : t('tend.texto', { v: `${media >= 0 ? '+' : '−'}${Math.abs(media).toLocaleString(localidade(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`, nivel: nivelTend + 1 });
   const curto = curtos(idx);
   const nivel = {
-    co2: v.co2, temperatura: v.temperatura, tendencia: nivelTend == null ? null : (nivelTend + 1) / 4,
+    co2: v.co2, temperatura: v.temperatura,
     chuva: v.chuva == null ? null : Math.max(0, Math.min(1, (v.chuva + 50) / 100)),
     vegetacao: v.vegetacao == null ? null : 1 - v.vegetacao.perda,
   };

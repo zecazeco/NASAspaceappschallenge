@@ -111,12 +111,21 @@ export class Motor {
   duracaoPasso() { return Tone.Time('1m').toSeconds(); }
 
   aoPasso(tempo) {
+    if (this.terminou) return;   // o relógio ainda anda enquanto o fim do CO₂ soa
     let mudou = false;
     if (this.pularAvanco) { this.pularAvanco = false; mudou = true; }
     else if (this.idx < this.nPassos - 1) { this.idx++; mudou = true; }
     else { this.terminar(tempo); return; }   // o último passo (hoje) já tocou inteiro: fim
     this.inicioCompasso = tempo;          // para o gráfico saber quanto do ano já passou
+    // voltou para trás no meio do fim: as camadas voltam ao volume delas
+    if (this.encerrando && this.idx !== this.nPassos - 1) { Object.values(this.dims).forEach((d) => d.restaurar()); this.encerrando = false; }
     this.aplicarPasso(tempo, true);
+    // último ano: a música termina dentro deste compasso (ver Camada.encerrar)
+    if (this.idx === this.nPassos - 1) {
+      const dur = this.duracaoPasso();
+      this.fimDoSom = Math.max(...Object.values(this.dims).map((d) => d.encerrar(tempo, dur, dur / 4)));
+      this.encerrando = true;
+    }
     const idx = this.idx;
     // timer comum (não Draw/requestAnimationFrame): a tela e o leitor de tela acompanham
     // mesmo com a aba em segundo plano ou a tela do celular apagada
@@ -146,11 +155,15 @@ export class Motor {
   terminar(tempo) {
     this.tocando = false;
     this.terminou = true;
+    // o último compasso já fez o fade de cada camada: aqui corta o resto dos loops; o relógio para quando
+    // o último som (a voz final do CO₂) termina
+    Object.values(this.dims).forEach((d) => d.parar(tempo));
+    const ate = Math.max(tempo, this.fimDoSom ?? tempo);
     this.pausa.gain.cancelScheduledValues(tempo);
-    this.pausa.gain.setValueAtTime(this.pausa.gain.getValueAtTime(tempo), tempo);
-    this.pausa.gain.linearRampToValueAtTime(0, tempo + 3);
-    transporte().pause(tempo + 3.1);
-    Object.values(this.dims).forEach((d) => d.pararLoops(tempo + 3, 0.1));
+    this.pausa.gain.setValueAtTime(this.pausa.gain.getValueAtTime(tempo), ate);
+    this.pausa.gain.linearRampToValueAtTime(0, ate + 0.1);
+    // (por timer, e só se ainda estiver no fim: se a pessoa já apertou tocar de novo, não para a música nova)
+    setTimeout(() => { if (this.terminou) transporte().pause(); }, Math.max(0, (ate + 0.2 - Tone.now()) * 1000));
     // timer comum (não Tone.Draw): avisa a interface mesmo com a tela em segundo plano
     setTimeout(() => this.aoTerminar(), Math.max(0, (tempo - Tone.now()) * 1000));
   }
@@ -160,6 +173,8 @@ export class Motor {
     if (this.terminou) { this.terminou = false; this.idx = 0; }
     this.tCongelado = null; this.inicioCompasso = null;   // o compasso recomeça do início
     this.tocando = true;
+    Object.values(this.dims).forEach((d) => d.restaurar());   // depois do fim, as camadas voltam ao volume delas
+    this.encerrando = false;
     this.pausa.gain.rampTo(1, 0.4);
     this.reiniciarRelogio();
   }
@@ -187,7 +202,11 @@ export class Motor {
 
 
   definirVolume(v) { this.volume.gain.rampTo(v, 0.1); }
-  definirDimensao(id, ligada) { this.dims[id].definirLigada(ligada); }
+  /** Liga ou desliga uma camada. A tendência é o segundo som da temperatura: segue o mesmo seletor. */
+  definirDimensao(id, ligada) {
+    this.dims[id].definirLigada(ligada);
+    if (id === 'temperatura') this.dims.tendencia.definirLigada(ligada);
+  }
   abaixarParaVoz(falando) { this.duck.gain.rampTo(falando ? 0.5 : 1, 0.25); }
 
   // ------------------------------------------------------------------ fita

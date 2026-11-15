@@ -11,7 +11,6 @@
 export const CAMADAS_GRAFICO = [
   { id: 'co2', nome: 'CO₂', cor: '#C77DFF', z: 0.9, espessura: 1.3 },
   { id: 'temperatura', nome: 'Temperatura', cor: '#FF5C9E', z: 0.6, espessura: 1.2 },
-  { id: 'tendencia', nome: 'Tendência', cor: '#7E8A99', z: 0.6, espessura: 1.6 },   // média de 11 anos, por dentro da temperatura
   { id: 'vegetacao', nome: 'Vegetação', cor: '#C6F06B', z: 0.3, espessura: 1.05 },
   { id: 'chuva', nome: 'Chuva', cor: '#53E2FF', z: 0.0, espessura: 0.8 },
 ];
@@ -129,8 +128,6 @@ export class Grafico {
   }
 
   valor(id, i) {
-    const linha = this.trilha?.linha?.[id];          // camadas com linha própria (tendência), já em 0..1
-    if (linha) return linha[i] ?? null;
     const p = this.trilha?.posicao[id][i]; return p == null ? null : p / 3;
   }
   valorEm(id, t) {
@@ -160,9 +157,7 @@ export class Grafico {
     if (!this.trilha) return;
     this.chao();
     const pontas = {};
-    // a tendência é desenhada primeiro, por trás de todas as camadas (os dados do ano ficam na frente)
-    const ordem = [...CAMADAS_GRAFICO].sort((a, b) => (b.id === 'tendencia') - (a.id === 'tendencia'));
-    for (const c of ordem) if (this.ligadas[c.id]) pontas[c.id] = this.camada(c);
+    for (const c of CAMADAS_GRAFICO) if (this.ligadas[c.id]) pontas[c.id] = this.camada(c);
     this.cursor();
     this.etiquetas(agora);
     this.bordasEsfumadas();
