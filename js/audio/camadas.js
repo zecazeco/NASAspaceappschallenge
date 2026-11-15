@@ -55,7 +55,7 @@ export const DEFINICAO = {
   // 2 (desce um pouco) → 2, 3 (desce muito) → chuva_base_1.
   // volumeDb: a camada toda (as bases); os pontuais têm o volume deles: gota na chuva extrema e estalo (madeira
   // oca) na seca, este sem reverb (semReverb). A base continua tocando.
-  chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'troca', entra: 0.015, sai: 0.3, ordem: [4, 3, 2, 1],
+  chuva: { pasta: 'chuva', prefixo: 'chuva', formato: 'wav', modo: 'troca', entra: 0.015, sai: 0.3, ordem: [4, 3, 2, 1],
     volumeDb: -9,
     pontuais: { pontual: ['gota', 'estalo'] }, pontualPadrao: 'pontual', volumePontualDb: -12, semReverb: ['estalo'] },   // s (constantes de tempo)
 };
@@ -85,8 +85,11 @@ async function existe(url) {
   try { return (await fetch(url, { method: 'HEAD' })).ok; } catch { return false; }
 }
 
-async function carregarSom(pasta, nome) {
-  for (const [url, tipo] of [[`audio/${pasta}/${nome}.mp3`, 'musico'], [`audio/${pasta}/${nome}.wav`, 'musico'], [`audio/provisorio/${nome}.wav`, 'provisorio']]) {
+// formato: a extensão procurada primeiro (def.formato; 'mp3' se não disser). Assim o navegador não pede um arquivo
+// que não existe (cada pedido assim vira um erro 404 no console).
+async function carregarSom(pasta, nome, formato = 'mp3') {
+  const outro = formato === 'mp3' ? 'wav' : 'mp3';
+  for (const [url, tipo] of [[`audio/${pasta}/${nome}.${formato}`, 'musico'], [`audio/${pasta}/${nome}.${outro}`, 'musico'], [`audio/provisorio/${nome}.wav`, 'provisorio']]) {
     if (!(await existe(url))) continue;
     try {
       const buf = await new Tone.ToneAudioBuffer().load(url);
@@ -122,10 +125,10 @@ export class Camada {
   /** Baixa os arquivos da camada; aoArquivo() é chamado a cada arquivo pronto (para o progresso). */
   async carregar(aoArquivo = () => {}) {
     const { pasta } = this.def;
-    await Promise.all([...nomesDaCamada(this.def).map(({ nome, k }) => carregarSom(pasta, nome).then((buf) => {
+    await Promise.all([...nomesDaCamada(this.def).map(({ nome, k }) => carregarSom(pasta, nome, this.def.formato).then((buf) => {
       this.guardar(k, buf);
       aoArquivo();
-    })), ...pontuaisDaCamada(this.def).map(({ nome, conjunto, tipo }) => carregarSom(pasta, nome).then((buf) => {
+    })), ...pontuaisDaCamada(this.def).map(({ nome, conjunto, tipo }) => carregarSom(pasta, nome, this.def.formato).then((buf) => {
       (this.pontuais[conjunto] ??= {})[tipo] = buf;
       aoArquivo();
     }))]);
@@ -149,7 +152,7 @@ export class Camada {
   async recarregarFaltando() {
     const falta = new Set(this.faltando());
     await Promise.all(nomesDaCamada(this.def).filter(({ nome }) => falta.has(nome))
-      .map(({ nome, k }) => carregarSom(this.def.pasta, nome).then((buf) => this.guardar(k, buf))));
+      .map(({ nome, k }) => carregarSom(this.def.pasta, nome, this.def.formato).then((buf) => this.guardar(k, buf))));
   }
 
   /** Loop: { buf, ganho, fonte }. fonte só existe enquanto ele pode ser ouvido. */
