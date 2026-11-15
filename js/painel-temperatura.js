@@ -7,11 +7,15 @@
 // da cidade fica no lugar certo em qualquer tamanho de tela.
 
 import { visualizacao, frameDoPasso, imagemDoFrame, pontoNoFrame, corDoValor } from './frames.js';
+import { t, localidade } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
 const LADO_LENTE = 90;   // pedaço do frame (px, frame de 1280) mostrado na lente
 const INICIO_FUSAO = 0.7; // a partir de 70% do compasso o mapa começa a virar o do ano seguinte
-const num = (v) => Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const num = (v) => Math.abs(v).toLocaleString(localidade(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** "+1,5 °C" com a vírgula apertada (a fonte é monoespaçada). */
+const textoTemp = (valor) => { const [, i, sep, d] = num(valor).match(/^(.*?)([.,])(\d+)$/); return `${valor >= 0 ? '+' : '−'}${i}<span class="virg">${sep}</span>${d}<small>°C</small>`; };
 
 export class PainelTemperatura {
   constructor({ tempo, passos, valorEm = () => null }) {
@@ -29,6 +33,18 @@ export class PainelTemperatura {
     this.ponto = null;
     this.corAnel = '#ff7a45';
     this.chave = '';
+    const marcas = $('#marcas-dial');
+    if (marcas && !marcas.childElementCount) {
+      const ns = 'http://www.w3.org/2000/svg';
+      for (let d = 0; d < 360; d += 10) {
+        const forte = d % 30 === 0, r0 = 44, r1 = forte ? 50 : 47, a = (d * Math.PI) / 180;
+        const l = document.createElementNS(ns, 'line');
+        l.setAttribute('x1', (60 + r0 * Math.sin(a)).toFixed(2)); l.setAttribute('y1', (60 - r0 * Math.cos(a)).toFixed(2));
+        l.setAttribute('x2', (60 + r1 * Math.sin(a)).toFixed(2)); l.setAttribute('y2', (60 - r1 * Math.cos(a)).toFixed(2));
+        if (forte) l.setAttribute('class', 'forte');
+        marcas.append(l);
+      }
+    }
     const ro = new ResizeObserver(() => this.dimensionar());
     ro.observe(this.mapa); ro.observe(this.lente);
     const quadro = () => { this.desenhar(); this.acompanharValor(); requestAnimationFrame(quadro); };
@@ -38,6 +54,8 @@ export class PainelTemperatura {
   definirCidade(cidade) {
     this.cidade = cidade;
     this.ponto = this.v ? pontoNoFrame('temperatura', cidade.lat, cidade.lon) : null;
+    const lat = Math.abs(cidade.lat).toLocaleString(localidade(), { maximumFractionDigits: 1 });
+    $('#cidade-mapa').textContent = `${cidade.nome} · ${lat}° ${cidade.lat < 0 ? 'S' : 'N'}`;
     this.chave = '';
     this.ligarFio();
   }
@@ -51,8 +69,20 @@ export class PainelTemperatura {
     const valor = this.valorEm(this.tempo());
     if (valor == null) return;
     const texto = `${valor >= 0 ? '+' : '−'}${num(valor)}`;
-    if (texto !== this.textoValor) { this.textoValor = texto; $('#valor-temp').innerHTML = `${texto}<small>°C</small>`; }
+    if (texto !== this.textoValor) { this.textoValor = texto; $('#valor-temp').innerHTML = textoTemp(valor); this.arco(valor); }
     $('#seta-temp').style.top = `${((2 - Math.max(-2, Math.min(2, valor))) / 4) * 100}%`;
+  }
+
+  /** Ao trocar o idioma: refaz o rótulo da cidade (o resto vem com atualizar). */
+  atualizarIdioma() { if (this.cidade) { this.definirCidade(this.cidade); this.textoValor = ''; } }
+
+  /** Arco do dial: +2 °C = meia volta para a direita; frio vai para a esquerda. */
+  arco(valor) {
+    const el = $('#arco-valor');
+    if (!el) return;
+    const v = Math.max(-2, Math.min(2, valor));
+    el.setAttribute('stroke-dasharray', `${(Math.abs(v) / 2) * 180} 360`);
+    el.setAttribute('transform', v < 0 ? 'translate(120 0) scale(-1 1) rotate(-90 60 60)' : 'rotate(-90 60 60)');
   }
 
   /** Texto, cor e seta do ano (chamado a cada compasso e ao rebobinar). */
@@ -60,15 +90,17 @@ export class PainelTemperatura {
     const ano = this.passos[idx].inicio;
     const temValor = valor != null;
     this.textoValor = '';
-    $('#valor-temp').innerHTML = temValor ? `${valor >= 0 ? '+' : '−'}${num(valor)}<small>°C</small>` : '—';
+    $('#valor-temp').innerHTML = temValor ? textoTemp(valor) : '—';
+    $('#ano-mapa').textContent = ano;
+    this.arco(temValor ? valor : 0);
     $('#legenda-temp').textContent = temValor
-      ? `${Math.abs(valor) < 0.05 ? 'igual à' : valor > 0 ? 'mais quente que a' : 'mais frio que a'} média de 1951–1980, em ${ano}`
-      : `sem dado do mapa em ${ano}`;
+      ? t(Math.abs(valor) < 0.05 ? 'temp.igual' : valor > 0 ? 'temp.quente' : 'temp.frio', { ano })
+      : t('temp.semDado', { ano });
     const seta = $('#seta-temp');
     seta.hidden = !temValor;
     if (temValor) seta.style.top = `${((2 - Math.max(-2, Math.min(2, valor))) / 4) * 100}%`;
     this.corAnel = (temValor && corDoValor(this.v, valor)) || '#ff7a45';
-    this.botao.setAttribute('aria-label', `Ampliar o mapa de temperatura da NASA de ${ano}. O ponto marca ${this.cidade?.nome ?? 'a cidade'}.`);
+    this.botao.setAttribute('aria-label', t('mapa.ampliar', { ano, cidade: this.cidade?.nome ?? t('mapa.aCidade') }));
     this.chave = '';
   }
 
@@ -86,6 +118,7 @@ export class PainelTemperatura {
   /** Fio tracejado do ponto no mapa até a lente (só no celular; no monitor ficam lado a lado). */
   ligarFio() {
     const linha = $('#fio-temp');
+    if (!linha) return;   // visual novo: sem fio (a lente fica logo abaixo do mapa)
     if (!this.ponto || !this.v) { linha.removeAttribute('x1'); return; }
     const rc = this.v.recorte, base = this.painel.getBoundingClientRect();
     const m = this.mapa.getBoundingClientRect(), l = this.lente.getBoundingClientRect();
@@ -138,17 +171,12 @@ export class PainelTemperatura {
   }
 
   desenharLente(camadas) {
-    const g = this.lente.getContext('2d'), W = this.lente.width, d = this.dpr;
-    const c = W / 2, r = c - 4 * d, L = LADO_LENTE;
+    // só o recorte ampliado; anel, marcas, retículo e arco do valor são o SVG do dial
+    const g = this.lente.getContext('2d'), W = this.lente.width;
+    const c = W / 2, r = c, L = LADO_LENTE;
     g.clearRect(0, 0, W, W);
     g.save(); g.beginPath(); g.arc(c, c, r, 0, 7); g.clip();
-    for (const [im, alfa] of camadas) { g.globalAlpha = alfa; g.drawImage(im, this.ponto.x - L / 2, this.ponto.y - L / 2, L, L, c - r, c - r, 2 * r, 2 * r); }
+    for (const [im, alfa] of camadas) { g.globalAlpha = alfa; g.drawImage(im, this.ponto.x - L / 2, this.ponto.y - L / 2, L, L, 0, 0, W, W); }
     g.restore();
-    g.save(); g.shadowColor = this.corAnel; g.shadowBlur = 16 * d;
-    g.beginPath(); g.arc(c, c, r, 0, 7); g.strokeStyle = this.corAnel; g.lineWidth = 3 * d; g.stroke(); g.restore();
-    const m = 4 * d, k = 10 * d;
-    g.strokeStyle = '#fff'; g.lineWidth = 1.2 * d; g.beginPath();
-    g.moveTo(c - k, c); g.lineTo(c - m, c); g.moveTo(c + m, c); g.lineTo(c + k, c);
-    g.moveTo(c, c - k); g.lineTo(c, c - m); g.moveTo(c, c + m); g.lineTo(c, c + k); g.stroke();
   }
 }

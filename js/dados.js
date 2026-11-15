@@ -1,3 +1,4 @@
+import { t, localidade } from './i18n.js';
 // Carrega a linha do tempo e normaliza os valores para o motor de som (0..1).
 // Fonte dos números: os FRAMES visuais (data/frames/, lidos por frames.js) quando existirem;
 // senão, os valores por região de data/timeline.json.
@@ -94,18 +95,18 @@ export function valoresDoPasso(regiao, idx) {
 }
 
 // ---------- textos (tela e leitor de tela) ----------
-const fmt = (v, casas = 1) => v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+const fmt = (v, casas = 1) => v.toLocaleString(localidade(), { minimumFractionDigits: casas, maximumFractionDigits: casas });
 
 export function textosDimensoes(regiao, idx) {
   const { bruto: b, vegetacao } = valoresDoPasso(regiao, idx);
   const ini = inicioMedicao(regiao);
   return {
-    co2: b.co2 == null ? `Ainda não medido. Começa em ${ini.co2}.` : `${fmt(b.co2, 0)} ppm no planeta`,
-    temperatura: b.temperatura == null ? `Ainda não medida. Começa em ${ini.temperatura}.` : `${b.temperatura >= 0 ? '+' : '−'}${fmt(Math.abs(b.temperatura))} °C em relação a 1951–1980`,
-    chuva: b.chuva == null ? `Ainda não medida. Começa em ${ini.chuva}.` :
-      `${b.chuva >= 0 ? '+' : '−'}${fmt(Math.abs(b.chuva), 0)}% ${b.chuva <= -25 ? '(seca)' : b.chuva >= 25 ? '(chuva extrema)' : 'em relação à média'}`,
-    vegetacao: vegetacao == null ? `Ainda não medida. Começa em ${ini.vegetacao}.` :
-      vegetacao.saude >= 1 ? `Saudável: ${fmt((vegetacao.saude - 1) * 100, 0)}% mais verde que nos anos 1980` :
-        `${fmt((1 - vegetacao.saude) * 100, 0)}% menos verde que nos anos 1980`,
+    co2: b.co2 == null ? t('dim.naoMedido', { ano: ini.co2 }) : t('dim.co2', { v: fmt(b.co2, 0) }),
+    temperatura: b.temperatura == null ? t('dim.naoMedida', { ano: ini.temperatura }) : t('dim.temp', { v: `${b.temperatura >= 0 ? '+' : '−'}${fmt(Math.abs(b.temperatura))}` }),
+    chuva: b.chuva == null ? t('dim.naoMedida', { ano: ini.chuva }) :
+      t('dim.chuva', { v: `${b.chuva >= 0 ? '+' : '−'}${fmt(Math.abs(b.chuva), 0)}`, tipo: b.chuva <= -25 ? 'seca' : b.chuva >= 25 ? 'extrema' : '' }),
+    vegetacao: vegetacao == null ? t('dim.naoMedida', { ano: ini.vegetacao }) :
+      vegetacao.saude >= 1 ? t('dim.vegMais', { v: fmt((vegetacao.saude - 1) * 100, 0) }) :
+        t('dim.vegMenos', { v: fmt((1 - vegetacao.saude) * 100, 0) }),
   };
 }
