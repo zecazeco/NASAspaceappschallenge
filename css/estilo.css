@@ -340,6 +340,8 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
 .idiomas button[aria-pressed="true"] { background: var(--estrutura); color: var(--fundo); }
 .idiomas button:hover:not([aria-pressed="true"]) { background: rgba(79, 198, 245, 0.12); }
 .idiomas button:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; z-index: 1; }
+/* dica abaixo do gráfico: dá para arrastar e tocar nos pontos */
+.dica-grafico { margin: -4px 0 0; font-size: 0.78rem; line-height: 1.35; color: var(--texto-suave); text-align: center; }
 /* rodapé: idioma no canto esquerdo, créditos ao lado */
 .rodape { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; margin-top: 22px; padding-bottom: 8px; }
 .creditos { flex: 1; min-width: 0; margin: 0; font-size: 0.75rem; line-height: 1.35; color: var(--texto-suave); text-align: left; }
@@ -353,7 +355,7 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
     display: grid; gap: 20px 40px; align-content: start;
     max-width: min(80vw, 1280px);
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "topo" "painel" "grafico" "tempo";
+    grid-template-areas: "topo" "painel" "grafico" "dica" "tempo";
   }
   #tela-principal[hidden] { display: none; }
   #tela-principal > .topo { grid-area: topo; }
@@ -367,6 +369,7 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
   .card-evento b { font-size: 0.8rem; }
   #tela-principal > .grafico { grid-area: grafico; min-height: clamp(280px, 36vh, 420px); }
   #tela-principal > .linha-tempo { grid-area: tempo; }
+  #tela-principal > .dica-grafico { grid-area: dica; margin-top: -12px; }
   .topo h1 { font-size: 1.75rem; }
   .moldura-mapa { width: 100%; }
   .leitura { justify-content: center; }
