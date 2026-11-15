@@ -2,8 +2,8 @@
 // • Textos fixos do HTML: atributo data-i18n="chave" (troca o conteúdo) e
 //   data-i18n-attr="aria-label:chave; placeholder:chave" (troca atributos).
 // • Textos montados no JavaScript: t('chave', { variáveis }).
-// • Na primeira visita, abre no idioma do navegador (português ou inglês); a escolha nos botões
-//   PT / EN fica salva neste navegador e passa a valer nas próximas visitas.
+// • Na primeira visita, abre sempre em inglês (e °F), seja qual for o idioma do navegador; a escolha
+//   nos botões PT / EN fica salva neste navegador e passa a valer nas próximas visitas.
 
 const TEXTOS = {
   pt: {
@@ -222,13 +222,12 @@ const TEXTOS = {
   },
 };
 
-// Idioma: a escolha salva da pessoa (botões PT / EN); se não houver, o do navegador (português → pt,
-// qualquer outro → en). A mesma regra está no script do <head> do index.html, que roda antes de tudo
-// e esconde a página até ela estar traduzida — mantenha as duas iguais.
+// Idioma: a escolha salva da pessoa (botões PT / EN); se não houver, sempre en (o do navegador é ignorado).
+// A mesma regra está no script do <head> do index.html, que roda antes de tudo e, só para quem salvou pt,
+// esconde a página até ela estar traduzida — mantenha as duas iguais.
 let idioma = (() => {
   try { const s = localStorage.getItem('jukebox-idioma'); if (s === 'pt' || s === 'en') return s; } catch { /* sem storage */ }
-  const nav = navigator.languages?.[0] || navigator.language || '';
-  return /^pt/i.test(nav) ? 'pt' : 'en';
+  return 'en';
 })();
 const ouvintes = [];
 
@@ -271,13 +270,13 @@ export const aoMudarIdioma = (f) => ouvintes.push(f);
 // ---------------------------------------------------------------- unidade de temperatura
 // Toda a lógica é em °C (os mapas da NASA que lemos são em °C); °F é só na hora de mostrar.
 // Os valores são ANOMALIAS (diferença em relação à média de 1951–1980): a conversão é só × 1,8, sem o +32.
-// Padrão: segue o idioma (português → °C, inglês → °F) até a pessoa escolher nos botões °C / °F;
+// Padrão: sempre °F (em qualquer idioma) até a pessoa escolher nos botões °C / °F;
 // a escolha fica salva e passa a valer em qualquer idioma. O par aparece sempre: "+2,9 °F (+1,6 °C)".
 let unidadeEscolhida = (() => {
   try { const s = localStorage.getItem('jukebox-unidade'); if (s === 'c' || s === 'f') return s; } catch { /* sem storage */ }
   return null;
 })();
-export const unidade = () => unidadeEscolhida ?? (idioma === 'pt' ? 'c' : 'f');
+export const unidade = () => unidadeEscolhida ?? 'f';
 const outra = (u) => (u === 'c' ? 'f' : 'c');
 const sinal = (v) => (v >= 0 ? '+' : '−');
 /** Anomalia em °C convertida para a unidade pedida, com sinal e uma casa: "+1,6". */
