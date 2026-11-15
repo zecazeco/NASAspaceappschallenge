@@ -23,7 +23,7 @@ const num = (v, casas = 1) => v.toLocaleString(localidade(), { minimumFractionDi
 const sinal = (v) => `${v >= 0 ? '+' : '−'}${num(Math.abs(v))}`;
 // Textos dos eventos (no idioma escolhido, ver js/i18n.js)
 const FRASES = {
-  co2: { recorde: (e) => tr('ev.co2.recorde', { v: num(e.valor) }) },
+  co2: { recorde: (e) => tr('ev.co2.recorde', { v: num(e.valor) }), faixa: (e) => tr('ev.co2.faixa', { n: e.quintos, v: Math.round(e.valor) }) },
   temperatura: { recorde: (e) => tr('ev.temperatura.recorde', { v: tempPar(e.valor) }) },
   chuva: {
     seca: (e) => (e.intensidade === 'f' ? tr('ev.chuva.secaF') : tr('ev.chuva.seca', { v: Math.round(e.valor) })),
@@ -32,7 +32,7 @@ const FRASES = {
 };
 /** Resumo de 2 ou 3 palavras: a etiqueta que fica presa ao ponto depois que o card fecha. */
 const RESUMOS = {
-  co2: { recorde: () => tr('res.co2.recorde') },
+  co2: { recorde: () => tr('res.co2.recorde'), faixa: (e) => tr('res.co2.faixa', { n: e.quintos }) },
   temperatura: { recorde: () => tr('res.temperatura.recorde') },
   chuva: { seca: (e) => tr(e.intensidade === 'f' ? 'res.chuva.secaF' : 'res.chuva.seca'), extrema: (e) => tr(e.intensidade === 'f' ? 'res.chuva.extremaF' : 'res.chuva.extrema') },
 };

@@ -229,7 +229,18 @@ export function calcularTrilha(local, passos, co2Global) {
   // som dos loops quando não é a posição: CO₂ = voz mais alta que toca (0 = só a voz 1 … 4 = as 5; a faixa
   // medida dividida em 5 partes iguais); chuva = tipo de mudança até o ano seguinte
   const som = { co2: niveisFixos(co2, VOZES_CO2), chuva: mudancasChuva(chuva) };
-  const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA) };
+  // CO₂ (teste), sons pontuais junto com os cards:
+  //   • recorde de velocidade (eventos acima) → "impacto". Com os dados da NOAA: 1973, 1988, 1998 e 2016.
+  //   • ano em que a faixa das vozes muda (cruzou mais um quinto da subida medida) → "cresce". NOAA: 1980, 1994, 2005 e 2015.
+  // Num ano que fosse as duas coisas (não acontece com os dados de hoje), a faixa vence: um som e um card só.
+  const viradaCo2 = eventos.map((ev) => (ev.co2?.nome === 'recorde' ? 'impacto' : null));
+  som.co2.forEach((nv, i) => {
+    const antes = som.co2.slice(0, i).filter((x) => x != null).pop();
+    if (nv == null || antes == null || nv === antes) return;
+    viradaCo2[i] = 'cresce';
+    eventos[i].co2 = { nome: 'faixa', intensidade: 'm', quintos: nv, valor: co2[i] };
+  });
+  const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA), co2: viradaCo2 };
   const movimento = { temperatura: movimentos(temp) };
   return { posicao, som, virada, movimento, tendencia, eventos };
 }

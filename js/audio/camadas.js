@@ -7,7 +7,9 @@
 //   • 'niveis' (tendência): 4 loops de 1 compasso; o nível do ano decide qual se ouve
 //     (com troca suave; posição quebrada, ex. 1,4, mistura dois níveis). A tendência é o segundo som da
 //     temperatura (média de 11 anos em 4 níveis): não tem seletor nem linha própria, liga junto com ela.
-//   • 'vozes' (CO₂): 5 loops de 4 compassos que se acumulam; o ano liga da voz 1 até a voz dele.
+//   • 'vozes' (CO₂): 5 loops de 4 compassos que se acumulam; o ano liga da 1ª até a voz dele, na ordem de
+//     def.ordem (os números dos arquivos): 1, 2, 4, 5, 3. A voz 3 (o Ré bem grave) entra por último, quando o
+//     CO₂ já passou de 400 ppm, e a 4 e a 5 (a tensão) entram antes.
 //   • 'troca' (chuva): 4 loops de 1 compasso, um por tipo de mudança até o ano seguinte (trilha.sons).
 //     O som novo entra rápido (a gota do começo fica inteira) e o anterior some devagar.
 // Loops só tocam enquanto podem ser ouvidos. Quando um entra, começa no ponto certo do relógio (como se
@@ -19,6 +21,8 @@
 // somem antes do 2º. Quando 2024 chegaria, a música para.
 //
 // Som pontual (teste): picos e vales da temperatura, ligado pelo seletor no topo da página.
+// CO₂ (teste), os dois a −14 dB (trilha.virada.co2): co2_pontual_cresce em cada ano em que a faixa das vozes muda;
+// co2_pontual_impacto em cada recorde de velocidade (o CO₂ subiu mais que em qualquer ano anterior).
 //
 // Arquivos: primeiro audio/<pasta>/<nome>.mp3 ou .wav (os do músico); se não existir,
 // audio/provisorio/<nome>.wav (gerados por tools/gerar-sons-provisorios.mjs).
@@ -27,7 +31,9 @@ import { NIVEIS, FIGURAS_MOVIMENTO, VOZES_CO2 } from '../trilha.js';
 
 export const DEFINICAO = {
   co2: { pasta: 'co2', prefixo: 'co2', modo: 'vozes', quantas: VOZES_CO2,
-    fim: { voz: 2, ate: 4.2 } },   // no fim: só a voz 3, do começo do arquivo; some até 4,2 s (a nota seguinte dela entra em 4,36 s)
+    ordem: [1, 2, 4, 5, 3],   // co2_voz_N na ordem em que entram (com os dados da NOAA: 1959, 1980, 1994, 2005 e 2015)
+    fim: { voz: 4, ate: 4.2 },   // no fim: só a última a entrar (co2_voz_3), do começo do arquivo; some até 4,2 s (a nota seguinte dela entra em 4,36 s)
+    pontuais: { pontual: ['cresce', 'impacto'] }, pontualPadrao: 'pontual', volumePontualDb: -14 },
   temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', figuras: FIGURAS_MOVIMENTO,
     pontuais: { pontual01: ['pico', 'vale'] } },
   tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis', volume: 0.4, fim: 'sustenta' },   // 60% mais baixa que as outras
@@ -37,7 +43,7 @@ export const DEFINICAO = {
 /** Arquivos da camada, na ordem: { nome, k }. */
 const nomesDaCamada = (d) => {
   if (d.modo === 'compassos') return d.figuras.map((fig, k) => ({ nome: `${d.prefixo}_${fig}`, k }));
-  if (d.modo === 'vozes') return Array.from({ length: d.quantas }, (_, k) => ({ nome: `${d.prefixo}_voz_${k + 1}`, k }));
+  if (d.modo === 'vozes') return Array.from({ length: d.quantas }, (_, k) => ({ nome: `${d.prefixo}_voz_${d.ordem?.[k] ?? k + 1}`, k }));
   return Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k }));
 };
 
@@ -84,7 +90,7 @@ export class Camada {
     this.buffers = [];     // modo 'compassos': um buffer por figura
     this.soando = [];      // modo 'compassos': { fonte, ganho } ainda tocando
     this.pontuais = {};    // conjunto → { pico: buffer, vale: buffer }
-    this.pontualAtivo = null;   // ex.: 'pontual01'; null = sem pontual
+    this.pontualAtivo = this.def.pontualPadrao ?? null;   // ex.: 'pontual01'; null = sem pontual
   }
 
   /** Baixa os arquivos da camada; aoArquivo() é chamado a cada arquivo pronto (para o progresso). */
@@ -233,11 +239,11 @@ export class Camada {
     this.pontualAtivo = conjunto && this.def.pontuais?.[conjunto] ? conjunto : null;
   }
 
-  /** Som pontual no início do compasso ('pico' | 'vale' | null). Pode sobrepor a cauda do anterior. */
+  /** Som pontual no início do compasso (ex.: 'pico', 'vale', 'cresce', 'impacto'; null = nada). Pode sobrepor a cauda do anterior. */
   dispararPontual(tipo, tempo) {
     const buf = tipo && this.pontualAtivo && this.ligada ? this.pontuais[this.pontualAtivo]?.[tipo] : null;
     if (!buf) return;
-    const ganho = new Tone.Gain(1).connect(this.mix);
+    const ganho = new Tone.Gain(Tone.dbToGain(this.def.volumePontualDb ?? 0)).connect(this.mix);
     const fonte = new Tone.ToneBufferSource(buf).connect(ganho);
     const voz = { fonte, ganho, pontual: true };
     fonte.onended = () => { ganho.dispose(); this.soandoPontuais = this.soandoPontuais.filter((v) => v !== voz); };
