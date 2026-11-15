@@ -26,7 +26,7 @@ export class Motor {
     this.tocando = false;
     this.emFita = false;
     this.pularAvanco = true;
-    this.aoMudarPasso = () => {}; // (idx, {narrar}) → interface
+    this.aoMudarPasso = () => {}; // (idx, {mudou}) → interface
     this.aoTerminar = () => {};   // a música chegou ao fim (hoje) → interface
     this.terminou = false;
   }
@@ -41,13 +41,12 @@ export class Motor {
     const total = nomesDosArquivos().length + 4;   // + reverb e 3 efeitos de fita
     let feitos = 0;
     const umArquivo = () => aoProgresso(Math.min(1, ++feitos / total));
-    // cadeia: dimensões → música → (reverb) → volume → duck → pausa → filtroFita → audível → limitador
+    // cadeia: dimensões → música → (reverb) → volume → pausa → filtroFita → audível → limitador
     this.limitador = new Tone.Limiter(-1).toDestination();
     this.audivel = new Tone.Gain(1).connect(this.limitador);
     this.filtroFita = new Tone.Filter(20000, 'lowpass').connect(this.audivel);
     this.pausa = new Tone.Gain(0).connect(this.filtroFita);
-    this.duck = new Tone.Gain(1).connect(this.pausa);
-    this.volume = new Tone.Gain(0.8).connect(this.duck);
+    this.volume = new Tone.Gain(0.8).connect(this.pausa);
     this.musica = new Tone.Gain(1).connect(this.volume);
     this.efeitos = new Tone.Gain(0.9).connect(this.limitador);
 
@@ -135,7 +134,7 @@ export class Motor {
     const idx = this.idx;
     // timer comum (não Draw/requestAnimationFrame): a tela e o leitor de tela acompanham
     // mesmo com a aba em segundo plano ou a tela do celular apagada
-    setTimeout(() => this.aoMudarPasso(idx, { narrar: mudou }), Math.max(0, (tempo - Tone.now()) * 1000));
+    setTimeout(() => this.aoMudarPasso(idx, { mudou }), Math.max(0, (tempo - Tone.now()) * 1000));
   }
 
   /**
@@ -213,7 +212,6 @@ export class Motor {
     this.dims[id].definirLigada(ligada);
     if (id === 'temperatura') this.dims.tendencia.definirLigada(ligada);
   }
-  abaixarParaVoz(falando) { this.duck.gain.rampTo(falando ? 0.5 : 1, 0.25); }
 
   // ------------------------------------------------------------------ fita
   iniciarFita(direcao) {

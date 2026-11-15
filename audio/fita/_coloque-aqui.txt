@@ -1,2 +1,0 @@
-Efeitos de fita (opcionais; sem eles o site usa sons sintetizados):
-rebobinar.wav (loop), tic.wav, tape_start.wav

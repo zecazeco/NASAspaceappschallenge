@@ -177,7 +177,6 @@ const passosJson = passos.map((p, i) => {
     fim: p.fim,
     rotulo,
     falado: p.inicio === p.fim ? `${p.inicio}` : `${p.inicio} a ${p.fim}`,
-    narracao: `${p.inicio}`, // narração = só o ano
     ...(evento ? { evento: evento.dimensao } : {}),
   };
 });

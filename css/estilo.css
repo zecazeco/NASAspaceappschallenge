@@ -324,8 +324,8 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
 .btn-controle.ativo { background: rgba(255, 138, 76, 0.28); color: var(--texto); box-shadow: 0 0 20px rgba(255, 138, 76, 0.6), inset 0 0 16px rgba(255, 138, 76, 0.35); }
 .btn-tocar { background: var(--destaque); color: var(--destaque-texto); box-shadow: var(--brilho-destaque-forte); }
 .btn-tocar .ic-pausar { display: none; }
-.btn-tocar[aria-pressed="true"] .ic-pausar { display: block; }
-.btn-tocar[aria-pressed="true"] .ic-tocar { display: none; }
+.btn-tocar.tocando .ic-pausar { display: block; }
+.btn-tocar.tocando .ic-tocar { display: none; }
 /* seletor de idioma PT | EN: alvo de toque 48×48 (área invisível em volta), estado marcado por preenchimento */
 .idiomas { display: inline-flex; border: 1px solid var(--estrutura-fraca); }
 .idiomas button {

@@ -29,7 +29,6 @@ O som nasce da **imagem**, não de uma tabela: se a NASA trocar os mapas, a mús
 - Botões grandes, com rótulo em texto, e navegação completa por teclado (espaço toca ou pausa; setas movem o ano).
 - Leitor de tela: a cidade escolhida e o ano são anunciados, e o mapa da temperatura tem descrição em texto com o valor do ano.
 - A linha do tempo pode ser rebobinada e avançada como uma **fita**: a própria música toca de trás para a frente, com um "tic" a cada ano.
-- Narração opcional do ano.
 - Respeita "reduzir movimento" do sistema.
 
 ---
@@ -68,7 +67,7 @@ No celular, o GPS e o áudio exigem **HTTPS** quando o endereço não é `localh
 | `js/trilha.js` | regras da música: qual compasso, nível e som pontual em cada ano |
 | `js/audio/` | motor de som (Tone.js), camadas e efeito de fita |
 | `data/frames/` | os mapas de cada ano e o `manifesto.json`, que descreve projeção, recorte e legenda de cada mapa |
-| `audio/` | sons (provisórios em `audio/provisorio/`; os do músico em `audio/<camada>/`) e narração |
+| `audio/` | sons (provisórios em `audio/provisorio/`; os do músico em `audio/<camada>/`) |
 | `tools/` | servidor local e scripts que geram os sons provisórios, os dados e os mapas |
 
 Para baixar de novo os mapas da NASA: `python -I tools/preparar-frames-nasa.py`.
@@ -77,4 +76,4 @@ Para baixar de novo os mapas da NASA: `python -I tools/preparar-frames-nasa.py`.
 
 ## Uso de inteligência artificial
 
-O código deste protótipo, os sons provisórios e parte da documentação foram desenvolvidos com a ajuda de um assistente de IA (Claude, da Anthropic), sob direção da equipe, que definiu o conceito, o mapeamento musical e as decisões de design. A narração opcional dos anos pode ser gerada por voz sintética (`tools/gerar-narracao.py`).
+O código deste protótipo, os sons provisórios e parte da documentação foram desenvolvidos com a ajuda de um assistente de IA (Claude, da Anthropic), sob direção da equipe, que definiu o conceito, o mapeamento musical e as decisões de design.

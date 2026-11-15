@@ -91,7 +91,7 @@
           <span class="prompt" aria-hidden="true">&gt;</span>
           <span class="campo-texto">
             <input id="campo-cidade" type="search" inputmode="search" enterkeyhint="search" placeholder="your city" data-i18n-attr="placeholder:busca.placeholder"
-                   aria-describedby="status-busca" spellcheck="false" required>
+                   aria-describedby="motivo-busca status-busca" spellcheck="false" required>
             <span class="cursor-bloco" aria-hidden="true"><span class="espelho"></span><i></i></span>
           </span>
         </div>
@@ -160,7 +160,7 @@
         <span class="canto c3" aria-hidden="true"></span><span class="canto c4" aria-hidden="true"></span>
         <span class="regua-lateral esq" aria-hidden="true"></span><span class="regua-lateral dir" aria-hidden="true"></span>
         <p class="rot-mapa topo" aria-hidden="true"><span class="rot-texto" data-i18n="mapa.rotulo">NASA · temperature anomaly</span><span class="rot-ano"> · <span id="ano-mapa">—</span></span></p>
-        <button id="mapa-temp" class="mapa-nasa" type="button" aria-label="Ampliar o mapa de temperatura da NASA">
+        <button id="mapa-temp" class="mapa-nasa" type="button" aria-label="Enlarge the NASA temperature map">
           <canvas aria-hidden="true"></canvas>
           <span class="crt" aria-hidden="true"></span>
         </button>
@@ -205,11 +205,11 @@
       <ul id="lista-dimensoes"></ul>
     </section>
 
-    <section id="grafico" class="grafico" data-i18n-attr="aria-label:grafico.rotulo" aria-label="Chart of the four layers over the years. Drag sideways to see the past and the future.">
+    <section id="grafico" class="grafico" data-i18n-attr="aria-label:grafico.rotulo" aria-label="Chart of the three layers over the years. The values of the year are in the list What you are hearing, and the events are announced as the music plays.">
       <span class="canto c1" aria-hidden="true"></span><span class="canto c2" aria-hidden="true"></span>
       <span class="canto c3" aria-hidden="true"></span><span class="canto c4" aria-hidden="true"></span>
     </section>
-    <p class="dica-grafico" data-i18n="grafico.dica">Drag the chart sideways to see past events. Tap a point to read the event.</p>
+    <p class="dica-grafico" aria-hidden="true" data-i18n="grafico.dica">Drag the chart sideways to see past events. Tap a point to read the event.</p>
 
     <section class="linha-tempo" aria-labelledby="titulo-tempo">
       <h2 id="titulo-tempo" class="sr-only" data-i18n="tempo.titulo">Timeline</h2>
@@ -230,7 +230,7 @@
         <button id="btn-tocar" class="btn btn-controle btn-tocar" type="button">
           <svg class="ic-tocar" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L19.5 12 7 4.5Z"/></svg>
           <svg class="ic-pausar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>
-          <span id="rotulo-tocar">Tocar</span>
+          <span id="rotulo-tocar">Play</span>
         </button>
         <button id="btn-avancar" class="btn btn-controle" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 6v12l8.5-6L13 6ZM3 6v12l8.5-6L3 6Z"/></svg>
@@ -270,13 +270,6 @@
 
       <p class="rotulo" id="aj-unidade-rotulo" data-i18n="aj.unidade">Temperature unit</p>
       <div class="idiomas unidades unidades-ajustes" role="group" aria-labelledby="aj-unidade-rotulo"><button type="button" data-unidade="f" aria-pressed="true">°F</button><button type="button" data-unidade="c" aria-pressed="false">°C</button></div>
-
-      <label class="rotulo" for="aj-narracao" data-i18n="aj.narracao">Year narration</label>
-      <select id="aj-narracao" name="narracao">
-        <option value="off" data-i18n="aj.narr.off">Off</option>
-        <option value="voz" data-i18n="aj.narr.voz">App voice</option>
-        <option value="leitor" data-i18n="aj.narr.leitor">Screen reader only</option>
-      </select>
 
       <label class="opcao"><input type="checkbox" name="tic" checked> <span data-i18n="aj.tic">Tick on each year while rewinding</span></label>
 

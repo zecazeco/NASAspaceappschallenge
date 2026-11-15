@@ -83,6 +83,7 @@ export class Grafico {
     this.ctx = this.canvas.getContext('2d');
     this.camadaCards = document.createElement('div');
     this.camadaCards.className = 'grafico-cards';
+    this.camadaCards.setAttribute('aria-hidden', 'true');
     this.btnAgora = document.createElement('button');
     this.btnAgora.type = 'button';
     this.btnAgora.className = 'btn grafico-agora';

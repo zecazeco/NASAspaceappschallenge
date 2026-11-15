@@ -4,7 +4,6 @@ import { PainelTemperatura } from './painel-temperatura.js';
 import { Grafico } from './grafico.js';
 import { calcularTrilha, listarEventos } from './trilha.js';
 import { carregarCidadesLocais, pedirLocalizacao, nomeDaCidade, buscarCidades } from './cidade.js';
-import { Narrador } from './narrador.js';
 import { Motor, BPM } from './audio/motor.js';
 import { origemDosSons } from './audio/camadas.js';
 import { t, aplicarTextos, aoMudarIdioma, localidade, tempPar } from './i18n.js';
@@ -21,23 +20,21 @@ const DIMS = [
   papel: { get: () => t(`papel.${d.id}`) },
 }));
 
-// Padrão: todas as camadas ligadas e sem narração (dá para mudar nos ajustes).
+// Padrão: todas as camadas ligadas (dá para mudar nos ajustes).
 // As camadas NÃO ficam salvas: toda vez que a pessoa abre o site, todas voltam ligadas (quem desligou
-// uma e esqueceu não fica sem ouvir parte da música). Narração, tic e volume continuam salvos.
+// uma e esqueceu não fica sem ouvir parte da música). Tic e volume continuam salvos.
 const CAMADAS = ['co2', 'temperatura', 'chuva'];
-const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, chuva: true, narracao: 'off', tic: true, volume: 80 };
+const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, chuva: true, tic: true, volume: 80 };
 // só guarda o que existe hoje e não é camada (some também o que sobrou de versões antigas, ex. vegetacao)
 const semCamadas = (a) => Object.fromEntries(Object.entries(a).filter(([k]) => k in AJUSTES_PADRAO && !CAMADAS.includes(k)));
 let ajustes = { ...AJUSTES_PADRAO };
 try {
   const salvos = semCamadas(JSON.parse(localStorage.getItem('jukebox-ajustes') || '{}'));
-  if (salvos.versao !== 2) delete salvos.narracao;   // ajustes antigos: a narração vinha ligada sem a pessoa escolher
   ajustes = { ...AJUSTES_PADRAO, ...salvos, versao: 2 };
 } catch { /* sem storage */ }
 const salvarAjustes = () => { try { localStorage.setItem('jukebox-ajustes', JSON.stringify(semCamadas(ajustes))); } catch { /* ok */ } };
 
 let grafico = null, painel = null;
-const narrador = new Narrador();
 const motor = new Motor();
 
 // SÓ PARA TESTE: o botão vermelho "Teste" abre e fecha os seletores (já abertos com ?teste no endereço).
@@ -72,10 +69,16 @@ let regiao = null, cidade = null, trilha = null;
 let somPronto = null, progressoSom = 0, somLigado = false, aoProgressoSom = () => {};
 
 // ---------------------------------------------------------------- utilidades
+let filaAnuncio = [], esperaAnuncio = null;
 function anunciar(texto) {
+  filaAnuncio.push(texto);
+  if (esperaAnuncio) return;
   const el = $('#anuncio');
   el.textContent = '';
-  setTimeout(() => { el.textContent = texto; }, 60);
+  esperaAnuncio = setTimeout(() => {
+    el.textContent = filaAnuncio.join(' ');
+    filaAnuncio = []; esperaAnuncio = null;
+  }, 150);
 }
 function mostrar(id) {
   for (const t of ['#tela-inicio', '#tela-cidade', '#tela-carregando', '#tela-principal']) $(t).hidden = t !== id;
@@ -109,7 +112,6 @@ async function iniciar() {
     somPronto = motor.preparar(n, (p) => { progressoSom = p; aoProgressoSom(p); });
     somPronto.catch((e) => console.error('Sons não carregaram', e));
     preCarregarFrames();
-    if (ajustes.narracao === 'voz') narrador.carregar(timeline().passos); // só se a voz estiver ligada
   } catch (e) {
     console.error(e);
     throw e;   // escolherCidade mostra o erro na tela "Preparando"
@@ -123,7 +125,6 @@ $('#btn-comecar').addEventListener('click', async () => {
   btn.textContent = t('inicio.procurando');
   // o áudio precisa ser destravado DENTRO do toque (iOS); ligar o motor fica para depois
   Tone.start();
-  narrador.destravar();
   try {
     const pos = await pedirLocalizacao();
     const nome = await nomeDaCidade(pos.lat, pos.lon);
@@ -160,8 +161,8 @@ async function buscar(texto, imediato = false) {
     const li = document.createElement('li');
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'btn btn-secundario';
-    b.innerHTML = `<span></span><span class="sub"></span>`;
-    b.children[0].textContent = c.nome; b.children[1].textContent = c.detalhe;
+    b.innerHTML = `<span></span><span class="sr-only">, </span><span class="sub"></span>`;
+    b.children[0].textContent = c.nome; b.children[2].textContent = c.detalhe;
     b.addEventListener('click', () => escolherCidade(c));
     li.append(b); lista.append(li);
   }
@@ -248,7 +249,6 @@ async function escolherCidade(c) {
     ]);
     if (!somLigado) {
       await motor.ligar();
-      narrador.aoFalar = (f) => motor.abaixarParaVoz(f);
       motor.aoMudarPasso = aoMudarPasso;
       motor.aoTerminar = () => {
         atualizarBotaoTocar();
@@ -397,24 +397,20 @@ async function abrirFrame(d) {
   dlgF.showModal();
 }
 
-function aoMudarPasso(idx, { narrar }) {
+function aoMudarPasso(idx, { mudou }) {
   if (scrub.ativo) return;
   atualizarUI(idx);
-  if (!narrar || !motor.tocando) return;
+  if (!mudou || !motor.tocando) return;
   grafico.mostrarEventos(idx);
-  const p = passo(idx);
-  if (ajustes.narracao === 'voz') narrador.falar(p.narracao, String(p.inicio));
-  else if (ajustes.narracao === 'leitor') anunciar(p.narracao);
 }
 
 // ---------------------------------------------------------------- tocar / pausar
 function atualizarBotaoTocar() {
-  const b = $('#btn-tocar');
-  b.setAttribute('aria-pressed', String(motor.tocando));
+  $('#btn-tocar').classList.toggle('tocando', motor.tocando);
   $('#rotulo-tocar').textContent = t(motor.tocando ? 'ctrl.pausar' : motor.terminou ? 'ctrl.recomecar' : 'ctrl.tocar');
 }
 function alternarTocar() {
-  if (motor.tocando) { motor.pausar(); narrador.cancelar(); }
+  if (motor.tocando) motor.pausar();
   else motor.tocar();
   atualizarBotaoTocar();
 }
@@ -425,7 +421,6 @@ const scrub = { ativo: false, dir: 0, timer: null, intervalo: 420 };
 
 function iniciarScrub(dir) {
   if (scrub.ativo) { scrub.dir = dir; motor.iniciarFita(dir); return; }
-  narrador.cancelar();
   scrub.ativo = true; scrub.dir = dir; scrub.intervalo = 420;
   motor.iniciarFita(dir);
   $(dir < 0 ? '#btn-voltar' : '#btn-avancar').classList.add('ativo');
@@ -457,7 +452,7 @@ function terminarScrub() {
   motor.terminarFita(true);
   atualizarBotaoTocar();
   atualizarUI(motor.idx);
-  if (ajustes.narracao !== 'voz') anunciar(passo(motor.idx).falado);
+  anunciar(passo(motor.idx).falado);
 }
 
 function ligarBotaoFita(btn, dir) {
@@ -528,8 +523,6 @@ function aplicarAjustes() {
     motor.definirDimensao(d.id, ligada); grafico?.definirLigada(d.id, ligada);
   }
   motor.definirVolume(ajustes.volume / 100);
-  if (ajustes.narracao !== 'voz') narrador.cancelar();
-  else narrador.carregar(timeline().passos);   // baixa as vozes só quando a pessoa liga a narração
   if (regiao) atualizarUI(motor.idx);
 }
 
@@ -542,19 +535,17 @@ $('#btn-ajustes').addEventListener('click', () => {
     if (semDados && !aviso) { aviso = document.createElement('small'); aviso.className = 'sem-dados'; caixa.parentElement.append(' ', aviso); }
     if (aviso) aviso.textContent = semDados ? t('aj.semDados') : '';
   }
-  form.elements.narracao.value = ajustes.narracao;
   form.elements.tic.checked = ajustes.tic;
   form.elements.volume.value = ajustes.volume;
   const n = timeline().passos.length;
   const origem = Object.values(origemDosSons());
   const doMusico = origem.filter((o) => o === 'musico').length, prov = origem.filter((o) => o === 'provisorio').length;
-  $('#aj-info').textContent = t('aj.info', { n, bpm: BPM, musico: doMusico, prov, narr: narrador.descricao, frames: fonteDosDados() === 'frames' });
+  $('#aj-info').textContent = t('aj.info', { n, bpm: BPM, musico: doMusico, prov, frames: fonteDosDados() === 'frames' });
   dlg.showModal();
 });
 
 form.addEventListener('change', () => {
   for (const d of DIMS) if (!form.elements[`dim-${d.id}`].disabled) ajustes[d.id] = form.elements[`dim-${d.id}`].checked;
-  ajustes.narracao = form.elements.narracao.value;
   ajustes.tic = form.elements.tic.checked;
   ajustes.volume = Number(form.elements.volume.value);
   salvarAjustes();
@@ -574,7 +565,7 @@ aoMudarIdioma(() => {
   grafico?.atualizarIdioma?.();
 });
 
-window.jukebox = { motor, narrador }; // para depurar no console
+window.jukebox = { motor }; // para depurar no console
 // dados: começam a baixar já; se falharem, "Tentar de novo" na tela "Preparando" chama de novo
 let preparo = null;
 function garantirPreparo() {
