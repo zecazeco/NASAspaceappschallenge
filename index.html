@@ -205,6 +205,12 @@
           <span data-i18n="ctrl.avancar">Avançar</span>
         </button>
       </div>
+      <!-- registro dos eventos: cada evento que aparece no gráfico fica anotado aqui -->
+      <section class="log-eventos moldura-terminal" aria-labelledby="titulo-log">
+        <h2 id="titulo-log" class="log-titulo" data-i18n="log.titulo">Eventos</h2>
+        <p id="log-vazio" class="log-vazio" data-i18n="log.vazio">Os eventos aparecem aqui conforme a música toca.</p>
+        <ol id="lista-eventos" class="log-lista" tabindex="0" aria-labelledby="titulo-log"></ol>
+      </section>
       <div class="rodape"><div class="idiomas" role="group" aria-label="Idioma" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div>
       <p class="creditos"><span data-i18n="creditos">Temperatura: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · CO₂, chuva e vegetação: dados fictícios (protótipo)</span> · <span id="versao" title="Muda a cada publicação no GitHub (número de commits e código do commit). No computador aparece “local”.">Version local</span></p>
       </div>

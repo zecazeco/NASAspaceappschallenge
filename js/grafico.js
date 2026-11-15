@@ -61,11 +61,12 @@ export class Grafico {
     for (const c of (this.cards ?? []).slice()) this.fecharCard(c, true);   // cards abertos estavam no idioma anterior
   }
 
-  constructor(el, { anos, aoAnunciar = () => {}, rotuloPonta = (id) => TITULOS[id] }) {
+  constructor(el, { anos, aoAnunciar = () => {}, aoEvento = () => {}, rotuloPonta = (id) => TITULOS[id] }) {
     this.el = el;
     this.anos = anos;
     this.N = anos.length;
     this.aoAnunciar = aoAnunciar;
+    this.aoEvento = aoEvento;   // cada evento que abre um card também vai para o registro abaixo dos controles
     this.rotuloPonta = rotuloPonta;
     this.trilha = null;
     this.ligadas = Object.fromEntries(CAMADAS_GRAFICO.map((c) => [c.id, true]));
@@ -422,6 +423,7 @@ export class Grafico {
     this.posicionarCard(card, p);
     setTimeout(() => { el.classList.add('visivel'); fio.classList.add('visivel'); }, 20);
     this.aoAnunciar(`${this.anos[i]}. ${TITULOS[id]}. ${frase}`);
+    this.aoEvento({ id, ev, i });
     card.timer = setTimeout(() => this.fecharCard(card), duracao);
   }
 

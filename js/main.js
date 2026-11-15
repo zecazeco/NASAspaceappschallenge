@@ -1,7 +1,7 @@
 import { carregarTimeline, timeline, prepararLocal, valoresDoPasso, textosDimensoes, inicioMedicao, fonteDosDados } from './dados.js';
 import { preCarregarFrames, desenharFrame } from './frames.js';
 import { PainelTemperatura } from './painel-temperatura.js';
-import { Grafico } from './grafico.js';
+import { Grafico, fraseDoEvento } from './grafico.js';
 import { calcularTrilha, listarEventos } from './trilha.js';
 import { carregarCidadesLocais, pedirLocalizacao, nomeDaCidade, buscarCidades } from './cidade.js';
 import { Narrador } from './narrador.js';
@@ -94,6 +94,7 @@ async function iniciar() {
     grafico = new Grafico($('#grafico'), {
       anos: timeline().passos.map((p) => p.inicio),
       aoAnunciar: anunciar,
+      aoEvento: registrarEvento,
       rotuloPonta: (id, idx, t) => `${DIMS.find((d) => d.id === id).sigla} ${id === 'temperatura' && tempEm(t) != null ? `${sinalTemp(tempEm(t))} °C` : curtos(idx)[id]}`,
     });
     grafico.tempoAlvo = () => motor.tempoContinuo();
@@ -250,6 +251,7 @@ async function escolherCidade(c) {
   window.jukebox.eventos = () => listarEventos(trilha, timeline().passos);
   motor.definirTrilha(trilha);
   grafico.definirTrilha(trilha);
+  limparRegistro();
   anunciar(t('anuncio.cidade', { cidade: c.nome, regiao: regiao.nome }));
   $('#nome-cidade').textContent = c.nome;
   // só o país (o resto cortava no celular); a região climática vai para o leitor de tela no anúncio acima
@@ -271,6 +273,34 @@ function voltarParaPrincipal() {
   if (!cidade) return;
   mostrar('#tela-principal');
   $('#nome-cidade').focus();
+}
+
+// ---------------------------------------------------------------- registro de eventos
+// Abaixo dos controles: cada evento que aparece no gráfico fica anotado (o mais novo em cima),
+// para quem quiser ler com calma. Recomeça ao trocar de cidade.
+const registro = new Map();   // chave "ano:camada" → { id, ev, i }
+function registrarEvento(e) {
+  const chave = `${e.i}:${e.id}`;
+  if (registro.has(chave)) return;
+  registro.set(chave, e);
+  desenharRegistro();
+}
+function limparRegistro() { registro.clear(); desenharRegistro(); }
+function desenharRegistro() {
+  const lista = $('#lista-eventos');
+  lista.replaceChildren();
+  const itens = [...registro.values()].sort((a, b) => b.i - a.i);
+  for (const e of itens) {
+    const d = DIMS.find((x) => x.id === e.id);
+    const li = document.createElement('li');
+    li.style.setProperty('--cor', d.cor);
+    li.innerHTML = `<i class="glifo ${e.id}" aria-hidden="true"></i><span class="log-ano"></span><span class="log-sigla"></span><span class="log-frase"></span>`;
+    li.querySelector('.log-ano').textContent = timeline().passos[e.i].inicio;
+    li.querySelector('.log-sigla').textContent = d.sigla;
+    li.querySelector('.log-frase').textContent = fraseDoEvento(e.id, e.ev);
+    lista.append(li);
+  }
+  $('#log-vazio').hidden = itens.length > 0;
 }
 
 // ---------------------------------------------------------------- dimensões e UI
@@ -534,6 +564,7 @@ aoMudarIdioma(() => {
   if ($('#lista-dimensoes').children.length) nomearDimensoes();
   atualizarBotaoTocar();
   if (regiao) atualizarUI(motor.idx);
+  desenharRegistro();
   painel?.atualizarIdioma?.();
   grafico?.atualizarIdioma?.();
 });
