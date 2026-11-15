@@ -386,6 +386,20 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
   .tela-inicio { min-height: min(100dvh, 760px); margin-top: max(0px, calc((100dvh - 760px) / 2)); }
 }
 
+/* monitor com altura suficiente: tudo numa tela só, sem rolar até os controles.
+   Mapa e dial ficam com no máximo ~40% da altura; o gráfico ocupa o que sobra (mínimo 220 px). */
+@media (min-width: 1000px) and (min-height: 700px) {
+  #tela-principal {
+    height: 100dvh; padding-bottom: 12px; gap: 14px 40px;
+    grid-template-rows: auto auto minmax(220px, 1fr) auto auto;
+  }
+  #tela-principal > .grafico { min-height: 0; }
+  #tela-principal > .painel-temp .moldura-mapa { max-width: calc((40dvh - 56px) * 2.02 + 60px); margin: 0 auto; }
+  #tela-principal > .painel-temp .leitura { max-height: 40dvh; }
+  .rodape { margin-top: 14px; padding-bottom: 0; }
+  .dica-grafico { margin-top: -8px; }
+}
+
 /* frame ampliado */
 dialog {
   width: min(480px, calc(100% - 2 * var(--gutter))); max-height: calc(100dvh - 32px);
