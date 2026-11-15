@@ -9,30 +9,33 @@
 // • Tudo que é dito pelos cards também vai para o leitor de tela (callback aoAnunciar).
 
 export const CAMADAS_GRAFICO = [
-  { id: 'co2', nome: 'CO₂', cor: '#b98cff', z: 0.9, espessura: 1.3 },
-  { id: 'temperatura', nome: 'Temperatura', cor: '#ff7a45', z: 0.6, espessura: 1.2 },
-  { id: 'tendencia', nome: 'Tendência', cor: '#ffd84d', z: 0.6, espessura: 1.6 },   // média de 11 anos, por dentro da temperatura
-  { id: 'vegetacao', nome: 'Vegetação', cor: '#55e08a', z: 0.3, espessura: 1.05 },
-  { id: 'chuva', nome: 'Chuva', cor: '#4fc3ff', z: 0.0, espessura: 0.8 },
+  { id: 'co2', nome: 'CO₂', cor: '#C77DFF', z: 0.9, espessura: 1.3 },
+  { id: 'temperatura', nome: 'Temperatura', cor: '#FF5C9E', z: 0.6, espessura: 1.2 },
+  { id: 'tendencia', nome: 'Tendência', cor: '#7E8A99', z: 0.6, espessura: 1.6 },   // média de 11 anos, por dentro da temperatura
+  { id: 'vegetacao', nome: 'Vegetação', cor: '#C6F06B', z: 0.3, espessura: 1.05 },
+  { id: 'chuva', nome: 'Chuva', cor: '#53E2FF', z: 0.0, espessura: 0.8 },
 ];
-const TITULOS = { co2: 'CO₂', temperatura: 'Temperatura', tendencia: 'Tendência', chuva: 'Chuva', vegetacao: 'Vegetação' };
-const num = (v, casas = 1) => v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+import { t as tr, localidade } from './i18n.js';
 
+const TITULOS = new Proxy({}, { get: (_, id) => tr(`sigla.${String(id)}`) });
+const num = (v, casas = 1) => v.toLocaleString(localidade(), { minimumFractionDigits: casas, maximumFractionDigits: casas });
+const sinal = (v) => `${v >= 0 ? '+' : '−'}${num(Math.abs(v))}`;
+// Textos dos eventos (no idioma escolhido, ver js/i18n.js)
 const FRASES = {
-  co2: { recorde: (e) => `O CO₂ subiu ${num(e.valor)} ppm: mais rápido que em qualquer ano anterior` },
-  temperatura: { recorde: (e) => `O ano mais quente já medido aqui (${e.valor >= 0 ? '+' : '−'}${num(Math.abs(e.valor))} °C)` },
+  co2: { recorde: (e) => tr('ev.co2.recorde', { v: num(e.valor) }) },
+  temperatura: { recorde: (e) => tr('ev.temperatura.recorde', { v: sinal(e.valor) }) },
   chuva: {
-    seca: (e) => (e.intensidade === 'f' ? 'O ano mais seco já medido aqui' : `Seca: ${Math.round(e.valor)}% de chuva`),
-    extrema: (e) => (e.intensidade === 'f' ? 'O ano mais chuvoso já medido aqui' : `Chuva extrema: +${Math.round(e.valor)}%`),
+    seca: (e) => (e.intensidade === 'f' ? tr('ev.chuva.secaF') : tr('ev.chuva.seca', { v: Math.round(e.valor) })),
+    extrema: (e) => (e.intensidade === 'f' ? tr('ev.chuva.extremaF') : tr('ev.chuva.extrema', { v: Math.round(e.valor) })),
   },
-  vegetacao: { queda: (e) => (e.intensidade === 'f' ? 'O ano menos verde já medido aqui' : `A vegetação perdeu ${Math.round(e.valor * 100)}% do verde`) },
+  vegetacao: { queda: (e) => (e.intensidade === 'f' ? tr('ev.vegetacao.quedaF') : tr('ev.vegetacao.queda', { v: Math.round(e.valor * 100) })) },
 };
 /** Resumo de 2 ou 3 palavras: a etiqueta que fica presa ao ponto depois que o card fecha. */
 const RESUMOS = {
-  co2: { recorde: () => 'Recorde CO₂' },
-  temperatura: { recorde: () => 'Recorde de calor' },
-  chuva: { seca: (e) => (e.intensidade === 'f' ? 'Seca recorde' : 'Seca'), extrema: (e) => (e.intensidade === 'f' ? 'Chuva recorde' : 'Chuva extrema') },
-  vegetacao: { queda: (e) => (e.intensidade === 'f' ? 'Menor verde' : 'Queda do verde') },
+  co2: { recorde: () => tr('res.co2.recorde') },
+  temperatura: { recorde: () => tr('res.temperatura.recorde') },
+  chuva: { seca: (e) => tr(e.intensidade === 'f' ? 'res.chuva.secaF' : 'res.chuva.seca'), extrema: (e) => tr(e.intensidade === 'f' ? 'res.chuva.extremaF' : 'res.chuva.extrema') },
+  vegetacao: { queda: (e) => tr(e.intensidade === 'f' ? 'res.vegetacao.quedaF' : 'res.vegetacao.queda') },
 };
 export const fraseDoEvento = (id, ev) => FRASES[id][ev.nome](ev);
 
@@ -40,7 +43,24 @@ const DURACAO_CARD = 3200, DURACAO_REABERTO = 4500, VOLTA_SOZINHO = 8000;
 const sobrepoe = (a, b, folga = 8) => !(a.x + a.w + folga < b.x || b.x + b.w + folga < a.x || a.y + a.h + folga < b.y || b.y + b.h + folga < a.y);
 const reduzMovimento = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/** Forma de cada camada (a cor nunca vem sozinha): losango, círculo, triângulo, cruz. */
+function glifo(ctx, id, x, y, r) {
+  ctx.beginPath();
+  if (id === 'co2') { ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
+  else if (id === 'temperatura') ctx.arc(x, y, r * 0.85, 0, 7);
+  else if (id === 'chuva') { ctx.moveTo(x - r, y - r * 0.7); ctx.lineTo(x + r, y - r * 0.7); ctx.lineTo(x, y + r); ctx.closePath(); }
+  else { const a = r * 0.36; ctx.moveTo(x - a, y - r); ctx.lineTo(x + a, y - r); ctx.lineTo(x + a, y - a); ctx.lineTo(x + r, y - a); ctx.lineTo(x + r, y + a); ctx.lineTo(x + a, y + a); ctx.lineTo(x + a, y + r); ctx.lineTo(x - a, y + r); ctx.lineTo(x - a, y + a); ctx.lineTo(x - r, y + a); ctx.lineTo(x - r, y - a); ctx.lineTo(x - a, y - a); ctx.closePath(); }
+  ctx.fill();
+}
+
 export class Grafico {
+  /** Textos do botão Agora no idioma escolhido. */
+  atualizarIdioma() {
+    this.btnAgora.textContent = tr('grafico.agora');
+    this.btnAgora.setAttribute('aria-label', tr('grafico.agoraRotulo'));
+    for (const c of (this.cards ?? []).slice()) this.fecharCard(c, true);   // cards abertos estavam no idioma anterior
+  }
+
   constructor(el, { anos, aoAnunciar = () => {}, rotuloPonta = (id) => TITULOS[id] }) {
     this.el = el;
     this.anos = anos;
@@ -65,8 +85,7 @@ export class Grafico {
     this.btnAgora = document.createElement('button');
     this.btnAgora.type = 'button';
     this.btnAgora.className = 'btn grafico-agora';
-    this.btnAgora.textContent = 'Agora';
-    this.btnAgora.setAttribute('aria-label', 'Voltar o gráfico para o ano que está tocando');
+    this.atualizarIdioma();
     this.btnAgora.hidden = true;
     this.btnAgora.addEventListener('click', () => { this.voltandoAgora = true; });
     el.append(this.canvas, this.camadaCards, this.btnAgora);
@@ -141,7 +160,9 @@ export class Grafico {
     if (!this.trilha) return;
     this.chao();
     const pontas = {};
-    for (const c of CAMADAS_GRAFICO) if (this.ligadas[c.id]) pontas[c.id] = this.camada(c);
+    // a tendência é desenhada primeiro, por trás de todas as camadas (os dados do ano ficam na frente)
+    const ordem = [...CAMADAS_GRAFICO].sort((a, b) => (b.id === 'tendencia') - (a.id === 'tendencia'));
+    for (const c of ordem) if (this.ligadas[c.id]) pontas[c.id] = this.camada(c);
     this.cursor();
     this.etiquetas(agora);
     this.bordasEsfumadas();
@@ -165,16 +186,16 @@ export class Grafico {
       const x = base + k - this.centro;
       const a = this.proj(x, 0, 0), b = this.proj(x, 1.4, 0);
       const forte = ano % 10 === 0;
-      ctx.strokeStyle = forte ? 'rgba(120,160,255,0.16)' : 'rgba(120,160,255,0.06)';
+      ctx.strokeStyle = forte ? 'rgba(79,198,245,0.28)' : 'rgba(79,198,245,0.1)';
       ctx.beginPath(); ctx.moveTo(a.x, a.base); ctx.lineTo(b.x, b.base); ctx.stroke();
       if (forte && Math.abs(x) < this.anosVisiveis() / 2 + 1) {
-        ctx.fillStyle = 'rgba(160,185,230,0.5)'; ctx.font = '11px system-ui'; ctx.textAlign = 'center';
+        ctx.fillStyle = '#B9B3A6'; ctx.font = "500 11px 'IBM Plex Mono', monospace"; ctx.textAlign = 'center';
         ctx.fillText(String(ano), a.x, a.base + 15);
       }
     }
     for (let z = 0; z <= 1.4; z += 0.2) {
       const a = this.proj(-60, z, 0), b = this.proj(60, z, 0);
-      ctx.strokeStyle = `rgba(120,160,255,${0.1 - z * 0.05})`;
+      ctx.strokeStyle = `rgba(79,198,245,${0.16 - z * 0.08})`;
       ctx.beginPath(); ctx.moveTo(a.x, a.base); ctx.lineTo(b.x, b.base); ctx.stroke();
     }
     ctx.restore();
@@ -226,11 +247,13 @@ export class Grafico {
       const ev = this.trilha.eventos[p.i][c.id];
       if (!ev) continue;
       const ja = p.i <= t;
+      const r = (ev.intensidade === 'f' ? 6 : ev.intensidade === 'm' ? 5 : 4) * p.s;
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = c.cor; ctx.shadowColor = c.cor; ctx.shadowBlur = ja ? 14 : 0; ctx.globalAlpha = ja ? 1 : 0.4;
-      ctx.translate(p.x, p.y); ctx.rotate(Math.PI / 4);
-      const r = (ev.intensidade === 'f' ? 4.5 : ev.intensidade === 'm' ? 3.6 : 2.8) * p.s;
-      ctx.fillRect(-r, -r, 2 * r, 2 * r);
+      ctx.fillStyle = c.cor; ctx.shadowColor = c.cor; ctx.shadowBlur = ja ? 12 : 0; ctx.globalAlpha = ja ? 1 : 0.4;
+      glifo(ctx, c.id, p.x, p.y, r);
+      // anel: o evento acabou de acontecer (até ~1,5 ano depois)
+      const recente = ja && t - p.i < 1.5;
+      if (recente) { ctx.beginPath(); ctx.arc(p.x, p.y, r * 2.3, 0, 7); ctx.strokeStyle = c.cor; ctx.lineWidth = 2; ctx.stroke(); }
       ctx.restore();
       if (ja) this.alvos.push({ x: p.x, y: p.y, i: p.i, id: c.id, ev, cor: c.cor, chave: `${p.i}:${c.id}` });
     }
@@ -260,7 +283,7 @@ export class Grafico {
     const idx = Math.max(0, Math.min(this.N - 1, Math.floor(this.t + 0.001)));
     for (const o of ord) {
       if (o.p.x < -20 || o.p.x > this.W + 20) continue;
-      ctx.save(); ctx.font = '12px system-ui'; ctx.fillStyle = o.c.cor; ctx.globalAlpha = 0.95; ctx.textAlign = 'left';
+      ctx.save(); ctx.font = "500 12px 'IBM Plex Mono', monospace"; ctx.fillStyle = o.c.cor; ctx.globalAlpha = 0.95; ctx.textAlign = 'left';
       const x = o.p.x + o.r + 10;
       if (Math.abs(o.y - (o.p.y + 4)) > 2) {
         ctx.strokeStyle = o.c.cor; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
@@ -276,8 +299,8 @@ export class Grafico {
     const a = this.proj(x, 0, 0), b = this.proj(x, 1.4, 1.05);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     const g = ctx.createLinearGradient(0, b.y, 0, a.base);
-    g.addColorStop(0, 'rgba(255,211,77,0)'); g.addColorStop(0.25, 'rgba(255,211,77,0.55)'); g.addColorStop(1, 'rgba(255,211,77,0.9)');
-    ctx.strokeStyle = g; ctx.lineWidth = 1.5; ctx.shadowColor = '#ffd34d'; ctx.shadowBlur = 16;
+    g.addColorStop(0, 'rgba(255,138,76,0)'); g.addColorStop(0.25, 'rgba(255,138,76,0.6)'); g.addColorStop(1, 'rgba(255,138,76,1)');
+    ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.shadowColor = '#FF8A4C'; ctx.shadowBlur = 14;
     ctx.beginPath(); ctx.moveTo(a.x, a.base); ctx.lineTo(b.x, b.y); ctx.stroke();
     ctx.restore();
   }
@@ -299,7 +322,7 @@ export class Grafico {
     const { ctx } = this;
     const ocupados = [];
     const abertas = new Set(this.cards.map((c) => c.chave));
-    ctx.save(); ctx.font = '10.5px system-ui';
+    ctx.save(); ctx.font = "600 10.5px 'Chakra Petch', sans-serif";
     for (const a of this.alvos.slice().sort((x, y) => y.i - x.i)) {
       a.etiqueta = null;
       const t0 = this.vistos.get(a.chave);
@@ -316,8 +339,8 @@ export class Grafico {
       ocupados.push(r);
       a.etiqueta = r;
       ctx.globalAlpha = alpha * 0.9;
-      ctx.fillStyle = 'rgba(8,14,28,0.82)'; ctx.strokeStyle = a.cor; ctx.lineWidth = 0.8;
-      ctx.beginPath(); ctx.roundRect(r.x, r.y, w, h, 8); ctx.fill(); ctx.globalAlpha = alpha * 0.6; ctx.stroke();
+      ctx.fillStyle = 'rgba(7,7,12,0.88)'; ctx.strokeStyle = a.cor; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.rect(r.x, r.y, w, h); ctx.fill(); ctx.globalAlpha = alpha * 0.7; ctx.setLineDash([3, 2]); ctx.stroke(); ctx.setLineDash([]);
       ctx.globalAlpha = alpha; ctx.fillStyle = a.cor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(txt, r.x + w / 2, r.y + h / 2 + 0.5);
     }
@@ -345,28 +368,33 @@ export class Grafico {
   }
 
   /**
-   * Escolhe onde o card aparece em volta do ponto: dos dois lados (acima, na altura, abaixo,
-   * perto e longe), dentro da área do gráfico, sem encostar em cards abertos nem cobrir o
-   * ponto. Começa pelo lado CONTRÁRIO ao do último card aberto.
+   * Escolhe onde o card aparece em volta do ponto, dentro da área do gráfico, sem encostar em cards
+   * abertos nem cobrir o ponto. Sempre que possível o card fica INTEIRO à esquerda do centro (o ano
+   * que está tocando), para não tapar o caminho por onde o gráfico anda; se não couber, usa os dois lados.
    */
   posicionar(w, h, p) {
-    const m = 8, topo = 6, baixo = this.H - 6;
+    const m = 8, topo = 6, baixo = this.H - 6, centro = this.W / 2 - 10;
     const prende = (v, a, b) => Math.max(a, Math.min(b, v));
-    const ultimo = this.cards.at(-1);
-    const lados = ultimo && ultimo.lado > 0 ? [-1, 1] : [1, -1];
     const ocupados = this.cards.map((c) => ({ x: c.x, y: c.y, w: c.w, h: c.h }));
     const ponto = { x: p.x - 14, y: p.y - 14, w: 28, h: 28 };
-    for (const lado of lados) {
-      for (const dy of [-h - 30, -h / 2, 30, -h - 100, 100]) {
-        for (const dist of [22, 60]) {
-          const r = { x: prende(lado > 0 ? p.x + dist : p.x - dist - w, m, this.W - m - w), y: prende(p.y + dy, topo, baixo - h), w, h };
-          if (sobrepoe(r, ponto, 2) || ocupados.some((o) => sobrepoe(r, o))) continue;
-          return { ...r, lado };
+    const tentativas = [
+      { lados: [-1], soEsquerda: true },
+      { lados: [-1, 1], soEsquerda: false },
+    ];
+    for (const { lados, soEsquerda } of tentativas) {
+      for (const lado of lados) {
+        for (const dy of [-h - 30, -h / 2, 30, -h - 100, 100]) {
+          for (const dist of [22, 60, 120]) {
+            const r = { x: prende(lado > 0 ? p.x + dist : p.x - dist - w, m, this.W - m - w), y: prende(p.y + dy, topo, baixo - h), w, h };
+            if (soEsquerda && r.x + w > centro) continue;
+            if (sobrepoe(r, ponto, 2) || ocupados.some((o) => sobrepoe(r, o))) continue;
+            return { ...r, lado };
+          }
         }
       }
     }
     const yMin = Math.min(...ocupados.map((o) => o.y), baixo);
-    return { x: prende(p.x - w / 2, m, this.W - m - w), y: Math.max(topo, yMin - h - 10), w, h, lado: 0 };
+    return { x: prende(Math.min(p.x, centro) - w, m, this.W - m - w), y: Math.max(topo, yMin - h - 10), w, h, lado: -1 };
   }
 
   abrirCard(id, ev, i, duracao) {
@@ -383,6 +411,8 @@ export class Grafico {
     el.children[1].textContent = frase;
     const fio = document.createElement('div');
     fio.className = 'card-fio'; fio.style.setProperty('--cor', camada.cor);
+    // cabe na metade esquerda do gráfico (ver posicionar)
+    el.style.maxWidth = `${Math.max(150, this.W / 2 - 26)}px`;
     this.camadaCards.append(fio, el);
     const w = el.offsetWidth, h = el.offsetHeight;
     const r = this.posicionar(w, h, p);

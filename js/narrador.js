@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 // Narração dos anos.
 // 1º: arquivos gravados em audio/narracao/ (voz natural: gravada por alguém ou gerada por IA).
 // 2º: se não existirem, a voz do próprio navegador (Web Speech API), escolhendo a mais natural.
@@ -52,8 +53,8 @@ export class Narrador {
 
   get descricao() {
     const n = Object.keys(this.buffers).length;
-    if (n) return `voz gravada (${n} arquivos)`;
-    return this.voz ? `voz do navegador: ${this.voz.name}` : 'sem voz disponível';
+    if (n) return t('narr.gravada', { n });
+    return this.voz ? t('narr.navegador', { nome: this.voz.name }) : t('narr.sem');
   }
 
   /** No iOS a primeira fala precisa acontecer dentro de um toque do usuário. */

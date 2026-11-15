@@ -1,3 +1,4 @@
+import { t, lingua } from './i18n.js';
 // Descobrir a cidade: GPS → geocodificação reversa, ou busca digitada.
 
 let CIDADES_LOCAIS = [];
@@ -27,7 +28,7 @@ export function pedirLocalizacao() {
 export async function nomeDaCidade(lat, lon) {
   const la = lat.toFixed(2), lo = lon.toFixed(2);
   try {
-    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${la}&longitude=${lo}&localityLanguage=pt`;
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${la}&longitude=${lo}&localityLanguage=${lingua()}`;
     const d = await comTempo(fetch(url).then((r) => r.json()), 6000);
     const nome = d.city || d.locality || d.principalSubdivision;
     if (nome) return { nome, detalhe: [d.principalSubdivision, d.countryName].filter(Boolean).join(', ') };
@@ -38,8 +39,8 @@ export async function nomeDaCidade(lat, lon) {
     if (d < menor) { menor = d; melhor = c; }
   }
   return melhor && menor < 4
-    ? { nome: `Perto de ${melhor.nome}`, detalhe: melhor.pais }
-    : { nome: 'Sua localização', detalhe: `${la}, ${lo}` };
+    ? { nome: t('local.perto', { nome: melhor.nome }), detalhe: melhor.pais }
+    : { nome: t('local.sua'), detalhe: `${la}, ${lo}` };
 }
 
 /** Busca por nome: primeiro a lista local (instantânea, offline), depois o Open-Meteo. */
@@ -51,7 +52,7 @@ export async function buscarCidades(texto) {
     .map((c) => ({ nome: c.nome, detalhe: c.pais, lat: c.lat, lon: c.lon }));
   let remotas = [];
   try {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(texto.trim())}&count=8&language=pt&format=json`;
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(texto.trim())}&count=8&language=${lingua()}&format=json`;
     const d = await comTempo(fetch(url).then((r) => r.json()), 6000);
     remotas = (d.results || []).map((c) => ({
       nome: c.name,

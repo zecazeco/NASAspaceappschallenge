@@ -7,15 +7,21 @@ import { carregarCidadesLocais, pedirLocalizacao, nomeDaCidade, buscarCidades } 
 import { Narrador } from './narrador.js';
 import { Motor, BPM } from './audio/motor.js';
 import { origemDosSons } from './audio/camadas.js';
+import { t, aplicarTextos, aoMudarIdioma, localidade } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
+// nome, sigla e papel vêm do idioma escolhido (js/i18n.js)
 const DIMS = [
-  { id: 'co2', nome: 'Gás carbônico', sigla: 'CO₂', papel: 'base grave', cor: '#b98cff' },
-  { id: 'temperatura', nome: 'Temperatura', sigla: 'Temperatura', papel: 'harmonia', cor: '#ff7a45' },
-  { id: 'tendencia', nome: 'Tendência da temperatura', sigla: 'Tendência', papel: 'média de 11 anos, pulso que sobe de nota', cor: '#ffd84d' },
-  { id: 'chuva', nome: 'Chuva', sigla: 'Chuva', papel: 'gotas agudas', cor: '#4fc3ff' },
-  { id: 'vegetacao', nome: 'Vegetação', sigla: 'Vegetação', papel: 'cordas dedilhadas', cor: '#55e08a' },
-];
+  { id: 'temperatura', cor: '#FF5C9E' },
+  { id: 'tendencia', cor: '#7E8A99' },
+  { id: 'co2', cor: '#C77DFF' },
+  { id: 'chuva', cor: '#53E2FF' },
+  { id: 'vegetacao', cor: '#C6F06B' },
+].map((d) => Object.defineProperties(d, {
+  nome: { get: () => t(`nome.${d.id}`) },
+  sigla: { get: () => t(`sigla.${d.id}`) },
+  papel: { get: () => t(`papel.${d.id}`) },
+}));
 
 // Quem abre a página pela primeira vez: só a temperatura (e a tendência dela) ligada e sem narração (dá para mudar nos ajustes).
 const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, tendencia: true, chuva: false, vegetacao: false, narracao: 'off', tic: true, volume: 80 };
@@ -31,6 +37,23 @@ let grafico = null, painel = null;
 const narrador = new Narrador();
 const motor = new Motor();
 
+// SÓ PARA TESTE: o botão vermelho "Teste" abre e fecha os seletores (já abertos com ?teste no endereço).
+{
+  const btn = $('#btn-teste'), barra = $('#barra-teste');
+  const abrir = (sim) => { barra.hidden = !sim; btn.setAttribute('aria-expanded', String(sim)); };
+  btn.addEventListener('click', () => abrir(barra.hidden));
+  if (new URLSearchParams(location.search).has('teste')) abrir(true);
+  // efeito CRT do mapa e da lente
+  const seletor = $('#seletor-crt');
+  const escolher = (crt) => {
+    document.body.dataset.crt = crt;
+    for (const b of seletor.querySelectorAll('button')) b.setAttribute('aria-checked', String(b.dataset.crt === crt));
+    try { localStorage.setItem('jukebox-crt', crt); } catch { /* ok */ }
+  };
+  seletor.addEventListener('click', (e) => { const b = e.target.closest('button[data-crt]'); if (b) escolher(b.dataset.crt); });
+  let salvo = null; try { salvo = localStorage.getItem('jukebox-crt'); } catch { /* ok */ }
+  escolher(salvo === 'linha' ? 'linha' : 'fosforo');
+}
 // SÓ PARA TESTE: seletor de som pontual da temperatura (Sem pontual / Pontual01). Começa sem pontual.
 {
   const seletor = document.getElementById('seletor-pontual');
@@ -61,7 +84,7 @@ const ultimo = () => timeline().passos.length - 1;
 async function iniciar() {
   const status = $('#status-carregamento');
   try {
-    status.textContent = 'Carregando dados…';
+    status.textContent = t('inicio.carregandoDados');
     await Promise.all([carregarTimeline(), carregarCidadesLocais()]);
     const n = timeline().passos.length;
     $('#slider-tempo').max = n - 1;
@@ -82,10 +105,11 @@ async function iniciar() {
     preCarregarFrames();
     if (ajustes.narracao === 'voz') narrador.carregar(timeline().passos); // só se a voz estiver ligada
     $('#btn-comecar').disabled = false;
-    $('#btn-comecar').textContent = 'Começar';
+    $('#btn-comecar').dataset.chave = 'inicio.comecar';
+    $('#btn-comecar').textContent = t('inicio.comecar');
   } catch (e) {
     console.error(e);
-    status.textContent = 'Erro ao carregar. Verifique a internet e recarregue a página.';
+    status.textContent = t('inicio.erro');
     $('#alerta').textContent = status.textContent;
   }
 }
@@ -93,7 +117,8 @@ async function iniciar() {
 $('#btn-comecar').addEventListener('click', async () => {
   const btn = $('#btn-comecar');
   btn.disabled = true;
-  btn.textContent = 'Procurando sua localização…';
+  btn.dataset.chave = 'inicio.procurando';
+  btn.textContent = t('inicio.procurando');
   // o áudio precisa ser destravado DENTRO do toque (iOS); ligar o motor fica para depois
   Tone.start();
   narrador.destravar();
@@ -103,8 +128,8 @@ $('#btn-comecar').addEventListener('click', async () => {
     await escolherCidade({ ...pos, ...nome });
   } catch (e) {
     const motivo = e.message === 'negado'
-      ? 'Você não autorizou a localização. Sem problema: digite sua cidade.'
-      : 'Não conseguimos encontrar sua localização. Digite sua cidade.';
+      ? t('local.negado')
+      : t('local.falhou');
     mostrarBusca(motivo, false);
   }
 });
@@ -125,7 +150,7 @@ async function buscar(texto, imediato = false) {
   const id = ++buscaAtual;
   const lista = $('#resultados-cidade');
   if (texto.trim().length < 2) { lista.innerHTML = ''; return; }
-  $('#status-busca').textContent = 'Buscando…';
+  $('#status-busca').textContent = t('busca.buscando');
   const resultados = await buscarCidades(texto);
   if (id !== buscaAtual) return; // chegou uma busca mais nova
   lista.innerHTML = '';
@@ -139,8 +164,8 @@ async function buscar(texto, imediato = false) {
     li.append(b); lista.append(li);
   }
   $('#status-busca').textContent = resultados.length
-    ? `${resultados.length} ${resultados.length === 1 ? 'cidade encontrada' : 'cidades encontradas'}. Escolha na lista abaixo.`
-    : 'Nenhuma cidade encontrada. Tente outro nome.';
+    ? t('busca.achadas', { n: resultados.length })
+    : t('busca.nenhuma');
   if (imediato && resultados.length) lista.querySelector('button').focus();
 }
 
@@ -154,6 +179,20 @@ $('#form-cidade').addEventListener('submit', (e) => {
   buscar($('#campo-cidade').value, true);
 });
 $('#btn-cancelar-busca').addEventListener('click', () => voltarParaPrincipal());
+$('#btn-usar-local').addEventListener('click', async () => {
+  const btn = $('#btn-usar-local'), st = $('#status-busca');
+  btn.disabled = true;
+  st.textContent = t('inicio.procurando');
+  try {
+    const pos = await pedirLocalizacao();
+    const nome = await nomeDaCidade(pos.lat, pos.lon);
+    await escolherCidade({ ...pos, ...nome });
+  } catch (e) {
+    st.textContent = e.message === 'negado'
+      ? t('local.negado2')
+      : t('local.falhou');
+  } finally { btn.disabled = false; }
+});
 $('#btn-trocar-cidade').addEventListener('click', () => mostrarBusca('', true));
 
 async function escolherCidade(c) {
@@ -169,10 +208,10 @@ async function escolherCidade(c) {
     const total = (pMapas + progressoSom) / 2;
     barra.value = Math.round(total * 100);
     const partes = [];
-    if (pMapas < 1) partes.push(`Lendo os mapas da NASA… ${Math.round(pMapas * 100)}%`);
-    if (progressoSom < 1) partes.push(`Baixando os sons… ${Math.round(progressoSom * 100)}%`);
+    if (pMapas < 1) partes.push(t('prep.mapas', { p: Math.round(pMapas * 100) }));
+    if (progressoSom < 1) partes.push(t('prep.sons', { p: Math.round(progressoSom * 100) }));
     // leitor de tela: avisa de 25 em 25%
-    if (total - ultimoAviso >= 0.25 || total === 1) { ultimoAviso = total; st.textContent = partes.join(' · ') || 'Compondo a trilha…'; }
+    if (total - ultimoAviso >= 0.25 || total === 1) { ultimoAviso = total; st.textContent = partes.join(' · ') || t('prep.compondo'); }
   };
   aoProgressoSom = mostrarProgresso;
   mostrarProgresso();
@@ -187,20 +226,22 @@ async function escolherCidade(c) {
     motor.aoMudarPasso = aoMudarPasso;
     motor.aoTerminar = () => {
       atualizarBotaoTocar();
-      anunciar(`Fim da música em ${passo(ultimo()).inicio}. Toque em Recomeçar para ouvir desde 1950.`);
+      anunciar(t('fim', { ano: passo(ultimo()).inicio }));
     };
     aplicarAjustes();
     somLigado = true;
   }
-  st.textContent = 'Compondo a trilha…';
+  st.textContent = t('prep.compondo');
   trilha = calcularTrilha(regiao, timeline().passos, timeline().global.co2);
   window.jukebox.trilha = trilha;
   window.jukebox.eventos = () => listarEventos(trilha, timeline().passos);
   motor.definirTrilha(trilha);
   grafico.definirTrilha(trilha);
-  anunciar(`${c.nome}. Região: ${regiao.nome}.`);
+  anunciar(t('anuncio.cidade', { cidade: c.nome, regiao: regiao.nome }));
   $('#nome-cidade').textContent = c.nome;
-  $('#nome-regiao').textContent = `${c.detalhe ? c.detalhe + ' · ' : ''}Região: ${regiao.nome}`;
+  // só o país (o resto cortava no celular); a região climática vai para o leitor de tela no anúncio acima
+  const pais = (c.detalhe || '').split(',').map((x) => x.trim()).filter(Boolean).pop() || '';
+  $('#nome-regiao').textContent = pais;
   mostrar('#tela-principal');
   $('#nome-cidade').focus();
   if (primeiraCidade) {
@@ -225,8 +266,16 @@ function montarDimensoes() {
   for (const d of DIMS) {
     const li = document.createElement('li');
     li.className = 'dim'; li.id = `dim-${d.id}`; li.style.setProperty('--cor', d.cor);
-    li.innerHTML = `<h3><span aria-hidden="true">${d.sigla}</span><span class="sr-only">${d.nome} (${d.papel})</span></h3><p class="curto" aria-hidden="true"></p><p class="sr-only longo"></p><div class="barra" aria-hidden="true"><i></i></div>`;
+    li.innerHTML = `<h3><span aria-hidden="true" class="sigla"></span><span class="sr-only nome"></span></h3><p class="curto" aria-hidden="true"></p><p class="sr-only longo"></p><div class="barra" aria-hidden="true"><i></i></div>`;
     ul.append(li);
+  }
+  nomearDimensoes();
+}
+function nomearDimensoes() {
+  for (const d of DIMS) {
+    const li = $(`#dim-${d.id}`);
+    li.querySelector('.sigla').textContent = d.sigla;
+    li.querySelector('.nome').textContent = `${d.nome} (${d.papel})`;
   }
 }
 
@@ -235,13 +284,14 @@ function curtos(idx) {
   if (!regiao) return {};
   const v = valoresDoPasso(regiao, idx);
   const b = v.bruto, ini = inicioMedicao(regiao);
-  const sinal = (x, casas = 0) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toLocaleString('pt-BR', { maximumFractionDigits: casas, minimumFractionDigits: casas })}`;
+  const sinal = (x, casas = 0) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toLocaleString(localidade(), { maximumFractionDigits: casas, minimumFractionDigits: casas })}`;
+  const desde = (ano) => t('desde', { ano });
   return {
-    co2: b.co2 == null ? `desde ${ini.co2}` : `${Math.round(b.co2)} ppm`,
-    temperatura: b.temperatura == null ? `desde ${ini.temperatura}` : `${sinal(b.temperatura, 1)} °C`,
-    tendencia: trilha?.tendencia?.[idx] == null ? `desde ${ini.temperatura}` : `média ${sinal(trilha.tendencia[idx], 1)} °C`,
-    chuva: b.chuva == null ? `desde ${ini.chuva}` : `${sinal(b.chuva)}%`,
-    vegetacao: v.vegetacao == null ? `desde ${ini.vegetacao}` : `${sinal((v.vegetacao.saude - 1) * 100)}%`,
+    co2: b.co2 == null ? desde(ini.co2) : `${Math.round(b.co2)} ppm`,
+    temperatura: b.temperatura == null ? desde(ini.temperatura) : `${sinal(b.temperatura, 1)} °C`,
+    tendencia: trilha?.tendencia?.[idx] == null ? desde(ini.temperatura) : t('media', { v: `${sinal(trilha.tendencia[idx], 1)} °C` }),
+    chuva: b.chuva == null ? desde(ini.chuva) : `${sinal(b.chuva)}%`,
+    vegetacao: v.vegetacao == null ? desde(ini.vegetacao) : `${sinal((v.vegetacao.saude - 1) * 100)}%`,
   };
 }
 
@@ -251,13 +301,14 @@ function atualizarUI(idx) {
   $('#ano-grande').textContent = p.rotulo;
   const slider = $('#slider-tempo');
   slider.value = idx;
+  slider.style.setProperty('--p', `${(idx / Math.max(1, ultimo())) * 100}%`);
   slider.setAttribute('aria-valuetext', p.falado);
 
   const v = valoresDoPasso(regiao, idx);
   const textos = textosDimensoes(regiao, idx);
   const media = trilha?.tendencia?.[idx], nivelTend = trilha?.posicao.tendencia?.[idx];
-  textos.tendencia = media == null ? 'Ainda sem média.'
-    : `Média dos 11 anos em volta: ${media >= 0 ? '+' : '−'}${Math.abs(media).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} °C, nível ${nivelTend + 1} de 4`;
+  textos.tendencia = media == null ? t('tend.sem')
+    : t('tend.texto', { v: `${media >= 0 ? '+' : '−'}${Math.abs(media).toLocaleString(localidade(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`, nivel: nivelTend + 1 });
   const curto = curtos(idx);
   const nivel = {
     co2: v.co2, temperatura: v.temperatura, tendencia: nivelTend == null ? null : (nivelTend + 1) / 4,
@@ -269,7 +320,7 @@ function atualizarUI(idx) {
     const desligada = !ajustes[d.id];
     li.classList.toggle('inativa', nivel[d.id] == null);
     li.classList.toggle('desligada', desligada);
-    li.querySelector('.longo').textContent = desligada ? `Desligada nos ajustes. ${textos[d.id]}` : textos[d.id];
+    li.querySelector('.longo').textContent = desligada ? t('dim.desligadaLonga', { texto: textos[d.id] }) : textos[d.id];
     li.querySelector('.curto').textContent = desligada ? 'desligada' : curto[d.id];
     li.querySelector('i').style.width = `${Math.round((nivel[d.id] ?? 0) * 100)}%`;
   }
@@ -296,7 +347,7 @@ function tempEm(t) {
   const passos = Math.round(Math.abs(b - a) * 10);           // quantos 0,1 até o ano seguinte
   return Math.round(a * 10 + Math.sign(b - a) * Math.floor(passos * f + 1e-9)) / 10;
 }
-const sinalTemp = (x) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
+const sinalTemp = (x) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toLocaleString(localidade(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
 
 // ---------------------------------------------------------------- mapa ampliado
 async function abrirFrame(d) {
@@ -304,7 +355,7 @@ async function abrirFrame(d) {
   const f = await desenharFrame($('#canvas-frame'), d.id, passo(motor.idx), cidade.lat, cidade.lon).catch(() => null);
   if (!f) return;
   $('#titulo-frame').textContent = `${d.nome} · ${f.data}`;
-  const texto = `${f.titulo}. O ponto marca ${cidade.nome}. Fonte: ${f.fonte}.`;
+  const texto = t('mapa.legendaFrame', { titulo: f.titulo, cidade: cidade.nome, fonte: f.fonte });
   $('#legenda-frame').textContent = texto;
   $('#canvas-frame').setAttribute('aria-label', texto);
   dlgF.showModal();
@@ -324,7 +375,7 @@ function aoMudarPasso(idx, { narrar }) {
 function atualizarBotaoTocar() {
   const b = $('#btn-tocar');
   b.setAttribute('aria-pressed', String(motor.tocando));
-  $('#rotulo-tocar').textContent = motor.tocando ? 'Pausar' : motor.terminou ? 'Recomeçar' : 'Tocar';
+  $('#rotulo-tocar').textContent = t(motor.tocando ? 'ctrl.pausar' : motor.terminou ? 'ctrl.recomecar' : 'ctrl.tocar');
 }
 function alternarTocar() {
   if (motor.tocando) { motor.pausar(); narrador.cancelar(); }
@@ -448,7 +499,7 @@ $('#btn-ajustes').addEventListener('click', () => {
   const n = timeline().passos.length;
   const origem = Object.values(origemDosSons());
   const doMusico = origem.filter((o) => o === 'musico').length, prov = origem.filter((o) => o === 'provisorio').length;
-  $('#aj-info').textContent = `${n} compassos (1 por ano), ${BPM} BPM. Sons: ${doMusico} do músico, ${prov} provisórios. Narração: ${narrador.descricao}. ${fonteDosDados() === 'frames' ? 'Temperatura lida da cor do mapa da NASA (GISTEMP) sobre a cidade; CO₂, chuva e vegetação ainda fictícios' : 'Valores por região (dados fictícios)'}.`;
+  $('#aj-info').textContent = t('aj.info', { n, bpm: BPM, musico: doMusico, prov, narr: narrador.descricao, frames: fonteDosDados() === 'frames' });
   dlg.showModal();
 });
 
@@ -461,6 +512,18 @@ form.addEventListener('change', () => {
   aplicarAjustes();
 });
 form.elements.volume.addEventListener('input', () => motor.definirVolume(form.elements.volume.value / 100));
+
+// ---------------------------------------------------------------- idioma
+aplicarTextos();
+aoMudarIdioma(() => {
+  const btn = $('#btn-comecar');
+  btn.textContent = t(btn.dataset.chave || 'inicio.carregando');
+  if ($('#lista-dimensoes').children.length) nomearDimensoes();
+  atualizarBotaoTocar();
+  if (regiao) atualizarUI(motor.idx);
+  painel?.atualizarIdioma?.();
+  grafico?.atualizarIdioma?.();
+});
 
 window.jukebox = { motor, narrador }; // para depurar no console
 iniciar();
