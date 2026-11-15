@@ -27,8 +27,8 @@ const FRASES = {
   temperatura: { recorde: (e) => tr('ev.temperatura.recorde', { v: tempPar(e.valor) }) },
   tendencia: { troca: (e) => tr(e.sobe ? 'ev.tendencia.sobe' : 'ev.tendencia.desce', { lim: e.limite }) },
   chuva: {
-    seca: (e) => (e.intensidade === 'f' ? tr('ev.chuva.secaF') : tr('ev.chuva.seca', { v: Math.round(e.valor) })),
-    extrema: (e) => (e.intensidade === 'f' ? tr('ev.chuva.extremaF') : tr('ev.chuva.extrema', { v: Math.round(e.valor) })),
+    seca: (e) => tr('ev.chuva.seca', { v: Math.round(e.valor) }),
+    extrema: (e) => tr('ev.chuva.extrema', { v: Math.round(e.valor) }),
   },
 };
 /** Resumo de 2 ou 3 palavras: a etiqueta que fica presa ao ponto depois que o card fecha. */
@@ -36,7 +36,7 @@ const RESUMOS = {
   co2: { recorde: () => tr('res.co2.recorde'), faixa: (e) => tr('res.co2.faixa', { n: e.quintos }) },
   temperatura: { recorde: () => tr('res.temperatura.recorde') },
   tendencia: { troca: (e) => tr(e.sobe ? 'res.tendencia.sobe' : 'res.tendencia.desce') },
-  chuva: { seca: (e) => tr(e.intensidade === 'f' ? 'res.chuva.secaF' : 'res.chuva.seca'), extrema: (e) => tr(e.intensidade === 'f' ? 'res.chuva.extremaF' : 'res.chuva.extrema') },
+  chuva: { seca: () => tr('res.chuva.seca'), extrema: () => tr('res.chuva.extrema') },
 };
 export const fraseDoEvento = (id, ev) => FRASES[id][ev.nome](ev);
 

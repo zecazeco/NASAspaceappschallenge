@@ -60,6 +60,7 @@ export class Motor {
     await Promise.all(Object.values(this.dims).map(async (d) => {
       await d.carregar(umArquivo);
       d.saida.connect(this.musica);
+      d.saidaSeca.connect(this.volume);   // sem passar pelo reverb (pontuais de def.semReverb)
     }));
     await this.prepararFita();
     feitos = total - 1;

@@ -50,7 +50,14 @@ export const DEFINICAO = {
     // CO₂, que ficam mais tensos no fim; a troca é sempre com fade (REFORCO_FADE), no início do ano em que o nível muda
     reforcoPorNivelDb: [0, 1.5, 3, 6] },
   tendencia: { pasta: 'tendencia', prefixo: 'tend', modo: 'niveis', volume: 0.4, volumeDb: -2, fim: 'sustenta' },   // 60% mais baixa que as outras, e mais 2 dB
-  chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'troca', entra: 0.015, sai: 0.3 },   // s (constantes de tempo)
+  // audio/chuva/ (feitos por tools/gerar-sons-provisorios.mjs): a chuva_base_1 é a mais rala (2 notas) e a 4 a mais
+  // cheia (5), então a ordem é invertida: som 0 (sobe muito) → chuva_base_4, 1 (sobe um pouco) → 3,
+  // 2 (desce um pouco) → 2, 3 (desce muito) → chuva_base_1.
+  // volumeDb: a camada toda (as bases); os pontuais têm o volume deles: gota na chuva extrema e estalo (madeira
+  // oca) na seca, este sem reverb (semReverb). A base continua tocando.
+  chuva: { pasta: 'chuva', prefixo: 'chuva', modo: 'troca', entra: 0.015, sai: 0.3, ordem: [4, 3, 2, 1],
+    volumeDb: -9,
+    pontuais: { pontual: ['gota', 'estalo'] }, pontualPadrao: 'pontual', volumePontualDb: -12, semReverb: ['estalo'] },   // s (constantes de tempo)
 };
 
 /** Arquivos da camada, na ordem: { nome, k }. */
@@ -58,7 +65,8 @@ const nomesDaCamada = (d) => {
   if (d.modo === 'compassos') return d.figuras.map((fig, k) => ({ nome: `${d.prefixo}_${fig}`, k }));
   // vozes: os loops (k = 0, 1, …) e o arquivo do fim, se houver (k = 'fim')
   if (d.modo === 'vozes') return [...d.ordem.map((n, k) => ({ nome: `${d.prefixo}_voz_${n}`, k })), ...(d.fim?.arquivo ? [{ nome: d.fim.arquivo, k: 'fim' }] : [])];
-  return Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${k + 1}`, k }));
+  // def.ordem: o número do arquivo <prefixo>_base_N de cada nível/som (k = 0, 1, …); sem ela, k + 1
+  return Array.from({ length: NIVEIS }, (_, k) => ({ nome: `${d.prefixo}_base_${d.ordem?.[k] ?? k + 1}`, k }));
 };
 
 /** Sons pontuais da camada: { nome, conjunto, tipo } (ex.: temp_pontual_sino). */
@@ -101,6 +109,7 @@ export class Camada {
     this.id = id;
     this.def = DEFINICAO[id];
     this.saida = new Tone.Gain(1);
+    this.saidaSeca = new Tone.Gain(1);   // pontuais sem reverb (def.semReverb): o motor liga direto no volume; segue a saida
     this.mix = new Tone.Gain(volumeDaCamada(this.def)).connect(this.saida);   // def.volume / def.volumeDb: ajuste da camada
     this.ligada = true;
     this.loops = [];       // modos 'niveis', 'vozes' e 'troca': { buf, ganho, fonte } (criarLoop)
@@ -223,6 +232,10 @@ export class Camada {
     const g = this.saida.gain, v = g.getValueAtTime(tempo), fim = this.def.fim;
     g.cancelScheduledValues(tempo);
     g.setValueAtTime(v, tempo);
+    const gs = this.saidaSeca.gain;   // os pontuais sem reverb somem junto com o 1º tempo
+    gs.cancelScheduledValues(tempo);
+    gs.setValueAtTime(gs.getValueAtTime(tempo), tempo);
+    gs.setTargetAtTime(0, tempo, umTempo / 5);
     if (fim?.voz != null || fim?.arquivo) {
       // só a voz escolhida, tocada do começo do arquivo (não do ponto do loop), com as outras cortadas
       for (const l of this.loops) this.ajustarLoop(l, 0, tempo, 0.01);
@@ -251,9 +264,11 @@ export class Camada {
 
   /** Depois do fim (tocar de novo): a camada volta ao volume dela. */
   restaurar() {
-    const g = this.saida.gain, agora = Tone.now();
-    g.cancelScheduledValues(agora);
-    g.setValueAtTime(this.ligada ? 1 : 0, agora);
+    const agora = Tone.now();
+    for (const g of [this.saida.gain, this.saidaSeca.gain]) {
+      g.cancelScheduledValues(agora);
+      g.setValueAtTime(this.ligada ? 1 : 0, agora);
+    }
   }
 
   /** Teste: qual conjunto de sons pontuais toca (null = sem pontual). */
@@ -269,7 +284,8 @@ export class Camada {
     // volumePontualDb: um número (todos os pontuais da camada) ou { tipo: dB }
     const vol = this.def.volumePontualDb, db = typeof vol === 'object' ? vol[tipo] : vol;
     // direto na saída da camada (não pelo mix): o volumeDb da camada e o reforço da melodia não mudam os pontuais
-    const ganho = new Tone.Gain(VOLUME_BASE * (this.def.volume ?? 1) * Tone.dbToGain(db ?? 0)).connect(this.saida);
+    const destino = this.def.semReverb?.includes(tipo) ? this.saidaSeca : this.saida;
+    const ganho = new Tone.Gain(VOLUME_BASE * (this.def.volume ?? 1) * Tone.dbToGain(db ?? 0)).connect(destino);
     const fonte = new Tone.ToneBufferSource(buf).connect(ganho);
     const voz = { fonte, ganho, pontual: true };
     fonte.onended = () => { ganho.dispose(); this.soandoPontuais = this.soandoPontuais.filter((v) => v !== voz); };
@@ -315,6 +331,7 @@ export class Camada {
     this.ligada = ligada;
     const agora = Tone.now();
     this.saida.gain.rampTo(ligada ? 1 : 0, 0.4);
+    this.saidaSeca.gain.rampTo(ligada ? 1 : 0, 0.4);
     if (!ligada) {
       this.soltar(agora);
       this.pararLoops(agora + 0.4);

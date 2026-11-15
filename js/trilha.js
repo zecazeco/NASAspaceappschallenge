@@ -1,7 +1,7 @@
 // Trilha de uma cidade: transforma as séries anuais em
 //   • posição de cada camada na faixa da cidade (0 … 3; null = sem dado): linhas do gráfico e níveis
 //   • temperatura: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
-//   • sons pontuais de cada ano (virada): temperatura e CO₂, ver o fim de calcularTrilha
+//   • sons pontuais de cada ano (virada): temperatura, CO₂ e chuva, ver o fim de calcularTrilha
 //   • som dos loops quando não é a posição: CO₂ (quantas das 5 vozes) e chuva (tipo de mudança)
 //   • tendência da temperatura: média de 11 anos em faixas fixas de °C, nível 1 a 4 (o segundo som da temperatura)
 //   • eventos de cada ano ({ nome, intensidade }): viram cartões no gráfico (a tendência, na linha da temperatura).
@@ -10,7 +10,6 @@
 export const NIVEIS = 4;
 export const VOZES_CO2 = 5;          // CO₂: 5 vozes que se acumulam
 const INICIO_RECORDES = 1970;        // antes disso quase todo ano seria recorde
-const ANOS_MINIMOS_PARA_RECORDE = 10; // chuva: "o mais extremo até então" só depois de 10 anos medidos
 
 const valido = (v) => v != null && Number.isFinite(v);
 
@@ -206,16 +205,13 @@ export function calcularTrilha(local, passos, co2Global) {
   const chuva = local.chuva;
   const vc = chuva.filter(valido);
   if (vc.length) {
+    // um evento só por ano, sem recorde (para não poluir): seca ou chuva extrema
     const lim = limites10(vc);
-    let min = Infinity, max = -Infinity, medidos = 0;
     for (let i = 0; i < n; i++) {
       const v = chuva[i];
       if (!valido(v)) continue;
-      const recordeSeco = v < min && medidos >= ANOS_MINIMOS_PARA_RECORDE;
-      const recordeChuva = v > max && medidos >= ANOS_MINIMOS_PARA_RECORDE;
-      if (v <= lim.baixo) eventos[i].chuva = { nome: 'seca', intensidade: recordeSeco ? 'f' : 'm', valor: v };
-      else if (v >= lim.alto) eventos[i].chuva = { nome: 'extrema', intensidade: recordeChuva ? 'f' : 'm', valor: v };
-      min = Math.min(min, v); max = Math.max(max, v); medidos++;
+      if (v <= lim.baixo) eventos[i].chuva = { nome: 'seca', intensidade: 'm', valor: v };
+      else if (v >= lim.alto) eventos[i].chuva = { nome: 'extrema', intensidade: 'm', valor: v };
     }
   }
 
@@ -260,7 +256,10 @@ export function calcularTrilha(local, passos, co2Global) {
     // limite cruzado (°C acima de 1951–1980): subindo, o que acabou de passar; descendo, o que deixou para trás
     eventos[i].tendencia = { nome: 'troca', intensidade: 'm', sobe, limite: LIMITES_TENDENCIA[sobe ? nv - 1 : nv] };
   });
-  const virada = { temperatura: viradaTemp.map((s) => (s.length ? s : null)), co2: viradaCo2 };
+  // Chuva (teste), junto com o card: "gota" na chuva extrema e "estalo" (a madeira oca) na seca
+  const SOM_CHUVA = { extrema: 'gota', seca: 'estalo' };
+  const viradaChuva = eventos.map((ev) => SOM_CHUVA[ev.chuva?.nome] ?? null);
+  const virada = { temperatura: viradaTemp.map((s) => (s.length ? s : null)), co2: viradaCo2, chuva: viradaChuva };
   const movimento = { temperatura: movimentos(temp) };
   return { posicao, som, virada, movimento, tendencia, eventos };
 }

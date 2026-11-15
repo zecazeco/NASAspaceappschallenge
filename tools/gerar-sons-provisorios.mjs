@@ -1,8 +1,10 @@
-// Gera os SONS PROVISÓRIOS da trilha em audio/provisorio/.
+// Gera os SONS PROVISÓRIOS da trilha em audio/provisorio/. Exceção: as bases e os pontuais da chuva (chuva_base_N,
+// chuva_pontual_gota e chuva_pontual_estalo) já são os sons usados e vão para audio/chuva/.
 // Servem só para ouvir a lógica funcionando enquanto o músico não entrega os arquivos.
 // Os arquivos do músico vão em audio/<camada>/ com o MESMO nome e têm prioridade.
 //
-// Uso: node tools/gerar-sons-provisorios.mjs
+// Uso: node tools/gerar-sons-provisorios.mjs            (todos)
+//      node tools/gerar-sons-provisorios.mjs chuva_base (só os que começam com esse nome)
 //
 // Regras seguidas: 110 BPM, 4 tempos por compasso, Ré menor; bases = loops de 1 compasso
 // sem emenda (o que passa do fim volta para o começo); sons pontuais = 2 compassos com cauda.
@@ -14,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SAIDA = join(RAIZ, 'audio', 'provisorio');
 const SR = 24000;
+const SR_CHUVA = 48000;                 // a chuva: notas agudas com harmônicos acima de 12 kHz
 const BPM = 110;
 const TEMPO = 60 / BPM;                 // 1 tempo (semínima)
 const COMPASSO = 4 * TEMPO;             // ≈ 2,18 s
@@ -83,7 +86,7 @@ function caudaFinal(buf, seg = 0.4) {
   return buf;
 }
 
-function wav(buf) {
+function wav(buf, SR = 24000) {
   const dados = Buffer.alloc(buf.length * 2);
   for (let i = 0; i < buf.length; i++) dados.writeInt16LE(Math.round(Math.max(-1, Math.min(1, buf[i])) * 32767), i * 2);
   const h = Buffer.alloc(44);
@@ -232,17 +235,101 @@ const MARIMBA = (brilho) => ({ decai: 4, harm: [1, 0, 0.35 * brilho, 0, 0.15 * b
 [[N.D3, 0.6, 0.30], [N.F3, 0.75, 0.34], [N.A3, 0.9, 0.38], [N.D4, 1.05, 0.42]].forEach(([m, brilho, pico], k) =>
   loop(`tend_base_${k + 1}`, (b) => [0, 1, 2, 3].forEach((q) => nota(b, q * TEMPO, hz(m), q === 0 ? 1 : 0.8, MARIMBA(brilho))), pico));
 
-// ---------- Chuva: gotas agudas, mais densas a cada nível
-const gotas = (b, quantas, amp = 0.5) => {
-  for (let g = 0; g < quantas; g++) {
-    const pos = Math.floor(rnd() * 16) * TEMPO / 4;   // presas na grade de semicolcheias
-    nota(b, pos, hz(PENTA_AGUDA[Math.floor(rnd() * PENTA_AGUDA.length)]), amp * (0.6 + 0.4 * rnd()), { decai: 14, harm: [1, 0.2] });
+// ---------- Chuva: gotas agudas, mais densas a cada nível (1 = a mais fraca, 4 = a mais forte)
+// As notas e posições são sorteadas (pentatônica aguda de Ré menor, grade de semicolcheias) e são as mesmas
+// da primeira versão: o ruído de fundo que ela tinha foi tirado, mas o sorteio dele é "gasto" do mesmo jeito
+// (pularSorteio) para as notas seguintes não mudarem.
+// As notas tocam uma oitava abaixo do sorteio (Ré4 … Lá5), para não ficar agudo demais.
+// Timbre de kalimba (lamela de metal tocada com o dedo): fundamental redonda que soa um pouco, mais duas
+// parciais inarmônicas (~5,4× e ~11×) que somem rápido e dão o "tlim" do ataque. Não é o piano da
+// temperatura nem o sintetizador do CO₂.
+const gotasNotas = (quantas, amp = 0.5) => Array.from({ length: quantas }, () => {
+  const pos = Math.floor(rnd() * 16) * TEMPO / 4;   // presas na grade de semicolcheias
+  const midi = PENTA_AGUDA[Math.floor(rnd() * PENTA_AGUDA.length)];
+  return { pos, midi, amp: amp * (0.6 + 0.4 * rnd()) };
+});
+const pularSorteio = (n) => { for (let i = 0; i < n; i++) rnd(); };   // o que o ruído da 1ª versão sorteava
+const N_LOOP_CHUVA = Math.round(COMPASSO * SR_CHUVA);
+const KALIMBA = [   // [múltiplo da frequência, volume, decaimento (1/s)]
+  [1, 1, 6],          // fundamental
+  [2, 0.08, 12],      // um pouco de corpo
+  [5.4, 0.22, 30],    // parciais inarmônicas da lamela: o brilho do ataque
+  [11.1, 0.08, 60],
+];
+function kalimba(buf, inicio, f, amp) {
+  const n = buf.length, i0 = Math.round(inicio * SR_CHUVA);   // a nota termina dentro do compasso (não volta para o início)
+  for (const [mult, vol, decai] of KALIMBA) {
+    const fk = f * mult;
+    if (fk > SR_CHUVA / 2.2) continue;
+    const len = Math.min(n, Math.round((Math.log(1e4) / decai) * SR_CHUVA));   // até −80 dB
+    for (let j = 0; j < len && i0 + j < n; j++) {
+      const t = j / SR_CHUVA;
+      const env = Math.min(1, t / 0.0025) * Math.exp(-decai * t);   // ataque de 2,5 ms (sem clique)
+      buf[i0 + j] += amp * vol * env * Math.sin(2 * Math.PI * fk * t);
+    }
   }
+}
+// Menos notas que o sorteio (que fica igual): de cada base ficam as primeiras `usar` notas sorteadas, levadas para a
+// colcheia (para trás) e só nas 7 primeiras colcheias, para a nota acabar dentro do compasso; duas na mesma
+// colcheia viram uma. Se faltar nota (a base 1 só tem 2 sorteadas), a que sobrou vai para a colcheia livre mais
+// próxima antes. O compasso termina em silêncio (sem nota passando para o seguinte).
+const COLCHEIA = TEMPO / 2;
+const loopChuva = (nome, quantas, usar) => {
+  const b = new Float64Array(N_LOOP_CHUVA), usadas = new Set(), notas = [], sobras = [];
+  for (const g of gotasNotas(quantas)) {
+    const c = Math.floor(g.pos / COLCHEIA);
+    if (c > 6 || usadas.has(c)) { sobras.push({ ...g, c: Math.min(c, 6) }); continue; }
+    if (notas.length >= usar) continue;
+    usadas.add(c); notas.push({ ...g, pos: c * COLCHEIA });
+  }
+  for (const g of sobras) {
+    if (notas.length >= usar) break;
+    let c = g.c;
+    while (c >= 0 && usadas.has(c)) c--;
+    if (c < 0) continue;
+    usadas.add(c); notas.push({ ...g, pos: c * COLCHEIA });
+  }
+  for (const g of notas) kalimba(b, g.pos, hz(g.midi - 12), g.amp);   // uma oitava abaixo
+  arquivos[nome] = caudaFinal(normalizar(b, 0.5), 0.03);
+  taxa[nome] = SR_CHUVA;
+  console.log(nome, notas.sort((x, y) => x.pos - y.pos).map((g) => `colcheia ${Math.round(g.pos / COLCHEIA) + 1}: midi ${g.midi - 12}`).join(' · '));
 };
-loop('chuva_base_1', (b) => { gotas(b, 2); ruido(b, 0.02); });
-loop('chuva_base_2', (b) => { gotas(b, 5); ruido(b, 0.04); });
-loop('chuva_base_3', (b) => { gotas(b, 10); ruido(b, 0.07); });
-loop('chuva_base_4', (b) => { gotas(b, 18); ruido(b, 0.12, 0.3); });
+const taxa = {};   // nome → taxa de amostragem, quando não é SR
+loopChuva('chuva_base_1', 2, 2); pularSorteio(N_LOOP);
+loopChuva('chuva_base_2', 5, 3); pularSorteio(N_LOOP);
+loopChuva('chuva_base_3', 10, 4); pularSorteio(N_LOOP);
+loopChuva('chuva_base_4', 18, 5); pularSorteio(N_LOOP);
+
+// Gota (chuva extrema: os 10% de anos mais chuvosos da cidade): uma nota só, o Ré5 (dentro da região das bases, não
+// acima), com ataque macio e cauda longa e lisa (some em uns 4 s). Sem eco, sem a altura mudar e sem o
+// brilho metálico da kalimba: só a fundamental e um pouco da oitava. 2 compassos, termina em silêncio.
+{
+  const n = Math.round(2 * COMPASSO * SR_CHUVA), b = new Float64Array(n), f = hz(N.D5);
+  for (const [mult, vol, decai] of [[1, 1, 1.1], [2, 0.12, 2.5], [3, 0.03, 5]]) {
+    for (let j = 0; j < n; j++) {
+      const t = j / SR_CHUVA;
+      b[j] += vol * Math.min(1, t / 0.006) * Math.exp(-decai * t) * Math.sin(2 * Math.PI * f * mult * t);
+    }
+  }
+  arquivos.chuva_pontual_gota = caudaFinal(normalizar(b, 0.55), 0.6);
+  taxa.chuva_pontual_gota = SR_CHUVA;
+}
+
+// Estalo (seca: os 10% de anos mais secos da cidade): uma batida oca de madeira seca (como um bloco de madeira
+// ou um pote de barro), sem ruído: o Lá3 (nota do acorde, mais grave que as gotas) com os modos inarmônicos da
+// madeira (2,76× e 5,4×), que somem bem mais rápido que a fundamental. Ataque de 1,5 ms (sem clique) e a nota
+// some em uns 0,4 s. O site toca sem reverb (def.semReverb). 0,8 s, termina em silêncio.
+{
+  const n = Math.round(0.8 * SR_CHUVA), b = new Float64Array(n), f = hz(N.A3);
+  for (const [mult, vol, decai] of [[1, 1, 11], [2.76, 0.35, 28], [5.4, 0.12, 55]]) {
+    for (let j = 0; j < n; j++) {
+      const t = j / SR_CHUVA;
+      b[j] += vol * Math.min(1, t / 0.0015) * Math.exp(-decai * t) * Math.sin(2 * Math.PI * f * mult * t);
+    }
+  }
+  arquivos.chuva_pontual_estalo = caudaFinal(normalizar(b, 0.6), 0.1);
+  taxa.chuva_pontual_estalo = SR_CHUVA;
+}
 for (const int of ['m', 'f']) {
   pontual(`chuva_seca_${int}`, PICO[int], (b) => {
     // seca: notas que descem e perdem brilho
@@ -258,6 +345,8 @@ for (const int of ['m', 'f']) {
   });
 }
 
-mkdirSync(SAIDA, { recursive: true });
-for (const [nome, b] of Object.entries(arquivos)) writeFileSync(join(SAIDA, `${nome}.wav`), wav(b));
-console.log(`OK: ${Object.keys(arquivos).length} sons provisórios em ${SAIDA} (loop = ${(N_LOOP / SR).toFixed(3)} s)`);
+const filtro = process.argv[2] ?? '';
+const escolhidos = Object.entries(arquivos).filter(([nome]) => nome.startsWith(filtro));
+const pastaDe = (nome) => (/^chuva_(base|pontual)_/.test(nome) ? join(RAIZ, 'audio', 'chuva') : SAIDA);
+for (const [nome, b] of escolhidos) { mkdirSync(pastaDe(nome), { recursive: true }); writeFileSync(join(pastaDe(nome), `${nome}.wav`), wav(b, taxa[nome] ?? SR)); }
+console.log(`OK: ${escolhidos.length} sons provisórios em ${SAIDA} (loop = ${(N_LOOP / SR).toFixed(3)} s)`);
