@@ -63,8 +63,11 @@
           <span class="canto c1" aria-hidden="true"></span><span class="canto c2" aria-hidden="true"></span>
           <span class="canto c3" aria-hidden="true"></span><span class="canto c4" aria-hidden="true"></span>
           <span class="prompt" aria-hidden="true">&gt;</span>
-          <input id="campo-cidade" type="search" inputmode="search" enterkeyhint="search" placeholder="sua cidade" data-i18n-attr="placeholder:busca.placeholder"
-                 aria-describedby="status-busca" spellcheck="false" required>
+          <span class="campo-texto">
+            <input id="campo-cidade" type="search" inputmode="search" enterkeyhint="search" placeholder="sua cidade" data-i18n-attr="placeholder:busca.placeholder"
+                   aria-describedby="status-busca" spellcheck="false" required>
+            <span class="cursor-bloco" aria-hidden="true"><span class="espelho"></span><i></i></span>
+          </span>
         </div>
         <button class="btn btn-primario btn-quadrado" type="submit" aria-label="Buscar" data-i18n-attr="aria-label:busca.buscar">
           <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-traco"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5.5 5.5"/></svg>
@@ -102,7 +105,7 @@
       <div class="acoes-topo">
         <!-- SÓ PARA TESTE: abre os seletores de som e de efeito (sai na versão final) -->
         <button id="btn-teste" class="btn btn-teste" type="button" aria-expanded="false" aria-controls="barra-teste" data-i18n-attr="aria-label:teste.rotulo" aria-label="Modo de teste: mostrar seletores"><span data-i18n="teste.botao">Teste</span></button>
-        <button id="btn-trocar-cidade" class="btn btn-secundario" type="button" aria-label="Trocar cidade" data-i18n-attr="aria-label:topo.trocarCidade"><span data-i18n="topo.trocar">Trocar</span></button>
+        <button id="btn-trocar-cidade" class="btn btn-secundario" type="button" aria-label="Trocar cidade" data-i18n-attr="aria-label:topo.trocarCidade"><span data-i18n="topo.trocar">Cidade</span></button>
         <button id="btn-ajustes" class="btn btn-secundario btn-icone" type="button" aria-label="Ajustes" data-i18n-attr="aria-label:topo.ajustes" aria-haspopup="dialog">
           <svg viewBox="0 0 24 24" aria-hidden="true" class="ic-traco"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>
         </button>
@@ -136,6 +139,8 @@
         <p class="rot-mapa base" aria-hidden="true" id="cidade-mapa"></p>
       </div>
       <div class="leitura">
+        <span class="canto c1" aria-hidden="true"></span><span class="canto c2" aria-hidden="true"></span>
+        <span class="canto c3" aria-hidden="true"></span><span class="canto c4" aria-hidden="true"></span>
         <div class="dial" aria-hidden="true">
           <canvas id="lente-temp" class="lente"></canvas>
           <span class="crt-lente"></span>

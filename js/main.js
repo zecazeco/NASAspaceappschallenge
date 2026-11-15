@@ -168,6 +168,19 @@ async function buscar(texto, imediato = false) {
   if (imediato && resultados.length) lista.querySelector('button').focus();
 }
 
+// cursor em bloco: acompanha a posição do cursor de texto
+{
+  const campo = $('#campo-cidade'), bloco = campo.parentElement.querySelector('.cursor-bloco'), espelho = bloco.querySelector('.espelho');
+  const mover = () => {
+    const i = campo.selectionStart ?? campo.value.length;
+    espelho.textContent = campo.value.slice(0, i);
+    // a letra sob o bloco aparece invertida (escura sobre o ciano), como nos terminais
+    bloco.querySelector('i').textContent = campo.value[i] ?? (campo.value ? '' : campo.placeholder[0] ?? '');
+    bloco.style.left = `${-campo.scrollLeft}px`;
+  };
+  for (const ev of ['input', 'keyup', 'click', 'focus', 'select', 'scroll']) campo.addEventListener(ev, () => requestAnimationFrame(mover));
+  document.addEventListener('selectionchange', () => { if (document.activeElement === campo) mover(); });
+}
 $('#campo-cidade').addEventListener('input', (e) => {
   clearTimeout(esperaBusca);
   esperaBusca = setTimeout(() => buscar(e.target.value), 450);
