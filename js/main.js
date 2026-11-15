@@ -37,21 +37,25 @@ const salvarAjustes = () => { try { localStorage.setItem('jukebox-ajustes', JSON
 let grafico = null, painel = null;
 const motor = new Motor();
 
-// SÓ PARA TESTE: o botão vermelho "Teste" abre e fecha os seletores (já abertos com ?teste no endereço).
+// Modo teste: em produção o botão vermelho "Teste" fica escondido; só aparece com ?teste no endereço.
+// Fora do modo teste, as escolhas salvas nos seletores de teste são ignoradas (valem os padrões).
+const MODO_TESTE = new URLSearchParams(location.search).has('teste');
+const lerTeste = (chave) => { if (!MODO_TESTE) return null; try { return localStorage.getItem(chave); } catch { return null; } };
 {
   const btn = $('#btn-teste'), barra = $('#barra-teste');
+  btn.hidden = !MODO_TESTE;
   const abrir = (sim) => { barra.hidden = !sim; btn.setAttribute('aria-expanded', String(sim)); };
   btn.addEventListener('click', () => abrir(barra.hidden));
-  if (new URLSearchParams(location.search).has('teste')) abrir(true);
+  if (MODO_TESTE) abrir(true);
   // efeito CRT do mapa e da lente
   const seletor = $('#seletor-crt');
   const escolher = (crt) => {
     document.body.dataset.crt = crt;
     for (const b of seletor.querySelectorAll('button')) b.setAttribute('aria-checked', String(b.dataset.crt === crt));
-    try { localStorage.setItem('jukebox-crt', crt); } catch { /* ok */ }
+    if (MODO_TESTE) try { localStorage.setItem('jukebox-crt', crt); } catch { /* ok */ }
   };
   seletor.addEventListener('click', (e) => { const b = e.target.closest('button[data-crt]'); if (b) escolher(b.dataset.crt); });
-  let salvo = null; try { salvo = localStorage.getItem('jukebox-crt'); } catch { /* ok */ }
+  const salvo = lerTeste('jukebox-crt');
   escolher(salvo === 'linha' ? 'linha' : 'fosforo');
 }
 // SÓ PARA TESTE: marcador da escala de cores. "Seta anual" (padrão) muda só na troca de ano;
@@ -61,10 +65,10 @@ const motor = new Motor();
   const escolher = (modo) => {
     document.body.dataset.seta = modo;
     for (const b of seletor.querySelectorAll('button')) b.setAttribute('aria-checked', String(b.dataset.seta === modo));
-    try { localStorage.setItem('jukebox-seta', modo); } catch { /* ok */ }
+    if (MODO_TESTE) try { localStorage.setItem('jukebox-seta', modo); } catch { /* ok */ }
   };
   seletor.addEventListener('click', (e) => { const b = e.target.closest('button[data-seta]'); if (b) escolher(b.dataset.seta); });
-  let salvo = null; try { salvo = localStorage.getItem('jukebox-seta'); } catch { /* ok */ }
+  const salvo = lerTeste('jukebox-seta');
   escolher(salvo === 'continua' ? 'continua' : 'anual');
 }
 // SÓ PARA TESTE: liga e desliga os sons pontuais da temperatura (Sem pontuais / Pontuais). Começam ligados.
