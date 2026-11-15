@@ -6,7 +6,7 @@
 //     arquivo inteiro do início do compasso; a cauda some quando o compasso seguinte começa.
 //   • 'niveis' (tendência): 4 loops de 1 compasso; o nível do ano decide qual se ouve
 //     (com troca suave; posição quebrada, ex. 1,4, mistura dois níveis). A tendência é o segundo som da
-//     temperatura (média de 11 anos em 4 níveis): não tem seletor nem linha própria, liga junto com ela.
+//     temperatura (o valor do ano em faixas de 1 °C: −2…−1, −1…0, 0…+1, +1…+2): não tem seletor nem linha própria, liga junto com ela.
 //   • 'vozes' (CO₂): loops de 4 compassos que se acumulam; o ano liga da 1ª até a voz dele, na ordem de
 //     def.ordem (os números dos arquivos): 1, 2, 4, 5. São 5 faixas e 4 vozes: a voz 5 entra mais baixa na 4ª
 //     faixa e sobe na 5ª (def.volumeVozDb). A voz 3 (o Ré bem grave) só toca no fim (def.fim.arquivo).
@@ -20,8 +20,8 @@
 // curva suave antes da nota seguinte dela (passa do compasso de 2023: a música espera ele terminar); os outros (melodia, chuva) tocam só o 1º tempo e
 // somem antes do 2º. Quando 2024 chegaria, a música para.
 //
-// Sons pontuais da temperatura (teste; volumes em volumePontualDb): picos e vales (sobe/desce), recorde de calor (alerta) e troca de faixa
-// da tendência (sino). Ligados de saída; o seletor de teste no topo da página pode desligá-los.
+// Sons pontuais da temperatura (teste; volumes em volumePontualDb): picos e vales (sobe/desce) e recorde de calor (sino).
+// Ligados de saída; o seletor de teste no topo da página pode desligá-los.
 // CO₂ (teste), os dois a −14 dB (trilha.virada.co2): co2_pontual_cresce em cada ano em que a faixa das vozes muda;
 // co2_pontual_impacto em cada recorde de velocidade (o CO₂ subiu mais que em qualquer ano anterior).
 //
@@ -44,8 +44,8 @@ export const DEFINICAO = {
     pontuais: { pontual: ['cresce', 'impacto'] }, pontualPadrao: 'pontual', volumePontualDb: -14 },
   temperatura: { pasta: 'temperatura', prefixo: 'temp', modo: 'compassos', figuras: FIGURAS_MOVIMENTO,
     volumeDb: 1,    // a melodia toda, somado ao reforço por nível; os pontuais não mudam
-    pontuais: { pontual: ['alerta', 'sino', 'sobe', 'desce'] }, pontualPadrao: 'pontual',   // ver trilha.virada
-    volumePontualDb: { sobe: 0, desce: 0, sino: -16, alerta: -20 },   // sobe e desce a 0 dB: TESTE, para ouvir bem
+    pontuais: { pontual: ['sino', 'sobe', 'desce'] }, pontualPadrao: 'pontual',   // ver trilha.virada
+    volumePontualDb: { sobe: 0, desce: 0, sino: -13 },   // sobe e desce a 0 dB: TESTE, para ouvir bem
     // a melodia fica mais forte a cada nível da tendência (1 a 4), para não sumir debaixo da tendência e do
     // CO₂, que ficam mais tensos no fim; a troca é sempre com fade (REFORCO_FADE), no início do ano em que o nível muda
     reforcoPorNivelDb: [0, 1.5, 3, 6] },
@@ -276,7 +276,7 @@ export class Camada {
     this.pontualAtivo = conjunto && this.def.pontuais?.[conjunto] ? conjunto : null;
   }
 
-  /** Som(ns) pontual(is) no início do compasso (ex.: 'sino', ['desce', 'alerta'], 'impacto'; null = nada). Pode sobrepor a cauda do anterior. */
+  /** Som(ns) pontual(is) no início do compasso (ex.: 'sino', ['desce', 'sino'], 'impacto'; null = nada). Pode sobrepor a cauda do anterior. */
   dispararPontual(tipo, tempo) {
     if (Array.isArray(tipo)) { for (const t of tipo) this.dispararPontual(t, tempo); return; }
     const buf = tipo && this.pontualAtivo && this.ligada ? this.pontuais[this.pontualAtivo]?.[tipo] : null;

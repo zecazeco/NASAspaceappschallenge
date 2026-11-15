@@ -77,27 +77,18 @@ function movimentos(serie) {
 }
 
 // Tendência da temperatura: o segundo som da temperatura, tocando junto com a melodia.
-// Para cada ano, a média dos 11 anos em volta (5 antes, o próprio ano e 5 depois; nas pontas, o que
-// houver). Isso apaga o sobe e desce de um ano para o outro e deixa só o aquecimento ao longo das
-// décadas. O som usa FAIXAS FIXAS dessa média, iguais em todas as cidades (mesma régua do mapa da NASA):
-//   nível 1 = na média de 1951–1980 ou abaixo (o clima de antes) · 2 = 0 a +0,5 °C · 3 = +0,5 a +1 °C · 4 = +1 °C ou mais.
-// A escala vai numa direção só, do frio para o quente, porque mostra a tendência de aquecimento; os anos
-// frios ou quentes isolados aparecem na melodia. Sem folga nos limites: quando a média passa de um lado
-// para o outro, o som troca, mesmo que volte logo (é o que o dado mostra). Muda poucas vezes, como capítulos
-// (São Paulo: 1973 passa da média, 1986 meio grau, 1997 passa de +1 °C; Nova York passa de +1 °C em 2003,
-// volta em 2004 e passa de novo em 2006).
-export const LADO_TENDENCIA = 5;
-export const LIMITES_TENDENCIA = [0, 0.5, 1.0];   // °C
+// Segue o valor do ANO, o mesmo do mostrador (a seta na escala de −2 a +2 °C, em relação a 1951–1980), em
+// FAIXAS FIXAS de 1 °C, iguais em todas as cidades: o som muda quando a seta passa de −1, 0 ou +1 °C.
+//   nível 1 = −2 a −1 °C (ou abaixo) · 2 = −1 a 0 · 3 = 0 a +1 · 4 = +1 a +2 (ou acima).
+// O valor é arredondado a 1 casa, como o número do mostrador (0,96 aparece "+1,0" e já conta como +1).
+// Pode ir e voltar de um ano para o outro (é o que o dado mostra). Poucas cidades chegam ao nível 1.
+export const LIMITES_TENDENCIA = [-1, 0, 1];   // °C
 
-function faixasTendencia(media) {
-  return media.map((x) => (valido(x) ? LIMITES_TENDENCIA.filter((l) => x >= l).length : null));
-}
-
-export function mediaMovel(serie, lado = LADO_TENDENCIA) {
-  return serie.map((v, i) => {
-    if (!valido(v)) return null;
-    const vs = serie.slice(Math.max(0, i - lado), i + lado + 1).filter(valido);
-    return vs.reduce((a, b) => a + b, 0) / vs.length;
+function faixasTendencia(serie) {
+  return serie.map((x) => {
+    if (!valido(x)) return null;
+    const v = Math.round(x * 10) / 10;
+    return LIMITES_TENDENCIA.filter((l) => v >= l).length;
   });
 }
 
@@ -215,11 +206,10 @@ export function calcularTrilha(local, passos, co2Global) {
     }
   }
 
-  const tendencia = mediaMovel(temp);
   const posicao = {
     co2: posicoes(co2),
     temperatura: posicoes(temp),
-    tendencia: faixasTendencia(tendencia),
+    tendencia: faixasTendencia(temp),
     chuva: posicoesChuva(chuva),
   };
   // som dos loops quando não é a posição: CO₂ = voz mais alta que toca (0 = só a voz 1 … 4 = as 5; a faixa
@@ -239,29 +229,21 @@ export function calcularTrilha(local, passos, co2Global) {
   // Temperatura (teste), sons pontuais (volumes em camadas.js); num mesmo ano podem tocar vários juntos:
   //   • pico ou vale da linha (picosEVales) → o som diz para onde a linha VAI: no pico ela começa a descer
   //     ("desce"), no vale começa a subir ("sobe"). Sem card nem ponto no gráfico.
-  //   • recorde de calor (eventos acima) → "alerta", com o card de sempre.
-  //   • a tendência (média de 11 anos) troca de faixa, para cima ou para baixo → "sino", com card na linha da temperatura.
+  //   • recorde de calor (eventos acima) → "sino", com o card de sempre.
+  //   A troca de faixa da tendência não tem som pontual nem card (a própria base da tendência muda).
   const picos = picosEVales(temp, LIMIAR_VIRADA);
   const viradaTemp = picos.map((pv, i) => {
     const sons = [];
     if (pv) sons.push(pv === 'pico' ? 'desce' : 'sobe');
-    if (eventos[i].temperatura?.nome === 'recorde') sons.push('alerta');
+    if (eventos[i].temperatura?.nome === 'recorde') sons.push('sino');
     return sons;
-  });
-  posicao.tendencia.forEach((nv, i) => {
-    const antes = posicao.tendencia.slice(0, i).filter((x) => x != null).pop();
-    if (nv == null || antes == null || nv === antes) return;
-    const sobe = nv > antes;
-    viradaTemp[i].push('sino');
-    // limite cruzado (°C acima de 1951–1980): subindo, o que acabou de passar; descendo, o que deixou para trás
-    eventos[i].tendencia = { nome: 'troca', intensidade: 'm', sobe, limite: LIMITES_TENDENCIA[sobe ? nv - 1 : nv] };
   });
   // Chuva (teste), junto com o card: "gota" na chuva extrema e "estalo" (a madeira oca) na seca
   const SOM_CHUVA = { extrema: 'gota', seca: 'estalo' };
   const viradaChuva = eventos.map((ev) => SOM_CHUVA[ev.chuva?.nome] ?? null);
   const virada = { temperatura: viradaTemp.map((s) => (s.length ? s : null)), co2: viradaCo2, chuva: viradaChuva };
   const movimento = { temperatura: movimentos(temp) };
-  return { posicao, som, virada, movimento, tendencia, eventos };
+  return { posicao, som, virada, movimento, eventos };
 }
 
 /** Resumo legível (para depurar no console ou mostrar à equipe). */

@@ -25,7 +25,6 @@ const sinal = (v) => `${v >= 0 ? '+' : '−'}${num(Math.abs(v))}`;
 const FRASES = {
   co2: { recorde: (e) => tr('ev.co2.recorde', { v: num(e.valor) }), faixa: (e) => tr('ev.co2.faixa', { n: e.quintos, v: Math.round(e.valor) }) },
   temperatura: { recorde: (e) => tr('ev.temperatura.recorde', { v: tempPar(e.valor) }) },
-  tendencia: { troca: (e) => tr(e.sobe ? 'ev.tendencia.sobe' : 'ev.tendencia.desce', { lim: e.limite }) },
   chuva: {
     seca: (e) => tr('ev.chuva.seca', { v: Math.round(e.valor) }),
     extrema: (e) => tr('ev.chuva.extrema', { v: Math.round(e.valor) }),
@@ -35,14 +34,13 @@ const FRASES = {
 const RESUMOS = {
   co2: { recorde: () => tr('res.co2.recorde'), faixa: (e) => tr('res.co2.faixa', { n: e.quintos }) },
   temperatura: { recorde: () => tr('res.temperatura.recorde') },
-  tendencia: { troca: (e) => tr(e.sobe ? 'res.tendencia.sobe' : 'res.tendencia.desce') },
   chuva: { seca: () => tr('res.chuva.seca'), extrema: () => tr('res.chuva.extrema') },
 };
 export const fraseDoEvento = (id, ev) => FRASES[id][ev.nome](ev);
 
-// Eventos que não têm linha própria: aparecem (ponto, card e etiqueta) na linha de outra camada.
-// A tendência é o segundo som da temperatura, então fica na linha da temperatura e liga e desliga com ela.
-const LINHA_DO_EVENTO = { tendencia: 'temperatura' };
+// Eventos que não têm linha própria: aparecem (ponto, card e etiqueta) na linha de outra camada (camada → linha).
+// Hoje nenhum: a tendência não tem mais card.
+const LINHA_DO_EVENTO = {};
 const linhaDe = (id) => LINHA_DO_EVENTO[id] ?? id;
 const eventosDaLinha = (id) => [id, ...Object.keys(LINHA_DO_EVENTO).filter((k) => LINHA_DO_EVENTO[k] === id)];
 
