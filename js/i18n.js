@@ -8,6 +8,7 @@ const TEXTOS = {
   pt: {
     'titulo.pagina': 'Jukebox da Terra',
     'idioma.grupo': 'Idioma',
+    'unidade.grupo': 'Unidade de temperatura',
     'inicio.titulo': 'Jukebox da Terra',
     'inicio.lead': 'Ouça o clima da sua cidade mudar de 1950 até hoje.',
     'inicio.dados': 'Cada som é um dado da NASA: <strong>gás carbônico</strong>, <strong>temperatura</strong>, <strong>chuva</strong> e <strong>vegetação</strong>.',
@@ -75,6 +76,7 @@ const TEXTOS = {
     'aj.tendencia': 'Tendência da temperatura: média de 11 anos',
     'aj.chuva': 'Chuva: gotas agudas',
     'aj.vegetacao': 'Vegetação: arpejo',
+    'aj.unidade': 'Unidade de temperatura',
     'aj.narracao': 'Narração dos anos',
     'aj.narr.off': 'Desligada',
     'aj.narr.voz': 'Voz do app',
@@ -92,13 +94,13 @@ const TEXTOS = {
     'nome.chuva': 'Chuva', 'sigla.chuva': 'Chuva', 'papel.chuva': 'gotas agudas',
     'nome.vegetacao': 'Vegetação', 'sigla.vegetacao': 'Vegetação', 'papel.vegetacao': 'arpejo',
     'desde': ({ ano }) => `desde ${ano}`,
-    'media': ({ v }) => `média ${v}`,
+    'media': ({ v }) => `${v}`,
     'tend.sem': 'Ainda sem média.',
-    'tend.texto': ({ v, nivel }) => `Média dos 11 anos em volta: ${v} °C, nível ${nivel} de 4`,
+    'tend.texto': ({ v, nivel }) => `Média dos 11 anos em volta: ${v}, nível ${nivel} de 4`,
     'dim.naoMedido': ({ ano }) => `Ainda não medido. Começa em ${ano}.`,
     'dim.naoMedida': ({ ano }) => `Ainda não medida. Começa em ${ano}.`,
     'dim.co2': ({ v }) => `${v} ppm no planeta`,
-    'dim.temp': ({ v }) => `${v} °C em relação a 1951–1980`,
+    'dim.temp': ({ v }) => `${v} em relação a 1951–1980`,
     'dim.chuva': ({ v, tipo }) => `${v}% ${tipo === 'seca' ? '(seca)' : tipo === 'extrema' ? '(chuva extrema)' : 'em relação à média'}`,
     'dim.vegMais': ({ v }) => `Saudável: ${v}% mais verde que nos anos 1980`,
     'dim.vegMenos': ({ v }) => `${v}% menos verde que nos anos 1980`,
@@ -106,7 +108,7 @@ const TEXTOS = {
     'dim.desligadaLonga': ({ texto }) => `Desligada nos ajustes. ${texto}`,
     // eventos do gráfico
     'ev.co2.recorde': ({ v }) => `O CO₂ subiu ${v} ppm: mais rápido que em qualquer ano anterior`,
-    'ev.temperatura.recorde': ({ v }) => `O ano mais quente já medido aqui (${v} °C)`,
+    'ev.temperatura.recorde': ({ v }) => `O ano mais quente já medido aqui (${v})`,
     'ev.chuva.secaF': 'O ano mais seco já medido aqui',
     'ev.chuva.seca': ({ v }) => `Seca: ${v}% de chuva`,
     'ev.chuva.extremaF': 'O ano mais chuvoso já medido aqui',
@@ -122,6 +124,7 @@ const TEXTOS = {
   en: {
     'titulo.pagina': 'Earth Jukebox',
     'idioma.grupo': 'Language',
+    'unidade.grupo': 'Temperature unit',
     'inicio.titulo': 'Earth Jukebox',
     'inicio.lead': 'Hear your city’s climate change from 1950 to today.',
     'inicio.dados': 'Every sound is NASA data: <strong>carbon dioxide</strong>, <strong>temperature</strong>, <strong>rainfall</strong> and <strong>vegetation</strong>.',
@@ -189,6 +192,7 @@ const TEXTOS = {
     'aj.tendencia': 'Temperature trend: 11-year average',
     'aj.chuva': 'Rainfall: high drops',
     'aj.vegetacao': 'Vegetation: arpeggio',
+    'aj.unidade': 'Temperature unit',
     'aj.narracao': 'Year narration',
     'aj.narr.off': 'Off',
     'aj.narr.voz': 'App voice',
@@ -205,20 +209,20 @@ const TEXTOS = {
     'nome.chuva': 'Rainfall', 'sigla.chuva': 'Rainfall', 'papel.chuva': 'high drops',
     'nome.vegetacao': 'Vegetation', 'sigla.vegetacao': 'Vegetation', 'papel.vegetacao': 'arpeggio',
     'desde': ({ ano }) => `from ${ano}`,
-    'media': ({ v }) => `avg ${v}`,
+    'media': ({ v }) => `${v}`,
     'tend.sem': 'No average yet.',
-    'tend.texto': ({ v, nivel }) => `Average of the 11 surrounding years: ${v} °C, level ${nivel} of 4`,
+    'tend.texto': ({ v, nivel }) => `Average of the 11 surrounding years: ${v}, level ${nivel} of 4`,
     'dim.naoMedido': ({ ano }) => `Not measured yet. Starts in ${ano}.`,
     'dim.naoMedida': ({ ano }) => `Not measured yet. Starts in ${ano}.`,
     'dim.co2': ({ v }) => `${v} ppm worldwide`,
-    'dim.temp': ({ v }) => `${v} °C compared with 1951–1980`,
+    'dim.temp': ({ v }) => `${v} compared with 1951–1980`,
     'dim.chuva': ({ v, tipo }) => `${v}% ${tipo === 'seca' ? '(drought)' : tipo === 'extrema' ? '(extreme rain)' : 'compared with the average'}`,
     'dim.vegMais': ({ v }) => `Healthy: ${v}% greener than in the 1980s`,
     'dim.vegMenos': ({ v }) => `${v}% less green than in the 1980s`,
     'dim.desligada': 'off',
     'dim.desligadaLonga': ({ texto }) => `Turned off in settings. ${texto}`,
     'ev.co2.recorde': ({ v }) => `CO₂ rose ${v} ppm: faster than in any previous year`,
-    'ev.temperatura.recorde': ({ v }) => `The hottest year ever measured here (${v} °C)`,
+    'ev.temperatura.recorde': ({ v }) => `The hottest year ever measured here (${v})`,
     'ev.chuva.secaF': 'The driest year ever measured here',
     'ev.chuva.seca': ({ v }) => `Drought: ${v}% rainfall`,
     'ev.chuva.extremaF': 'The rainiest year ever measured here',
@@ -263,6 +267,7 @@ export function aplicarTextos(raiz = document) {
     }
   }
   for (const b of raiz.querySelectorAll('[data-idioma]')) b.setAttribute('aria-pressed', String(b.dataset.idioma === idioma));
+  marcarUnidade();
 }
 
 export function definirIdioma(novo) {
@@ -274,8 +279,41 @@ export function definirIdioma(novo) {
 }
 export const aoMudarIdioma = (f) => ouvintes.push(f);
 
-// botões PT / EN (no início e no rodapé da tela principal)
+// ---------------------------------------------------------------- unidade de temperatura
+// Toda a lógica é em °C (os mapas da NASA que lemos são em °C); °F é só na hora de mostrar.
+// Os valores são ANOMALIAS (diferença em relação à média de 1951–1980): a conversão é só × 1,8, sem o +32.
+// Padrão: °F (o site abre em inglês e °F); a escolha da pessoa fica salva. O par aparece sempre: "+2,9 °F (+1,6 °C)".
+let unidadeEscolhida = (() => {
+  try { const s = localStorage.getItem('jukebox-unidade'); if (s === 'c' || s === 'f') return s; } catch { /* sem storage */ }
+  return null;
+})();
+export const unidade = () => unidadeEscolhida ?? 'f';   // padrão do projeto: °F (e inglês); °C a um toque
+const outra = (u) => (u === 'c' ? 'f' : 'c');
+const sinal = (v) => (v >= 0 ? '+' : '−');
+/** Anomalia em °C convertida para a unidade pedida, com sinal e uma casa: "+1,6". */
+export const valorNa = (vC, u = unidade()) => { const v = u === 'f' ? vC * 1.8 : vC; return `${sinal(v)}${numero(Math.abs(v), 1)}`; };
+/** "+1,6 °C" (ou "+2,9 °F"). */
+export const temp = (vC, u = unidade()) => `${valorNa(vC, u)} °${u.toUpperCase()}`;
+/** "+1,6 °C (+2,9 °F)": a unidade escolhida e a outra entre parênteses. */
+export const tempPar = (vC) => `${temp(vC)} (${temp(vC, outra(unidade()))})`;
+export const unidadeSecundaria = () => outra(unidade());
+
+function marcarUnidade() {
+  document.body.dataset.unidadeAtiva = unidade();   // (não usar data-unidade no body: os botões são achados por [data-unidade])
+  for (const b of document.querySelectorAll('[data-unidade]')) b.setAttribute('aria-pressed', String(b.dataset.unidade === unidade()));
+}
+export function definirUnidade(u) {
+  if (u !== 'c' && u !== 'f') return;
+  unidadeEscolhida = u;
+  try { localStorage.setItem('jukebox-unidade', u); } catch { /* ok */ }
+  marcarUnidade();
+  for (const f of ouvintes) f(idioma);
+}
+
+// botões PT / EN (no início e no rodapé) e °C / °F (no rodapé)
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-idioma]');
   if (b) definirIdioma(b.dataset.idioma);
+  const u = e.target.closest('button[data-unidade]');
+  if (u) definirUnidade(u.dataset.unidade);
 });

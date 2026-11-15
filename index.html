@@ -161,8 +161,11 @@
         </div>
         <div class="escala" aria-hidden="true">
           <div class="barra"></div>
-          <span class="marca" style="top:0%">+2</span><span class="marca" style="top:25%">+1</span>
-          <span class="marca" style="top:50%">0</span><span class="marca" style="top:75%">−1</span><span class="marca" style="top:100%">−2</span>
+          <!-- como a legenda da NASA (SVS 5207): °C à esquerda da barra, °F à direita -->
+          <span class="marca c" style="top:0%">+2</span><span class="marca c" style="top:25%">+1</span>
+          <span class="marca c" style="top:50%">0</span><span class="marca c" style="top:75%">−1</span><span class="marca c" style="top:100%">−2</span>
+          <span class="marca f" style="top:8.3%">+3</span><span class="marca f" style="top:22.2%">+2</span><span class="marca f" style="top:36.1%">+1</span><span class="marca f" style="top:50.0%"><i class="sinal-vazio">+</i>0</span><span class="marca f" style="top:63.9%">−1</span><span class="marca f" style="top:77.8%">−2</span><span class="marca f" style="top:91.7%">−3</span>
+          <span class="unid c">°C</span><span class="unid f">°F</span>
           <div id="seta-temp" class="seta"></div>
         </div>
       </div>
@@ -205,7 +208,7 @@
           <span data-i18n="ctrl.avancar">Avançar</span>
         </button>
       </div>
-      <div class="rodape"><div class="idiomas" role="group" aria-label="Idioma" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div>
+      <div class="rodape"><div class="idiomas" role="group" aria-label="Idioma" data-i18n-attr="aria-label:idioma.grupo"><button type="button" data-idioma="en" lang="en" aria-pressed="true">EN</button><button type="button" data-idioma="pt" lang="pt-BR" aria-pressed="false">PT</button></div><div class="idiomas unidades" role="group" aria-label="Unidade de temperatura" data-i18n-attr="aria-label:unidade.grupo"><button type="button" data-unidade="f" aria-pressed="true">°F</button><button type="button" data-unidade="c" aria-pressed="false">°C</button></div>
       <p class="creditos"><span data-i18n="creditos">Temperatura: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · CO₂, chuva e vegetação: dados fictícios (protótipo)</span> · <span id="versao" title="Muda a cada publicação no GitHub (número de commits e código do commit). No computador aparece “local”.">Version local</span></p>
       </div>
     </section>
@@ -237,6 +240,9 @@
         <label class="opcao"><input type="checkbox" name="dim-chuva" checked><i class="glifo chuva" aria-hidden="true"></i> <span data-i18n="aj.chuva">Chuva: gotas agudas</span></label>
         <label class="opcao"><input type="checkbox" name="dim-vegetacao" checked><i class="glifo vegetacao" aria-hidden="true"></i> <span data-i18n="aj.vegetacao">Vegetação: arpejo</span></label>
       </fieldset>
+
+      <p class="rotulo" id="aj-unidade-rotulo" data-i18n="aj.unidade">Unidade de temperatura</p>
+      <div class="idiomas unidades unidades-ajustes" role="group" aria-labelledby="aj-unidade-rotulo"><button type="button" data-unidade="f" aria-pressed="true">°F</button><button type="button" data-unidade="c" aria-pressed="false">°C</button></div>
 
       <label class="rotulo" for="aj-narracao" data-i18n="aj.narracao">Narração dos anos</label>
       <select id="aj-narracao" name="narracao">
