@@ -100,7 +100,9 @@ export class PainelTemperatura {
     if (ano !== this.anoPrompt) {
       this.anoPrompt = ano;
       const p = document.querySelector('.prompt-ouvindo');
-      if (p) { p.classList.remove('pisca'); void p.offsetWidth; p.classList.add('pisca'); }
+      // feito com uma classe e um temporizador (não com animação CSS) de propósito: é um sinal lento,
+      // uma vez por ano, e continua aparecendo mesmo com "reduzir movimento" ligado (exceção combinada)
+      if (p) { p.classList.add('apagado'); clearTimeout(this.timerPrompt); this.timerPrompt = setTimeout(() => p.classList.remove('apagado'), 400); }
     }
     this.arco(temValor ? valor : 0);
     $('#legenda-temp').innerHTML = temValor

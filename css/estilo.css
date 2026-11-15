@@ -347,8 +347,7 @@ body[data-unidade-ativa="c"] .escala .c, body[data-unidade-ativa="f"] .escala .f
 .leitura { flex-wrap: wrap; align-content: center; }
 .ouvindo-texto { flex-basis: 100%; margin: 4px 0 0; padding-left: 2ch; text-indent: -2ch;   /* recuo: a 2ª linha alinha depois do > */ font: 500 0.85rem/1.45 var(--fonte-dado); color: var(--estrutura); }
 /* o > pisca uma vez a cada ano novo (sincronizado com a música), em vez de piscar sem parar */
-.prompt-ouvindo.pisca { animation: piscar-ano 0.7s steps(1) 1; }
-@keyframes piscar-ano { 0%, 50% { opacity: 0; } }
+.prompt-ouvindo.apagado { opacity: 0; }   /* some por 0,4 s a cada ano novo (ver painel-temperatura.js) */
 .ouvindo-texto .nota-ref { color: var(--estrutura); }
 /* ¹ ² ³ no texto (links para as notas) e a seção "Sobre os dados" abaixo dos controles */
 /* colado na palavra e na cor do texto em volta */
