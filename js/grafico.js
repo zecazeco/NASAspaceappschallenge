@@ -44,7 +44,14 @@ const LINHA_DO_EVENTO = {};
 const linhaDe = (id) => LINHA_DO_EVENTO[id] ?? id;
 const eventosDaLinha = (id) => [id, ...Object.keys(LINHA_DO_EVENTO).filter((k) => LINHA_DO_EVENTO[k] === id)];
 
-const TETO = 1.15;   // altura máxima visível de uma linha (1 = o valor máximo normal); acima disso, corta
+const TETO = 1.15;   // altura máxima visível de uma linha (1 = o valor máximo normal)
+// Compressão suave fora da faixa normal (hoje só a chuva passa dela): dentro de 0…1 nada muda;
+// acima, a linha continua subindo cada vez mais devagar até perto do TETO, sem nunca cortar
+// (a ordem entre os anos fica). Abaixo de 0, o mesmo até um pouco abaixo do chão.
+// Um ▲ / ▼ com o valor real avisa que ali a escala está comprimida.
+const ZONA_CIMA = TETO - 1 - 0.03, ZONA_BAIXO = 0.07;
+const comprimir = (v) => (v > 1 ? 1 + ZONA_CIMA * Math.tanh((v - 1) / ZONA_CIMA)
+  : v < 0 ? -ZONA_BAIXO * Math.tanh(-v / ZONA_BAIXO) : v);
 /** Evento num ano fora da área: o marcador e o card ficam na borda por onde a linha saiu. */
 const naBorda = (v) => Math.max(0.02, Math.min(TETO - 0.03, v));
 const DURACAO_CARD = 3200, DURACAO_REABERTO = 4500, VOLTA_SOZINHO = 8000;
@@ -136,8 +143,13 @@ export class Grafico {
     return { x: W / 2 + x * this.pxAno() * s, y: base - v * altura, base, s };
   }
 
-  valor(id, i) {
+  /** Posição real (0…1 na faixa normal; a chuva pode passar). */
+  valorBruto(id, i) {
     const p = this.trilha?.posicao[id][i]; return p == null ? null : p / 3;
+  }
+  /** Posição desenhada: a real, comprimida fora da faixa normal. */
+  valor(id, i) {
+    const v = this.valorBruto(id, i); return v == null ? null : comprimir(v);
   }
   valorEm(id, t) {
     const i = Math.floor(t), f = t - i;
@@ -163,6 +175,7 @@ export class Grafico {
 
     ctx.clearRect(0, 0, W, H);
     this.alvos = [];
+    this.obstaculos = [];   // textos já desenhados que as etiquetas não podem cobrir (ex.: ▲ +595%)
     if (!this.trilha) return;
     this.chao();
     const pontas = {};
@@ -224,10 +237,9 @@ export class Grafico {
     const futuro = pts.filter((p) => p.i > t);
     if (ponta && futuro.length) futuro.unshift(ponta);
 
-    // área da linha: do chão desta camada até um pouco acima do valor máximo normal (TETO);
-    // o que passa disso é cortado (só acontece na chuva, num ano muito fora da faixa da cidade)
-    const dentro = (v) => v >= -0.01 && v <= TETO;
-    const teto = this.proj(0, c.z, TETO).y, chao = this.proj(0, c.z, 0).base;
+    // área da linha: do chão desta camada (um pouco abaixo, pela compressão) até o TETO
+    const dentro = (v) => v >= -ZONA_BAIXO - 0.01 && v <= TETO;
+    const teto = this.proj(0, c.z, TETO).y, chao = this.proj(0, c.z, -ZONA_BAIXO - 0.01).y;
     ctx.save();
     ctx.beginPath(); ctx.rect(-50, teto, this.W + 100, chao - teto + 2); ctx.clip();
 
@@ -270,8 +282,56 @@ export class Grafico {
       if (ja) this.alvos.push({ x: p.x, y: p.y, i: p.i, id: eid, ev, cor: c.cor, chave: `${p.i}:${eid}` });
     }
     ctx.restore();
+    this.foraDaEscala(c, pts, t);
     // ponta fora da área: sem esfera nem rótulo até a linha voltar
     return ponta && dentro(vAgora) ? ponta : null;
+  }
+
+  /**
+   * Trechos fora da faixa normal (escala comprimida): uma linha tracejada fina no limite da faixa e,
+   * no ano mais extremo de cada trecho, um ▲ (ou ▼) com o valor real, para ninguém ler a altura
+   * como proporcional.
+   */
+  foraDaEscala(c, pts, t) {
+    const { ctx } = this;
+    const trechos = [];
+    let atual = null;
+    for (const p of pts) {
+      const v = this.valorBruto(c.id, p.i);
+      const lado = v > 1 ? 1 : v < 0 ? -1 : 0;
+      if (lado && atual && atual.lado === lado && p.i === atual.fim + 1) { atual.fim = p.i; if (lado * v > lado * atual.v) { atual.v = v; atual.i = p.i; atual.p = p; } }
+      else if (lado) { atual = { lado, ini: p.i, fim: p.i, v, i: p.i, p }; trechos.push(atual); }
+      else atual = null;
+    }
+    for (const tr of trechos) {
+      const ja = tr.i <= t;
+      const centro = this.centro;
+      const limite = tr.lado > 0 ? 1 : 0;
+      const a = this.proj(tr.ini - centro - 0.5, c.z, limite), b = this.proj(tr.fim - centro + 0.5, c.z, limite);
+      ctx.save();
+      ctx.strokeStyle = c.cor; ctx.globalAlpha = ja ? 0.45 : 0.2; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      // ▲ / ▼ no ponto mais extremo, com o valor real ao lado
+      // os dois ficam ACIMA do ponto (embaixo dele estão o chão e os anos do eixo):
+      // ▲ apontando para cima no pico; ▼ apontando para o ponto no vale
+      const p = tr.p, tam = 5 * p.s;
+      const ponta = tr.lado > 0 ? p.y - 10 * p.s - tam : p.y - 10 * p.s;
+      const base = tr.lado > 0 ? ponta + tam : ponta - tam;
+      const y0 = (ponta + base) / 2, dir = 0;
+      ctx.setLineDash([]); ctx.globalAlpha = ja ? 1 : 0.4; ctx.fillStyle = c.cor;
+      ctx.shadowColor = c.cor; ctx.shadowBlur = ja ? 8 : 0;
+      ctx.beginPath(); ctx.moveTo(p.x, ponta); ctx.lineTo(p.x - tam, base); ctx.lineTo(p.x + tam, base); ctx.closePath(); ctx.fill();
+      const ev = this.trilha.eventos[tr.i]?.[c.id];
+      if (ev && ev.valor != null) {
+        ctx.shadowBlur = 0;
+        ctx.font = `500 ${Math.round(11 * p.s)}px 'IBM Plex Mono', monospace`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        const txt = `${ev.valor >= 0 ? '+' : '−'}${Math.round(Math.abs(ev.valor))}%`;
+        ctx.fillText(txt, p.x + tam + 4, y0 + dir * tam * 0.5);
+        const w = ctx.measureText(txt).width;
+        this.obstaculos.push({ x: p.x - tam - 2, y: y0 + dir * tam * 0.5 - 9, w: w + tam * 2 + 8, h: 18 });
+      }
+      ctx.restore();
+    }
   }
 
   esfera(c, p, pulso) {
@@ -347,10 +407,17 @@ export class Grafico {
     ctx.restore();
   }
 
+  /**
+   * Etiquetas dos eventos já vistos (o card fechado vira etiqueta). Ficam afastadas do ponto, de
+   * preferência acima e à esquerda, sempre antes do cursor (o caminho do gráfico), ligadas ao ponto
+   * por um fio fino. Não cobrem outras etiquetas, outros pontos de evento nem os valores ▲/▼.
+   */
   etiquetas(agora) {
-    const { ctx } = this;
-    const ocupados = [];
+    const { ctx, W, H } = this;
     const abertas = new Set(this.cards.map((c) => c.chave));
+    const xCursor = this.proj(this.t - this.centro, 0, 0).x;
+    const pontos = this.alvos.map((a) => ({ x: a.x - 9, y: a.y - 9, w: 18, h: 18 }));
+    const ocupados = [...(this.obstaculos ?? [])];
     ctx.save(); ctx.font = "600 10.5px 'Chakra Petch', sans-serif";
     for (const a of this.alvos.slice().sort((x, y) => y.i - x.i)) {
       a.etiqueta = null;
@@ -359,16 +426,26 @@ export class Grafico {
       const alpha = Math.min(1, (agora - t0) / 400);
       const txt = RESUMOS[a.id][a.ev.nome](a.ev);
       const w = ctx.measureText(txt).width + 12, h = 17;
+      const livre = (c, antesDoCursor) => c.x >= 4 && c.x + w <= W - 4 && c.y >= 2 && c.y + h <= H - 22
+        && (!antesDoCursor || c.x + w <= xCursor - 8)
+        && !ocupados.some((o) => sobrepoe(c, o, 3)) && !pontos.some((o) => sobrepoe(c, o, 1));
       let r = null;
-      for (const dy of [-h - 9, 9, -h - 30, 30]) {
-        const c = { x: a.x - w / 2, y: a.y + dy, w, h };
-        if (!ocupados.some((o) => sobrepoe(c, o, 3))) { r = c; break; }
+      // 1º: à esquerda (acima, depois abaixo) e antes do cursor; 2º: qualquer lado
+      busca: for (const [lados, antes] of [[[-1], true], [[-1, 1], false]]) {
+        for (const lado of lados) for (const dy of [-30, -52, 14, 36, -74, 58]) for (const dx of [6, 26, 48]) {
+          const c = { x: lado < 0 ? a.x - dx - w : a.x + dx, y: a.y + dy, w, h };
+          if (livre(c, antes)) { r = c; break busca; }
+        }
       }
       if (!r) continue;
       ocupados.push(r);
       a.etiqueta = r;
+      // fio do ponto até a borda mais próxima da etiqueta
+      const fx = Math.max(r.x, Math.min(r.x + w, a.x)), fy = Math.max(r.y, Math.min(r.y + h, a.y));
+      ctx.globalAlpha = alpha * 0.55; ctx.strokeStyle = a.cor; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(fx, fy); ctx.stroke();
       ctx.globalAlpha = alpha * 0.9;
-      ctx.fillStyle = 'rgba(7,7,12,0.88)'; ctx.strokeStyle = a.cor; ctx.lineWidth = 1;
+      ctx.fillStyle = 'rgba(7,7,12,0.88)';
       ctx.beginPath(); ctx.rect(r.x, r.y, w, h); ctx.fill(); ctx.globalAlpha = alpha * 0.7; ctx.setLineDash([3, 2]); ctx.stroke(); ctx.setLineDash([]);
       ctx.globalAlpha = alpha; ctx.fillStyle = a.cor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(txt, r.x + w / 2, r.y + h / 2 + 0.5);
