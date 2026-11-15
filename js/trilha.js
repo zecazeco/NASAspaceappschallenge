@@ -1,15 +1,14 @@
 // Trilha de uma cidade: transforma as séries anuais em
-//   • posição na base de cada camada (0 = nível 1 … 3 = nível 4; null = silêncio)
-//   • temperatura: qual dos COMPASSOS_TEMP compassos toca em cada ano (0 = mais frio … 5 = mais quente)
+//   • posição de cada camada na faixa da cidade (0 … 3; null = sem dado): linhas do gráfico e níveis
+//   • temperatura: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
 //   • temperatura: anos que são pico ou vale da linha (som pontual em teste)
-//   • temperatura, Base04 e Base05: qual figura de movimento toca em cada ano (FIGURAS_MOVIMENTO)
-//   • CO₂ Base02 (em teste): quantas das 5 vozes tocam em cada ano
+//   • som dos loops quando não é a posição: CO₂ (quantas das 5 vozes) e chuva (tipo de mudança)
 //   • tendência da temperatura: média de 11 anos (linha do gráfico) e nível 1 a 4 (camada de som)
 //   • eventos de cada ano ({ nome, intensidade }): hoje só viram cartões no gráfico.
 // É calculada uma vez, ao escolher a cidade.
 
 export const NIVEIS = 4;
-export const VOZES_CO2 = 5;          // CO₂ Base02 (em teste): 5 vozes que se acumulam
+export const VOZES_CO2 = 5;          // CO₂: 5 vozes que se acumulam
 const INICIO_RECORDES = 1970;        // antes disso quase todo ano seria recorde
 const ANOS_MINIMOS_PARA_RECORDE = 10; // chuva e vegetação: "o mais extremo até então" só depois de 10 anos medidos
 const QUEDA_MINIMA_VEG = 0.03;        // queda de pelo menos 3% do verde dos anos 1980
@@ -24,10 +23,6 @@ function posicoes(serie) {
   return serie.map((v) => (valido(v) ? (max > min ? (v - min) / (max - min) : 0.5) * (NIVEIS - 1) : null));
 }
 
-// Temperatura: cada ano toca UM compasso inteiro, escolhido entre 6,
-// do mais frio ao mais quente. A escala é a da própria cidade: o ano mais frio medido ali
-// toca o compasso 1 e o mais quente, o 6 (a faixa entre eles é dividida em 6 partes iguais).
-export const COMPASSOS_TEMP = 6;
 
 // Som pontual de picos e vales (EM TESTE): toca no início do compasso do ano que é
 // um PICO ou um VALE da linha do gráfico. Método ziguezague: a partir do ponto mais alto (ou mais
@@ -65,26 +60,25 @@ function picosEVales(serie, limiar) {
   return saida;
 }
 
-// Base04 (EM TESTE): o compasso de cada ano mostra a MUDANÇA até o ano seguinte (para onde a
+// Temperatura: o compasso de cada ano mostra a MUDANÇA até o ano seguinte (para onde a
 // linha vai), e não a altura do ano. Todas as figuras começam na mesma nota e voltam para ela, então
 // nada acumula. A variação é a do valor arredondado (1 casa decimal, o mesmo da tela e da linha):
 //   0 = parado (Ré · Mi · Ré · Mi: ida e volta duas vezes, sem sair do lugar)   ±0,1 = pequena   ±0,2 a 0,3 = média   ±0,4 ou mais = grande.
 // O último ano (sem ano seguinte) toca um parado.
-// Base05 (EM TESTE): igual, mas compara com o ANO ANTERIOR (de onde a linha veio); o 1º ano toca um parado.
 export const FIGURAS_MOVIMENTO = ['parado', 'sobe_pequena', 'sobe_media', 'sobe_grande', 'desce_pequena', 'desce_media', 'desce_grande'];
 
-function movimentos(serie, sentido) {   // sentido: +1 = até o ano seguinte, −1 = desde o ano anterior
+function movimentos(serie) {
   return serie.map((v, i) => {
     if (!valido(v)) return null;
-    const outro = serie[i + sentido];
-    const d = valido(outro) ? (Math.round(outro * 10) - Math.round(v * 10)) * sentido : 0;   // em décimos de grau
+    const outro = serie[i + 1];
+    const d = valido(outro) ? Math.round(outro * 10) - Math.round(v * 10) : 0;   // em décimos de grau
     if (d === 0) return FIGURAS_MOVIMENTO.indexOf('parado');
     const tamanho = Math.abs(d) === 1 ? 'pequena' : Math.abs(d) <= 3 ? 'media' : 'grande';
     return FIGURAS_MOVIMENTO.indexOf(`${d > 0 ? 'sobe' : 'desce'}_${tamanho}`);
   });
 }
 
-// Tendência da temperatura (EM TESTE): segunda base da temperatura, tocando junto com a Base04.
+// Tendência da temperatura: segunda camada da temperatura, tocando junto com a melodia.
 // Para cada ano, a média dos 11 anos em volta (5 antes, o próprio ano e 5 depois; nas pontas, o que
 // houver). Isso apaga o sobe e desce de um ano para o outro e deixa só o aquecimento ao longo das
 // décadas. O som usa essa média dividida em 4 níveis na escala da cidade: muda poucas vezes na
@@ -113,11 +107,28 @@ function naEscalaDe(serie, ref) {
   return serie.map((v) => (valido(v) && max > min ? (v - min) / (max - min) : null));
 }
 
-function compassos(serie, n) {
+// Chuva: como a temperatura, o som de cada ano mostra a MUDANÇA até o ano seguinte (para onde a linha vai):
+//   0 = sobe muito (chuva_base_1, o mais forte) · 1 = sobe um pouco · 2 = desce um pouco · 3 = desce muito (o mais fraco).
+// "Muito" = o terço maior das mudanças da própria cidade. "Quase igual" (menos de QUASE_IGUAL_CHUVA da faixa
+// da cidade) mantém o som do ano anterior; o último ano (sem ano seguinte) também.
+export const QUASE_IGUAL_CHUVA = 0.05;
+
+function mudancasChuva(serie) {
   const vals = serie.filter(valido);
-  if (!vals.length) return serie.map(() => null);
-  const min = Math.min(...vals), max = Math.max(...vals);
-  return serie.map((v) => (valido(v) ? Math.min(n - 1, Math.floor((max > min ? (v - min) / (max - min) : 0.5) * n)) : null));
+  if (vals.length < 2) return serie.map(() => null);
+  const faixa = (Math.max(...vals) - Math.min(...vals)) || 1;
+  const d = serie.map((v, i) => (valido(v) && valido(serie[i + 1]) ? (serie[i + 1] - v) / faixa : null));
+  const grandes = d.filter((x) => x != null && Math.abs(x) >= QUASE_IGUAL_CHUVA).map(Math.abs).sort((a, b) => a - b);
+  const muito = grandes.length ? grandes[Math.floor((grandes.length * 2) / 3)] : Infinity;
+  const tipo = d.map((x) => (x == null || Math.abs(x) < QUASE_IGUAL_CHUVA ? null
+    : x > 0 ? (x >= muito ? 0 : 1) : (-x >= muito ? 3 : 2)));
+  const primeiro = tipo.find((t) => t != null) ?? 1;   // começo "quase igual": usa o primeiro som que vier
+  let anterior = null;
+  return serie.map((v, i) => {
+    if (!valido(v)) return null;
+    if (tipo[i] != null) anterior = tipo[i];
+    return anterior ?? primeiro;
+  });
 }
 
 /** Os k-ésimos valores extremos (k = 10% da série, pelo menos 1). */
@@ -206,14 +217,14 @@ export function calcularTrilha(local, passos, co2Global) {
     chuva: posicoes(chuva),
     vegetacao: posicoes(veg),
   };
-  // CO₂ Base02: quantas vozes tocam (0 = só a voz 1 … 4 = as 5); a faixa medida dividida em 5 partes iguais
-  const vozes = { co2: niveisFixos(co2, VOZES_CO2) };
-  const compasso = { temperatura: compassos(temp, COMPASSOS_TEMP) };
+  // som dos loops quando não é a posição: CO₂ = voz mais alta que toca (0 = só a voz 1 … 4 = as 5; a faixa
+  // medida dividida em 5 partes iguais); chuva = tipo de mudança até o ano seguinte
+  const som = { co2: niveisFixos(co2, VOZES_CO2), chuva: mudancasChuva(chuva) };
   const virada = { temperatura: picosEVales(temp, LIMIAR_VIRADA) };
-  const movimento = { temperatura: { base04: movimentos(temp, 1), base05: movimentos(temp, -1) } };
+  const movimento = { temperatura: movimentos(temp) };
   // linha da tendência no gráfico: na mesma escala da linha da temperatura, para passar por dentro dela
   const linha = { tendencia: naEscalaDe(tendencia, temp) };
-  return { posicao, vozes, compasso, virada, movimento, tendencia, linha, eventos };
+  return { posicao, som, virada, movimento, tendencia, linha, eventos };
 }
 
 /** Resumo legível (para depurar no console ou mostrar à equipe). */
