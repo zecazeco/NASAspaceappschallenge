@@ -8,9 +8,10 @@ const TEXTOS = {
   pt: {
     'titulo.pagina': 'Jukebox da Terra',
     'idioma.grupo': 'Idioma',
+    'unidade.grupo': 'Unidade de temperatura',
     'inicio.titulo': 'Jukebox da Terra',
     'inicio.lead': 'Ouça o clima da sua cidade mudar de 1950 até hoje.',
-    'inicio.dados': 'Cada som é um dado da NASA: <strong>gás carbônico</strong>, <strong>temperatura</strong> e <strong>chuva</strong>.',
+    'inicio.dados': 'Cada som é um dado da NASA: <strong>gás carbônico</strong>, <strong>temperatura</strong>, <strong>chuva</strong> e <strong>vegetação</strong>.',
     'inicio.fones': 'Use fones de ouvido.',
     'inicio.local': 'Vamos pedir sua localização. Se preferir não compartilhar, você pode digitar a cidade.',
     'inicio.carregando': 'Carregando…',
@@ -55,6 +56,7 @@ const TEXTOS = {
     'dims.titulo': 'O que você está ouvindo',
     'grafico.rotulo': 'Gráfico das quatro camadas ao longo dos anos. Arraste para os lados para ver o passado e o futuro.',
     'grafico.agora': 'Agora',
+    'grafico.dica': 'Arraste o gráfico para os lados para ver os eventos passados. Toque num ponto para ler o evento.',
     'grafico.agoraRotulo': 'Voltar o gráfico para o ano que está tocando',
     'tempo.titulo': 'Linha do tempo',
     'tempo.ano': 'Ano',
@@ -65,7 +67,7 @@ const TEXTOS = {
     'ctrl.avancar': 'Avançar',
     'fim': ({ ano }) => `Fim da música em ${ano}. Toque em Recomeçar para ouvir desde 1950.`,
     'anuncio.cidade': ({ cidade, regiao }) => `${cidade}. Região: ${regiao}.`,
-    'creditos': 'Temperatura: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · Chuva: <a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener">NASA POWER (MERRA-2)</a> · CO₂: <a href="https://gml.noaa.gov/ccgg/trends/" target="_blank" rel="noopener">NOAA GML, Mauna Loa</a> (Lan, NOAA/GML, e Keeling, Scripps)',
+    'creditos': 'Temperatura: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · CO₂, chuva e vegetação: dados fictícios (protótipo)',
     'fechar': 'Fechar',
     'aj.titulo': 'Ajustes',
     'aj.fechar': 'Fechar ajustes',
@@ -74,6 +76,8 @@ const TEXTOS = {
     'aj.temperatura': 'Temperatura: melodia',
     'aj.tendencia': 'Tendência da temperatura: média de 11 anos',
     'aj.chuva': 'Chuva: gotas agudas',
+    'aj.vegetacao': 'Vegetação: arpejo',
+    'aj.unidade': 'Unidade de temperatura',
     'aj.narracao': 'Narração dos anos',
     'aj.narr.off': 'Desligada',
     'aj.narr.voz': 'Voz do app',
@@ -83,46 +87,48 @@ const TEXTOS = {
     'narr.gravada': ({ n }) => `voz gravada (${n} arquivos)`,
     'narr.navegador': ({ nome }) => `voz do navegador: ${nome}`,
     'narr.sem': 'sem voz disponível',
-    'aj.info': ({ n, bpm, musico, prov, narr, frames }) => `${n} compassos (1 por ano), ${bpm} BPM. Sons: ${musico} do músico, ${prov} provisórios. Narração: ${narr}. ${frames ? 'Temperatura lida da cor do mapa da NASA (GISTEMP) sobre a cidade; chuva da NASA POWER; CO₂ da NOAA (Mauna Loa)' : 'Valores por região (dados fictícios)'}.`,
+    'aj.info': ({ n, bpm, musico, prov, narr, frames }) => `${n} compassos (1 por ano), ${bpm} BPM. Sons: ${musico} do músico, ${prov} provisórios. Narração: ${narr}. ${frames ? 'Temperatura lida da cor do mapa da NASA (GISTEMP) sobre a cidade; CO₂, chuva e vegetação ainda fictícios' : 'Valores por região (dados fictícios)'}.`,
     // camadas
     'nome.co2': 'Gás carbônico', 'sigla.co2': 'CO₂', 'papel.co2': 'base grave',
     'nome.temperatura': 'Temperatura', 'sigla.temperatura': 'Temp', 'papel.temperatura': 'melodia',
     'nome.tendencia': 'Tendência da temperatura', 'sigla.tendencia': 'Tendência', 'papel.tendencia': 'média de 11 anos, pulso que sobe de nota',
     'nome.chuva': 'Chuva', 'sigla.chuva': 'Chuva', 'papel.chuva': 'gotas agudas',
+    'nome.vegetacao': 'Vegetação', 'sigla.vegetacao': 'Vegetação', 'papel.vegetacao': 'arpejo',
     'desde': ({ ano }) => `desde ${ano}`,
-    'media': ({ v }) => `média ${v}`,
+    'media': ({ v }) => `${v}`,
     'tend.sem': 'Ainda sem média.',
-    'tend.texto': ({ v, nivel }) => `Média dos 11 anos em volta: ${v} °C, nível ${nivel} de 4`,
+    'tend.texto': ({ v, nivel }) => `Média dos 11 anos em volta: ${v}, nível ${nivel} de 4`,
     'dim.naoMedido': ({ ano }) => `Ainda não medido. Começa em ${ano}.`,
     'dim.naoMedida': ({ ano }) => `Ainda não medida. Começa em ${ano}.`,
     'dim.co2': ({ v }) => `${v} ppm no planeta`,
-    'dim.temp': ({ v }) => `${v} °C em relação a 1951–1980`,
+    'dim.temp': ({ v }) => `${v} em relação a 1951–1980`,
     'dim.chuva': ({ v, tipo }) => `${v}% ${tipo === 'seca' ? '(seca)' : tipo === 'extrema' ? '(chuva extrema)' : 'em relação à média'}`,
+    'dim.vegMais': ({ v }) => `Saudável: ${v}% mais verde que nos anos 1980`,
+    'dim.vegMenos': ({ v }) => `${v}% menos verde que nos anos 1980`,
     'dim.desligada': 'desligada',
     'dim.desligadaLonga': ({ texto }) => `Desligada nos ajustes. ${texto}`,
-    'dim.desligadaCurta': 'desligada',
-    'dim.semDadosCurta': 'sem dados',
-    'dim.semDadosLonga': 'Os dados da NASA não puderam ser carregados agora, então esta camada foi desligada.',
-    'aj.semDados': '(sem dados agora)',
-    'anuncio.semDados': ({ camadas }) => `Sem dados de ${camadas} agora; essa camada foi desligada.`,
     // eventos do gráfico
     'ev.co2.recorde': ({ v }) => `O CO₂ subiu ${v} ppm: mais rápido que em qualquer ano anterior`,
-    'ev.temperatura.recorde': ({ v }) => `O ano mais quente já medido aqui (${v} °C)`,
+    'ev.temperatura.recorde': ({ v }) => `O ano mais quente já medido aqui (${v})`,
     'ev.chuva.secaF': 'O ano mais seco já medido aqui',
     'ev.chuva.seca': ({ v }) => `Seca: ${v}% de chuva`,
     'ev.chuva.extremaF': 'O ano mais chuvoso já medido aqui',
     'ev.chuva.extrema': ({ v }) => `Chuva extrema: +${v}%`,
+    'ev.vegetacao.quedaF': 'O ano menos verde já medido aqui',
+    'ev.vegetacao.queda': ({ v }) => `A vegetação perdeu ${v}% do verde`,
     'res.co2.recorde': 'Recorde CO₂',
     'res.temperatura.recorde': 'Recorde de calor',
     'res.chuva.secaF': 'Seca recorde', 'res.chuva.seca': 'Seca',
     'res.chuva.extremaF': 'Chuva recorde', 'res.chuva.extrema': 'Chuva extrema',
+    'res.vegetacao.quedaF': 'Menor verde', 'res.vegetacao.queda': 'Queda do verde',
   },
   en: {
     'titulo.pagina': 'Earth Jukebox',
     'idioma.grupo': 'Language',
+    'unidade.grupo': 'Temperature unit',
     'inicio.titulo': 'Earth Jukebox',
     'inicio.lead': 'Hear your city’s climate change from 1950 to today.',
-    'inicio.dados': 'Every sound is NASA data: <strong>carbon dioxide</strong>, <strong>temperature</strong> and <strong>rainfall</strong>.',
+    'inicio.dados': 'Every sound is NASA data: <strong>carbon dioxide</strong>, <strong>temperature</strong>, <strong>rainfall</strong> and <strong>vegetation</strong>.',
     'inicio.fones': 'Use headphones.',
     'inicio.local': 'We’ll ask for your location. If you’d rather not share it, you can type your city.',
     'inicio.carregando': 'Loading…',
@@ -167,6 +173,7 @@ const TEXTOS = {
     'dims.titulo': 'What you are hearing',
     'grafico.rotulo': 'Chart of the four layers over the years. Drag sideways to see the past and the future.',
     'grafico.agora': 'Now',
+    'grafico.dica': 'Drag the chart sideways to see past events. Tap a point to read it.',
     'grafico.agoraRotulo': 'Bring the chart back to the year that is playing',
     'tempo.titulo': 'Timeline',
     'tempo.ano': 'Year',
@@ -177,7 +184,7 @@ const TEXTOS = {
     'ctrl.avancar': 'Forward',
     'fim': ({ ano }) => `End of the music in ${ano}. Tap Restart to listen from 1950.`,
     'anuncio.cidade': ({ cidade, regiao }) => `${cidade}. Region: ${regiao}.`,
-    'creditos': 'Temperature: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · Rainfall: <a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener">NASA POWER (MERRA-2)</a> · CO₂: <a href="https://gml.noaa.gov/ccgg/trends/" target="_blank" rel="noopener">NOAA GML, Mauna Loa</a> (Lan, NOAA/GML, and Keeling, Scripps)',
+    'creditos': 'Temperature: <a href="https://svs.gsfc.nasa.gov/5207/" target="_blank" rel="noopener">NASA SVS 5207 (GISTEMP v4)</a> · CO₂, rainfall and vegetation: placeholder data (prototype)',
     'fechar': 'Close',
     'aj.titulo': 'Settings',
     'aj.fechar': 'Close settings',
@@ -186,6 +193,8 @@ const TEXTOS = {
     'aj.temperatura': 'Temperature: melody',
     'aj.tendencia': 'Temperature trend: 11-year average',
     'aj.chuva': 'Rainfall: high drops',
+    'aj.vegetacao': 'Vegetation: arpeggio',
+    'aj.unidade': 'Temperature unit',
     'aj.narracao': 'Year narration',
     'aj.narr.off': 'Off',
     'aj.narr.voz': 'App voice',
@@ -195,37 +204,38 @@ const TEXTOS = {
     'narr.gravada': ({ n }) => `recorded voice (${n} files, Portuguese)`,
     'narr.navegador': ({ nome }) => `browser voice: ${nome}`,
     'narr.sem': 'no voice available',
-    'aj.info': ({ n, bpm, musico, prov, narr, frames }) => `${n} bars (1 per year), ${bpm} BPM. Sounds: ${musico} by the musician, ${prov} placeholders. Narration: ${narr}. ${frames ? 'Temperature read from the colour of the NASA map (GISTEMP) over the city; rainfall from NASA POWER; CO₂ from NOAA (Mauna Loa)' : 'Values by region (placeholder data)'}.`,
+    'aj.info': ({ n, bpm, musico, prov, narr, frames }) => `${n} bars (1 per year), ${bpm} BPM. Sounds: ${musico} by the musician, ${prov} placeholders. Narration: ${narr}. ${frames ? 'Temperature read from the colour of the NASA map (GISTEMP) over the city; CO₂, rainfall and vegetation are still placeholders' : 'Values by region (placeholder data)'}.`,
     'nome.co2': 'Carbon dioxide', 'sigla.co2': 'CO₂', 'papel.co2': 'low drone',
     'nome.temperatura': 'Temperature', 'sigla.temperatura': 'Temp', 'papel.temperatura': 'melody',
     'nome.tendencia': 'Temperature trend', 'sigla.tendencia': 'Trend', 'papel.tendencia': '11-year average, a pulse that rises in pitch',
     'nome.chuva': 'Rainfall', 'sigla.chuva': 'Rainfall', 'papel.chuva': 'high drops',
+    'nome.vegetacao': 'Vegetation', 'sigla.vegetacao': 'Vegetation', 'papel.vegetacao': 'arpeggio',
     'desde': ({ ano }) => `from ${ano}`,
-    'media': ({ v }) => `avg ${v}`,
+    'media': ({ v }) => `${v}`,
     'tend.sem': 'No average yet.',
-    'tend.texto': ({ v, nivel }) => `Average of the 11 surrounding years: ${v} °C, level ${nivel} of 4`,
+    'tend.texto': ({ v, nivel }) => `Average of the 11 surrounding years: ${v}, level ${nivel} of 4`,
     'dim.naoMedido': ({ ano }) => `Not measured yet. Starts in ${ano}.`,
     'dim.naoMedida': ({ ano }) => `Not measured yet. Starts in ${ano}.`,
     'dim.co2': ({ v }) => `${v} ppm worldwide`,
-    'dim.temp': ({ v }) => `${v} °C compared with 1951–1980`,
+    'dim.temp': ({ v }) => `${v} compared with 1951–1980`,
     'dim.chuva': ({ v, tipo }) => `${v}% ${tipo === 'seca' ? '(drought)' : tipo === 'extrema' ? '(extreme rain)' : 'compared with the average'}`,
+    'dim.vegMais': ({ v }) => `Healthy: ${v}% greener than in the 1980s`,
+    'dim.vegMenos': ({ v }) => `${v}% less green than in the 1980s`,
     'dim.desligada': 'off',
     'dim.desligadaLonga': ({ texto }) => `Turned off in settings. ${texto}`,
-    'dim.desligadaCurta': 'off',
-    'dim.semDadosCurta': 'no data',
-    'dim.semDadosLonga': 'The NASA data could not be loaded right now, so this layer was turned off.',
-    'aj.semDados': '(no data right now)',
-    'anuncio.semDados': ({ camadas }) => `No ${camadas} data right now; that layer was turned off.`,
     'ev.co2.recorde': ({ v }) => `CO₂ rose ${v} ppm: faster than in any previous year`,
-    'ev.temperatura.recorde': ({ v }) => `The hottest year ever measured here (${v} °C)`,
+    'ev.temperatura.recorde': ({ v }) => `The hottest year ever measured here (${v})`,
     'ev.chuva.secaF': 'The driest year ever measured here',
     'ev.chuva.seca': ({ v }) => `Drought: ${v}% rainfall`,
     'ev.chuva.extremaF': 'The rainiest year ever measured here',
     'ev.chuva.extrema': ({ v }) => `Extreme rain: +${v}%`,
+    'ev.vegetacao.quedaF': 'The least green year ever measured here',
+    'ev.vegetacao.queda': ({ v }) => `Vegetation lost ${v}% of its green`,
     'res.co2.recorde': 'CO₂ record',
     'res.temperatura.recorde': 'Heat record',
     'res.chuva.secaF': 'Record drought', 'res.chuva.seca': 'Drought',
     'res.chuva.extremaF': 'Rain record', 'res.chuva.extrema': 'Extreme rain',
+    'res.vegetacao.quedaF': 'Least green', 'res.vegetacao.queda': 'Green loss',
   },
 };
 
@@ -259,6 +269,7 @@ export function aplicarTextos(raiz = document) {
     }
   }
   for (const b of raiz.querySelectorAll('[data-idioma]')) b.setAttribute('aria-pressed', String(b.dataset.idioma === idioma));
+  marcarUnidade();
 }
 
 export function definirIdioma(novo) {
@@ -270,8 +281,41 @@ export function definirIdioma(novo) {
 }
 export const aoMudarIdioma = (f) => ouvintes.push(f);
 
-// botões PT / EN (no início e no rodapé da tela principal)
+// ---------------------------------------------------------------- unidade de temperatura
+// Toda a lógica é em °C (os mapas da NASA que lemos são em °C); °F é só na hora de mostrar.
+// Os valores são ANOMALIAS (diferença em relação à média de 1951–1980): a conversão é só × 1,8, sem o +32.
+// Padrão: °F (o site abre em inglês e °F); a escolha da pessoa fica salva. O par aparece sempre: "+2,9 °F (+1,6 °C)".
+let unidadeEscolhida = (() => {
+  try { const s = localStorage.getItem('jukebox-unidade'); if (s === 'c' || s === 'f') return s; } catch { /* sem storage */ }
+  return null;
+})();
+export const unidade = () => unidadeEscolhida ?? 'f';   // padrão do projeto: °F (e inglês); °C a um toque
+const outra = (u) => (u === 'c' ? 'f' : 'c');
+const sinal = (v) => (v >= 0 ? '+' : '−');
+/** Anomalia em °C convertida para a unidade pedida, com sinal e uma casa: "+1,6". */
+export const valorNa = (vC, u = unidade()) => { const v = u === 'f' ? vC * 1.8 : vC; return `${sinal(v)}${numero(Math.abs(v), 1)}`; };
+/** "+1,6 °C" (ou "+2,9 °F"). */
+export const temp = (vC, u = unidade()) => `${valorNa(vC, u)} °${u.toUpperCase()}`;
+/** "+1,6 °C (+2,9 °F)": a unidade escolhida e a outra entre parênteses. */
+export const tempPar = (vC) => `${temp(vC)} (${temp(vC, outra(unidade()))})`;
+export const unidadeSecundaria = () => outra(unidade());
+
+function marcarUnidade() {
+  document.body.dataset.unidadeAtiva = unidade();   // (não usar data-unidade no body: os botões são achados por [data-unidade])
+  for (const b of document.querySelectorAll('[data-unidade]')) b.setAttribute('aria-pressed', String(b.dataset.unidade === unidade()));
+}
+export function definirUnidade(u) {
+  if (u !== 'c' && u !== 'f') return;
+  unidadeEscolhida = u;
+  try { localStorage.setItem('jukebox-unidade', u); } catch { /* ok */ }
+  marcarUnidade();
+  for (const f of ouvintes) f(idioma);
+}
+
+// botões PT / EN (no início e no rodapé) e °C / °F (no rodapé)
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-idioma]');
   if (b) definirIdioma(b.dataset.idioma);
+  const u = e.target.closest('button[data-unidade]');
+  if (u) definirUnidade(u.dataset.unidade);
 });

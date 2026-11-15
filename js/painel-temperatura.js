@@ -7,7 +7,7 @@
 // da cidade fica no lugar certo em qualquer tamanho de tela.
 
 import { visualizacao, frameDoPasso, imagemDoFrame, pontoNoFrame, corDoValor } from './frames.js';
-import { t, localidade } from './i18n.js';
+import { t, localidade, unidade, unidadeSecundaria, valorNa, temp } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
 const LADO_LENTE = 90;   // pedaço do frame (px, frame de 1280) mostrado na lente
@@ -15,7 +15,11 @@ const INICIO_FUSAO = 0.7; // a partir de 70% do compasso o mapa começa a virar 
 const num = (v) => Math.abs(v).toLocaleString(localidade(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 /** "+1,5 °C" com a vírgula apertada (a fonte é monoespaçada). */
-const textoTemp = (valor) => { const [, i, sep, d] = num(valor).match(/^(.*?)([.,])(\d+)$/); return `${valor >= 0 ? '+' : '−'}${i}<span class="virg">${sep}</span>${d}<small>°C</small>`; };
+// número grande na unidade escolhida; a outra unidade aparece pequena no canto superior direito
+const textoTemp = (valor) => {
+  const [, i, sep, d] = valorNa(valor).match(/^(.*?)([.,])(\d+)$/);
+  return `<span class="num">${i}<span class="virg">${sep}</span>${d}<small>°${unidade().toUpperCase()}</small></span><span class="valor-sec">${temp(valor, unidadeSecundaria())}</span>`;
+};
 
 export class PainelTemperatura {
   constructor({ tempo, passos, valorEm = () => null }) {
@@ -68,7 +72,7 @@ export class PainelTemperatura {
     if (!this.cidade || this.painel.closest('[hidden]')) return;
     const valor = this.valorEm(this.tempo());
     if (valor == null) return;
-    const texto = `${valor >= 0 ? '+' : '−'}${num(valor)}`;
+    const texto = `${valorNa(valor)}${unidade()}`;
     if (texto !== this.textoValor) { this.textoValor = texto; $('#valor-temp').innerHTML = textoTemp(valor); this.arco(valor); }
     $('#seta-temp').style.top = `${((2 - Math.max(-2, Math.min(2, valor))) / 4) * 100}%`;
   }

@@ -7,22 +7,24 @@ import { carregarCidadesLocais, pedirLocalizacao, nomeDaCidade, buscarCidades } 
 import { Narrador } from './narrador.js';
 import { Motor, BPM } from './audio/motor.js';
 import { origemDosSons } from './audio/camadas.js';
-import { t, aplicarTextos, aoMudarIdioma, localidade } from './i18n.js';
+import { t, aplicarTextos, aoMudarIdioma, localidade, tempPar } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
 // nome, sigla e papel vêm do idioma escolhido (js/i18n.js)
 const DIMS = [
   { id: 'temperatura', cor: '#FF5C9E' },
+  { id: 'tendencia', cor: '#7E8A99' },
   { id: 'co2', cor: '#C77DFF' },
   { id: 'chuva', cor: '#53E2FF' },
+  { id: 'vegetacao', cor: '#C6F06B' },
 ].map((d) => Object.defineProperties(d, {
   nome: { get: () => t(`nome.${d.id}`) },
   sigla: { get: () => t(`sigla.${d.id}`) },
   papel: { get: () => t(`papel.${d.id}`) },
 }));
 
-// Quem abre a página pela primeira vez: temperatura e CO₂ ligados e sem narração (dá para mudar nos ajustes).
-const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, chuva: false, narracao: 'off', tic: true, volume: 80 };
+// Quem abre a página pela primeira vez: só a temperatura (e a tendência dela) ligada e sem narração (dá para mudar nos ajustes).
+const AJUSTES_PADRAO = { versao: 2, co2: true, temperatura: true, tendencia: true, chuva: false, vegetacao: false, narracao: 'off', tic: true, volume: 80 };
 let ajustes = { ...AJUSTES_PADRAO };
 try {
   const salvos = JSON.parse(localStorage.getItem('jukebox-ajustes') || '{}');
@@ -92,7 +94,7 @@ async function iniciar() {
     grafico = new Grafico($('#grafico'), {
       anos: timeline().passos.map((p) => p.inicio),
       aoAnunciar: anunciar,
-      rotuloPonta: (id, idx, t) => `${DIMS.find((d) => d.id === id).sigla} ${id === 'temperatura' && tempEm(t) != null ? `${sinalTemp(tempEm(t))} °C` : curtos(idx)[id]}`,
+      rotuloPonta: (id, idx, t) => `${DIMS.find((d) => d.id === id).sigla} ${id === 'temperatura' && tempEm(t) != null ? tempPar(tempEm(t)) : curtos(idx)[id]}`,
     });
     grafico.tempoAlvo = () => motor.tempoContinuo();
     window.jukebox.grafico = grafico;
@@ -248,10 +250,7 @@ async function escolherCidade(c) {
   window.jukebox.eventos = () => listarEventos(trilha, timeline().passos);
   motor.definirTrilha(trilha);
   grafico.definirTrilha(trilha);
-  aplicarAjustes();   // camadas sem dados (API fora do ar) ficam desligadas para esta cidade
-  const semDados = DIMS.filter((d) => semDadosAgora(d.id)).map((d) => t(`nome.${d.id}`).toLowerCase());
-  anunciar(t('anuncio.cidade', { cidade: c.nome, regiao: regiao.nome }) +
-    (semDados.length ? ` ${t('anuncio.semDados', { camadas: semDados.join(', ') })}` : ''));
+  anunciar(t('anuncio.cidade', { cidade: c.nome, regiao: regiao.nome }));
   $('#nome-cidade').textContent = c.nome;
   // só o país (o resto cortava no celular); a região climática vai para o leitor de tela no anúncio acima
   const pais = (c.detalhe || '').split(',').map((x) => x.trim()).filter(Boolean).pop() || '';
@@ -302,8 +301,10 @@ function curtos(idx) {
   const desde = (ano) => t('desde', { ano });
   return {
     co2: b.co2 == null ? desde(ini.co2) : `${Math.round(b.co2)} ppm`,
-    temperatura: b.temperatura == null ? desde(ini.temperatura) : `${sinal(b.temperatura, 1)} °C`,
+    temperatura: b.temperatura == null ? desde(ini.temperatura) : tempPar(b.temperatura),
+    tendencia: trilha?.tendencia?.[idx] == null ? desde(ini.temperatura) : t('media', { v: tempPar(trilha.tendencia[idx]) }),
     chuva: b.chuva == null ? desde(ini.chuva) : `${sinal(b.chuva)}%`,
+    vegetacao: v.vegetacao == null ? desde(ini.vegetacao) : `${sinal((v.vegetacao.saude - 1) * 100)}%`,
   };
 }
 
@@ -318,20 +319,22 @@ function atualizarUI(idx) {
 
   const v = valoresDoPasso(regiao, idx);
   const textos = textosDimensoes(regiao, idx);
+  const media = trilha?.tendencia?.[idx], nivelTend = trilha?.posicao.tendencia?.[idx];
+  textos.tendencia = media == null ? t('tend.sem')
+    : t('tend.texto', { v: tempPar(media), nivel: nivelTend + 1 });
   const curto = curtos(idx);
   const nivel = {
-    co2: v.co2, temperatura: v.temperatura,
+    co2: v.co2, temperatura: v.temperatura, tendencia: nivelTend == null ? null : (nivelTend + 1) / 4,
     chuva: v.chuva == null ? null : Math.max(0, Math.min(1, (v.chuva + 50) / 100)),
+    vegetacao: v.vegetacao == null ? null : 1 - v.vegetacao.perda,
   };
   for (const d of DIMS) {
     const li = $(`#dim-${d.id}`);
-    const semDados = semDadosAgora(d.id);
-    const desligada = semDados || !ajustes[d.id];
+    const desligada = !ajustes[d.id];
     li.classList.toggle('inativa', nivel[d.id] == null);
     li.classList.toggle('desligada', desligada);
-    li.querySelector('.longo').textContent = semDados ? t('dim.semDadosLonga')
-      : desligada ? t('dim.desligadaLonga', { texto: textos[d.id] }) : textos[d.id];
-    li.querySelector('.curto').textContent = semDados ? t('dim.semDadosCurta') : desligada ? t('dim.desligadaCurta') : curto[d.id];
+    li.querySelector('.longo').textContent = desligada ? t('dim.desligadaLonga', { texto: textos[d.id] }) : textos[d.id];
+    li.querySelector('.curto').textContent = desligada ? 'desligada' : curto[d.id];
     li.querySelector('i').style.width = `${Math.round((nivel[d.id] ?? 0) * 100)}%`;
   }
   painel?.atualizar(idx, b0(idx));
@@ -493,14 +496,8 @@ document.addEventListener('keydown', (e) => {
 const dlg = $('#ajustes');
 const form = dlg.querySelector('form');
 
-/** A camada não tem dados para esta cidade (a API da NASA falhou): fica desligada, sem mudar o ajuste salvo. */
-const semDadosAgora = (id) => !!regiao?.indisponivel?.includes(id);
-
 function aplicarAjustes() {
-  for (const d of DIMS) {
-    const ligada = ajustes[d.id] && !semDadosAgora(d.id);
-    motor.definirDimensao(d.id, ligada); grafico?.definirLigada(d.id, ligada);
-  }
+  for (const d of DIMS) { motor.definirDimensao(d.id, ajustes[d.id]); grafico?.definirLigada(d.id, ajustes[d.id]); }
   motor.definirVolume(ajustes.volume / 100);
   if (ajustes.narracao !== 'voz') narrador.cancelar();
   else narrador.carregar(timeline().passos);   // baixa as vozes só quando a pessoa liga a narração
@@ -508,14 +505,7 @@ function aplicarAjustes() {
 }
 
 $('#btn-ajustes').addEventListener('click', () => {
-  for (const d of DIMS) {
-    const caixa = form.elements[`dim-${d.id}`], semDados = semDadosAgora(d.id);
-    caixa.checked = ajustes[d.id] && !semDados;
-    caixa.disabled = semDados;
-    let aviso = caixa.parentElement.querySelector('.sem-dados');
-    if (semDados && !aviso) { aviso = document.createElement('small'); aviso.className = 'sem-dados'; caixa.parentElement.append(' ', aviso); }
-    if (aviso) aviso.textContent = semDados ? t('aj.semDados') : '';
-  }
+  for (const d of DIMS) form.elements[`dim-${d.id}`].checked = ajustes[d.id];
   form.elements.narracao.value = ajustes.narracao;
   form.elements.tic.checked = ajustes.tic;
   form.elements.volume.value = ajustes.volume;
@@ -527,7 +517,7 @@ $('#btn-ajustes').addEventListener('click', () => {
 });
 
 form.addEventListener('change', () => {
-  for (const d of DIMS) if (!form.elements[`dim-${d.id}`].disabled) ajustes[d.id] = form.elements[`dim-${d.id}`].checked;
+  for (const d of DIMS) ajustes[d.id] = form.elements[`dim-${d.id}`].checked;
   ajustes.narracao = form.elements.narracao.value;
   ajustes.tic = form.elements.tic.checked;
   ajustes.volume = Number(form.elements.volume.value);
