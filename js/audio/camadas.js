@@ -20,7 +20,7 @@
 // Sons pontuais: tirados, exceto o teste da
 // temperatura (Pontual01: picos e vales da linha), ligado pelo seletor no topo da página.
 //
-// Arquivos: primeiro audio/<pasta>/<nome>.wav (os do músico); se não existir,
+// Arquivos: primeiro audio/<pasta>/<nome>.mp3 ou .wav (os do músico); se não existir,
 // audio/provisorio/<nome>.wav (gerados por tools/gerar-sons-provisorios.mjs).
 
 import { NIVEIS, COMPASSOS_TEMP, FIGURAS_MOVIMENTO, VOZES_CO2 } from '../trilha.js';
@@ -62,7 +62,7 @@ async function existe(url) {
 }
 
 async function carregarSom(pasta, nome) {
-  for (const [url, tipo] of [[`audio/${pasta}/${nome}.wav`, 'musico'], [`audio/provisorio/${nome}.wav`, 'provisorio']]) {
+  for (const [url, tipo] of [[`audio/${pasta}/${nome}.mp3`, 'musico'], [`audio/${pasta}/${nome}.wav`, 'musico'], [`audio/provisorio/${nome}.wav`, 'provisorio']]) {
     if (!(await existe(url))) continue;
     try {
       const buf = await new Tone.ToneAudioBuffer().load(url);
