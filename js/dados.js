@@ -1,4 +1,4 @@
-import { t, localidade } from './i18n.js';
+import { t, localidade, tempPar } from './i18n.js';
 // Carrega a linha do tempo e normaliza os valores para o motor de som (0..1).
 // Fonte dos números: os FRAMES visuais (data/frames/, lidos por frames.js) quando existirem;
 // senão, os valores por região de data/timeline.json.
@@ -102,7 +102,7 @@ export function textosDimensoes(regiao, idx) {
   const ini = inicioMedicao(regiao);
   return {
     co2: b.co2 == null ? t('dim.naoMedido', { ano: ini.co2 }) : t('dim.co2', { v: fmt(b.co2, 0) }),
-    temperatura: b.temperatura == null ? t('dim.naoMedida', { ano: ini.temperatura }) : t('dim.temp', { v: `${b.temperatura >= 0 ? '+' : '−'}${fmt(Math.abs(b.temperatura))}` }),
+    temperatura: b.temperatura == null ? t('dim.naoMedida', { ano: ini.temperatura }) : t('dim.temp', { v: tempPar(b.temperatura) }),
     chuva: b.chuva == null ? t('dim.naoMedida', { ano: ini.chuva }) :
       t('dim.chuva', { v: `${b.chuva >= 0 ? '+' : '−'}${fmt(Math.abs(b.chuva), 0)}`, tipo: b.chuva <= -25 ? 'seca' : b.chuva >= 25 ? 'extrema' : '' }),
     vegetacao: vegetacao == null ? t('dim.naoMedida', { ano: ini.vegetacao }) :

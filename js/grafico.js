@@ -15,7 +15,7 @@ export const CAMADAS_GRAFICO = [
   { id: 'vegetacao', nome: 'Vegetação', cor: '#C6F06B', z: 0.3, espessura: 1.05 },
   { id: 'chuva', nome: 'Chuva', cor: '#53E2FF', z: 0.0, espessura: 0.8 },
 ];
-import { t as tr, localidade } from './i18n.js';
+import { t as tr, localidade, tempPar } from './i18n.js';
 
 const TITULOS = new Proxy({}, { get: (_, id) => tr(`sigla.${String(id)}`) });
 const num = (v, casas = 1) => v.toLocaleString(localidade(), { minimumFractionDigits: casas, maximumFractionDigits: casas });
@@ -23,7 +23,7 @@ const sinal = (v) => `${v >= 0 ? '+' : '−'}${num(Math.abs(v))}`;
 // Textos dos eventos (no idioma escolhido, ver js/i18n.js)
 const FRASES = {
   co2: { recorde: (e) => tr('ev.co2.recorde', { v: num(e.valor) }) },
-  temperatura: { recorde: (e) => tr('ev.temperatura.recorde', { v: sinal(e.valor) }) },
+  temperatura: { recorde: (e) => tr('ev.temperatura.recorde', { v: tempPar(e.valor) }) },
   chuva: {
     seca: (e) => (e.intensidade === 'f' ? tr('ev.chuva.secaF') : tr('ev.chuva.seca', { v: Math.round(e.valor) })),
     extrema: (e) => (e.intensidade === 'f' ? tr('ev.chuva.extremaF') : tr('ev.chuva.extrema', { v: Math.round(e.valor) })),
@@ -289,7 +289,22 @@ export class Grafico {
         ctx.strokeStyle = o.c.cor; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(o.p.x + o.r + 2, o.p.y); ctx.lineTo(x - 3, o.y - 4); ctx.stroke(); ctx.globalAlpha = 0.95;
       }
-      ctx.fillText(this.rotuloPonta(o.c.id, idx, this.t), x, o.y); ctx.restore();
+      // a parte entre parênteses (a outra unidade de temperatura) vai menor e mais apagada;
+      // se o rótulo não couber até a borda, as duas partes encolhem juntas (até 9 px)
+      const txt = this.rotuloPonta(o.c.id, idx, this.t);
+      const corte = txt.indexOf(' (');
+      const [a1, a2] = corte < 0 ? [txt, ''] : [txt.slice(0, corte), txt.slice(corte)];
+      const medir = (f1) => { ctx.font = `500 ${f1}px 'IBM Plex Mono', monospace`; const w1 = ctx.measureText(a1).width; ctx.font = `500 ${f1 - 2}px 'IBM Plex Mono', monospace`; return w1 + ctx.measureText(a2).width; };
+      let f1 = 12;
+      while (f1 > 9 && x + medir(f1) > this.W - 4) f1 -= 0.5;
+      ctx.font = `500 ${f1}px 'IBM Plex Mono', monospace`;
+      ctx.fillText(a1, x, o.y);
+      if (a2) {
+        const w1 = ctx.measureText(a1).width;
+        ctx.font = `500 ${f1 - 2}px 'IBM Plex Mono', monospace`; ctx.globalAlpha = 0.6;
+        ctx.fillText(a2, x + w1, o.y);
+      }
+      ctx.restore();
     }
   }
 

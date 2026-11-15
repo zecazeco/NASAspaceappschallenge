@@ -7,7 +7,7 @@ import { carregarCidadesLocais, pedirLocalizacao, nomeDaCidade, buscarCidades } 
 import { Narrador } from './narrador.js';
 import { Motor, BPM } from './audio/motor.js';
 import { origemDosSons } from './audio/camadas.js';
-import { t, aplicarTextos, aoMudarIdioma, localidade } from './i18n.js';
+import { t, aplicarTextos, aoMudarIdioma, localidade, tempPar } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
 // nome, sigla e papel vêm do idioma escolhido (js/i18n.js)
@@ -94,7 +94,7 @@ async function iniciar() {
     grafico = new Grafico($('#grafico'), {
       anos: timeline().passos.map((p) => p.inicio),
       aoAnunciar: anunciar,
-      rotuloPonta: (id, idx, t) => `${DIMS.find((d) => d.id === id).sigla} ${id === 'temperatura' && tempEm(t) != null ? `${sinalTemp(tempEm(t))} °C` : curtos(idx)[id]}`,
+      rotuloPonta: (id, idx, t) => `${DIMS.find((d) => d.id === id).sigla} ${id === 'temperatura' && tempEm(t) != null ? tempPar(tempEm(t)) : curtos(idx)[id]}`,
     });
     grafico.tempoAlvo = () => motor.tempoContinuo();
     window.jukebox.grafico = grafico;
@@ -301,8 +301,8 @@ function curtos(idx) {
   const desde = (ano) => t('desde', { ano });
   return {
     co2: b.co2 == null ? desde(ini.co2) : `${Math.round(b.co2)} ppm`,
-    temperatura: b.temperatura == null ? desde(ini.temperatura) : `${sinal(b.temperatura, 1)} °C`,
-    tendencia: trilha?.tendencia?.[idx] == null ? desde(ini.temperatura) : t('media', { v: `${sinal(trilha.tendencia[idx], 1)} °C` }),
+    temperatura: b.temperatura == null ? desde(ini.temperatura) : tempPar(b.temperatura),
+    tendencia: trilha?.tendencia?.[idx] == null ? desde(ini.temperatura) : t('media', { v: tempPar(trilha.tendencia[idx]) }),
     chuva: b.chuva == null ? desde(ini.chuva) : `${sinal(b.chuva)}%`,
     vegetacao: v.vegetacao == null ? desde(ini.vegetacao) : `${sinal((v.vegetacao.saude - 1) * 100)}%`,
   };
@@ -321,7 +321,7 @@ function atualizarUI(idx) {
   const textos = textosDimensoes(regiao, idx);
   const media = trilha?.tendencia?.[idx], nivelTend = trilha?.posicao.tendencia?.[idx];
   textos.tendencia = media == null ? t('tend.sem')
-    : t('tend.texto', { v: `${media >= 0 ? '+' : '−'}${Math.abs(media).toLocaleString(localidade(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`, nivel: nivelTend + 1 });
+    : t('tend.texto', { v: tempPar(media), nivel: nivelTend + 1 });
   const curto = curtos(idx);
   const nivel = {
     co2: v.co2, temperatura: v.temperatura, tendencia: nivelTend == null ? null : (nivelTend + 1) / 4,
