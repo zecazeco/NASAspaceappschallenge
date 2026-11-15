@@ -512,6 +512,9 @@ export class Grafico {
     if (this.cards.some((c) => c.chave === chave)) return;
     const p = this.pontoDe(id, i);
     if (!p) return;
+    // um card por linha: se já há um card aberto da mesma linha (ex.: CO₂ em 2015 e de novo em 2016),
+    // o antigo fecha (vira etiqueta) e fica só o mais recente
+    for (const c of this.cards.filter((c) => linhaDe(c.id) === linhaDe(id) && !c.fechando)) this.fecharCard(c);
     const camada = CAMADAS_GRAFICO.find((k) => k.id === linhaDe(id));
     const el = document.createElement('div');
     el.className = 'card-evento'; el.style.setProperty('--cor', camada.cor);
