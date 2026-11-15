@@ -15,6 +15,24 @@ const PASTA = 'data/frames/';
 const RAD = Math.PI / 180;
 let MANIFESTO = null;
 
+// d3 (projeção Robinson do mapa da NASA): só é preciso para ler o mapa da cidade, então não fica no
+// <head> segurando a página. Baixa em segundo plano ao abrir o site; quem lê o mapa espera por ele.
+const BIBLIOTECAS_D3 = [
+  { src: 'https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js', pronta: () => !!window.d3 },
+  { src: 'https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/dist/d3-geo-projection.min.js', pronta: () => !!window.d3?.geoRobinson },   // depende do d3
+];
+let d3Pronto = null;
+/** Se falhar, a próxima chamada tenta de novo (só o que ainda não carregou). */
+export function carregarD3() {
+  d3Pronto ??= BIBLIOTECAS_D3.reduce((antes, { src, pronta }) => antes.then(() => (pronta() ? null : new Promise((ok, erro) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = ok;
+    s.onerror = () => { s.remove(); erro(new Error(`não carregou ${src}`)); };
+    document.head.append(s);
+  }))), Promise.resolve()).catch((e) => { d3Pronto = null; throw e; });
+  return d3Pronto;
+}
+
 export async function carregarFrames() {
   try {
     const r = await fetch(`${PASTA}manifesto.json`);
@@ -182,6 +200,7 @@ const framesDoPasso = (v, passo) => v.frames.filter((f) => { const a = anoDe(f);
  * (média dos frames do passo; null = sem frame naquele período → instrumento em silêncio).
  */
 export async function lerSerieLocal(lat, lon, passos, aoProgresso = () => {}) {
+  await carregarD3();   // a projeção do mapa (depois disto, pontoNoFrame e cia. podem usar o d3 direto)
   const serie = {};
   const total = MANIFESTO.visualizacoes.reduce((s, v) => s + v.frames.length, 0) || 1;
   let lidos = 0;
@@ -193,11 +212,11 @@ export async function lerSerieLocal(lat, lon, passos, aoProgresso = () => {}) {
       if (!fs.length) return null;
       const valores = [];
       for (const f of fs) {
-        try {
-          const img = await imagem(f.arquivo);
-          const val = v.leitura === 'media' ? lerMedia(v, img, f.arquivo) : lerLocal(v, img, lat, lon);
-          if (val != null) valores.push(val);
-        } catch (e) { console.warn(e.message); }
+        // frame que não baixa: tenta mais uma vez; se ainda falhar, a música não começa incompleta
+        // (o erro sobe até a tela "Preparando", que oferece tentar de novo)
+        const img = await imagem(f.arquivo).catch(() => imagem(f.arquivo));
+        const val = v.leitura === 'media' ? lerMedia(v, img, f.arquivo) : lerLocal(v, img, lat, lon);
+        if (val != null) valores.push(val);
         avancar();
       }
       return valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
@@ -266,6 +285,7 @@ export function corDoValor(v, valor) {
  * com um ponto na cidade. Devolve o frame usado ou null (sem dado naquele ano).
  */
 export async function desenharFrame(canvas, id, passo, lat, lon) {
+  await carregarD3();
   const v = visualizacao(id);
   const f = v && framesDoPasso(v, passo).at(-1);
   const ctx = canvas.getContext('2d');

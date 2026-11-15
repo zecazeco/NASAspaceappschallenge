@@ -1,5 +1,5 @@
 import { carregarTimeline, timeline, prepararLocal, valoresDoPasso, textosDimensoes, inicioMedicao, fonteDosDados } from './dados.js';
-import { preCarregarFrames, desenharFrame } from './frames.js';
+import { preCarregarFrames, desenharFrame, carregarD3 } from './frames.js';
 import { PainelTemperatura } from './painel-temperatura.js';
 import { Grafico } from './grafico.js';
 import { calcularTrilha, listarEventos } from './trilha.js';
@@ -84,11 +84,15 @@ const passo = (i) => timeline().passos[i];
 const ultimo = () => timeline().passos.length - 1;
 
 // ---------------------------------------------------------------- início
+// O botão Começar nasce liberado: nada daqui é preciso antes de a cidade ser escolhida. Tudo baixa em
+// segundo plano; quem precisa (escolherCidade, na tela "Preparando") espera garantirPreparo().
+let montado = false;
 async function iniciar() {
-  const status = $('#status-carregamento');
   try {
-    status.textContent = t('inicio.carregandoDados');
+    carregarD3().catch(() => { /* tenta de novo ao ler o mapa da cidade */ });
     await Promise.all([carregarTimeline(), carregarCidadesLocais()]);
+    if (montado) return;   // "tentar de novo" depois de uma falha: a tela já foi montada
+    montado = true;
     const n = timeline().passos.length;
     $('#slider-tempo').max = n - 1;
     montarDimensoes();
@@ -101,19 +105,14 @@ async function iniciar() {
     });
     grafico.tempoAlvo = () => motor.tempoContinuo();
     window.jukebox.grafico = grafico;
-    status.textContent = '';
     // tudo o que é pesado baixa em SEGUNDO PLANO, enquanto a pessoa autoriza o GPS ou escolhe a cidade
     somPronto = motor.preparar(n, (p) => { progressoSom = p; aoProgressoSom(p); });
     somPronto.catch((e) => console.error('Sons não carregaram', e));
     preCarregarFrames();
     if (ajustes.narracao === 'voz') narrador.carregar(timeline().passos); // só se a voz estiver ligada
-    $('#btn-comecar').disabled = false;
-    $('#btn-comecar').dataset.chave = 'inicio.comecar';
-    $('#btn-comecar').textContent = t('inicio.comecar');
   } catch (e) {
     console.error(e);
-    status.textContent = t('inicio.erro');
-    $('#alerta').textContent = status.textContent;
+    throw e;   // escolherCidade mostra o erro na tela "Preparando"
   }
 }
 
@@ -213,41 +212,65 @@ $('#btn-trocar-cidade').addEventListener('click', () => mostrarBusca('', true));
 
 async function escolherCidade(c) {
   cidade = c;
-  // tela "Preparando": lê os mapas da cidade e calcula a trilha antes de tocar
+  // Tela "Preparando": AQUI é feita toda a verificação. O play e a tela do gráfico só aparecem quando
+  // tudo chegou e está completo: dados, d3, o mapa da cidade em todos os anos, a chuva (se a NASA POWER
+  // falhar, só a camada de chuva fica desligada) e todos os sons obrigatórios. Uma porcentagem só soma tudo.
   mostrar('#tela-carregando');
   $('#carregando-cidade').textContent = c.nome;
-  const barra = $('#progresso-cidade'), st = $('#status-cidade');
+  const barra = $('#progresso-cidade'), st = $('#status-cidade'), tentar = $('#prep-tentar');
+  tentar.hidden = true;
   $('#titulo-carregando').focus?.();
-  // duas coisas em paralelo: ler os mapas da cidade e terminar de baixar os sons
-  let pMapas = 0, ultimoAviso = -1;
+  const PESO = { dados: 0.05, mapas: 0.35, chuva: 0.1, sons: 0.5 };   // ~ quanto cada parte demora
+  const feito = { dados: 0, mapas: 0, chuva: 0, sons: progressoSom };
+  let ultimoAviso = -1;
   const mostrarProgresso = () => {
-    const total = (pMapas + progressoSom) / 2;
-    barra.value = Math.round(total * 100);
-    const partes = [];
-    if (pMapas < 1) partes.push(t('prep.mapas', { p: Math.round(pMapas * 100) }));
-    if (progressoSom < 1) partes.push(t('prep.sons', { p: Math.round(progressoSom * 100) }));
-    // leitor de tela: avisa de 25 em 25%
-    if (total - ultimoAviso >= 0.25 || total === 1) { ultimoAviso = total; st.textContent = partes.join(' · ') || t('prep.compondo'); }
+    const p = Math.round(Object.keys(PESO).reduce((s, k) => s + PESO[k] * Math.min(1, feito[k]), 0) * 100);
+    barra.value = p;
+    st.textContent = t('prep.porcentagem', { p });
+    if (p - ultimoAviso >= 25 || p === 100) { ultimoAviso = p; $('#alerta').textContent = st.textContent; }   // leitor de tela: de 25 em 25%
   };
-  aoProgressoSom = mostrarProgresso;
   mostrarProgresso();
-  [regiao] = await Promise.all([
-    prepararLocal(c.lat, c.lon, (p) => { pMapas = p; mostrarProgresso(); }),
-    somPronto,
-  ]);
-  aoProgressoSom = () => {};
-  if (!somLigado) {
-    await motor.ligar();
-    narrador.aoFalar = (f) => motor.abaixarParaVoz(f);
-    motor.aoMudarPasso = aoMudarPasso;
-    motor.aoTerminar = () => {
-      atualizarBotaoTocar();
-      anunciar(t('fim', { ano: passo(ultimo()).inicio }));
-    };
-    aplicarAjustes();
-    somLigado = true;
+  let local;
+  try {
+    await garantirPreparo();   // dados (começaram a baixar ao abrir o site)
+    feito.dados = 1;
+    feito.sons = progressoSom;
+    aoProgressoSom = (p) => { feito.sons = p; mostrarProgresso(); };
+    mostrarProgresso();
+    [local] = await Promise.all([
+      prepararLocal(c.lat, c.lon, (parte, p) => { feito[parte] = p; mostrarProgresso(); }),
+      (async () => {
+        await somPronto;
+        if (motor.sonsFaltando().length) await motor.recarregarFaltando();   // uma nova tentativa
+        const falta = motor.sonsFaltando();
+        if (falta.length) throw new Error(`sons que não baixaram: ${falta.join(', ')}`);
+      })(),
+    ]);
+    if (!somLigado) {
+      await motor.ligar();
+      narrador.aoFalar = (f) => motor.abaixarParaVoz(f);
+      motor.aoMudarPasso = aoMudarPasso;
+      motor.aoTerminar = () => {
+        atualizarBotaoTocar();
+        anunciar(t('fim', { ano: passo(ultimo()).inicio }));
+      };
+      aplicarAjustes();
+      somLigado = true;
+    }
+  } catch (e) {
+    console.error('Preparando:', e);
+    aoProgressoSom = () => {};
+    st.textContent = t('prep.erro');
+    $('#alerta').textContent = st.textContent;
+    tentar.hidden = false;
+    tentar.onclick = () => escolherCidade(c);
+    tentar.focus();
+    return;
   }
-  st.textContent = t('prep.compondo');
+  aoProgressoSom = () => {};
+  regiao = local;
+  feito.sons = 1;
+  mostrarProgresso();
   trilha = calcularTrilha(regiao, timeline().passos, timeline().global.co2);
   window.jukebox.trilha = trilha;
   window.jukebox.eventos = () => listarEventos(trilha, timeline().passos);
@@ -543,7 +566,7 @@ form.elements.volume.addEventListener('input', () => motor.definirVolume(form.el
 aplicarTextos();
 aoMudarIdioma(() => {
   const btn = $('#btn-comecar');
-  btn.textContent = t(btn.dataset.chave || 'inicio.carregando');
+  btn.textContent = t(btn.dataset.chave || 'inicio.comecar');
   if ($('#lista-dimensoes').children.length) nomearDimensoes();
   atualizarBotaoTocar();
   if (regiao) atualizarUI(motor.idx);
@@ -552,4 +575,18 @@ aoMudarIdioma(() => {
 });
 
 window.jukebox = { motor, narrador }; // para depurar no console
-iniciar();
+// dados: começam a baixar já; se falharem, "Tentar de novo" na tela "Preparando" chama de novo
+let preparo = null;
+function garantirPreparo() {
+  preparo ??= iniciar().catch((e) => { preparo = null; throw e; });
+  return preparo;
+}
+garantirPreparo().catch(() => { /* o erro aparece quando a cidade for escolhida */ });
+
+// O som só pode ser destravado dentro de um toque. Se o primeiro toque (Começar) veio antes deste código
+// chegar, qualquer toque seguinte (escolher a cidade, tocar) destrava.
+const destravarSom = () => { if (Tone.getContext().state !== 'running') Tone.start(); };
+document.addEventListener('pointerdown', destravarSom, { capture: true });
+document.addEventListener('keydown', destravarSom, { capture: true });
+// toque em Começar antes deste código chegar (o <head> guardou): atende agora
+if (window.cliqueAntesDoCodigo) { window.cliqueAntesDoCodigo = false; $('#btn-comecar').click(); }

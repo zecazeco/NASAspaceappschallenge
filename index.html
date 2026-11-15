@@ -19,6 +19,11 @@
         h.classList.add('traduzindo');
         setTimeout(function () { h.classList.remove('traduzindo'); }, 3000);
       }
+      // o botão Começar nasce liberado: um toque antes de o código do site chegar fica guardado
+      // e é atendido assim que ele chega (js/main.js, final)
+      document.addEventListener('click', function (e) {
+        if (!window.jukebox && e.target.closest && e.target.closest('#btn-comecar')) window.cliqueAntesDoCodigo = true;
+      });
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -32,10 +37,9 @@
   <!-- Ordem de execução: todos são adiados (defer/module) e rodam nesta ordem depois que o HTML é lido,
        sem segurar a página. A tradução (i18n.js) vem primeiro, então não espera as bibliotecas da internet. -->
   <script type="module" src="js/i18n.js"></script>
-  <!-- Bibliotecas (versões fixas) -->
+  <!-- Bibliotecas (versões fixas). O d3 não está aqui: é baixado em segundo plano por js/frames.js
+       (carregarD3), porque só é usado para ler o mapa depois que a cidade é escolhida. -->
   <script defer src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4.0.0/dist/d3-geo-projection.min.js"></script>
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
@@ -69,7 +73,7 @@
         <p class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6"/><rect x="17" y="14" width="4" height="6"/></svg><span data-i18n="inicio.fones">Use headphones.</span></p>
         <p class="nota"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg><span data-i18n="inicio.local">We’ll ask for your location. If you’d rather not share it, you can type your city.</span></p>
       </div>
-      <button id="btn-comecar" class="btn btn-primario btn-grande" type="button" disabled data-i18n="inicio.carregando">Loading…</button>
+      <button id="btn-comecar" class="btn btn-primario btn-grande" type="button" data-i18n="inicio.comecar">Start</button>
       <p id="status-carregamento" class="nota" aria-live="polite"></p>
     </div>
   </section>
@@ -114,7 +118,9 @@
     <h2 id="titulo-carregando" class="titulo-tela" tabindex="-1" data-i18n="prep.titulo">Preparing the music</h2>
     <p id="carregando-cidade" class="cidade-carregando"></p>
     <progress id="progresso-cidade" max="100" value="0" aria-labelledby="titulo-carregando" aria-describedby="status-cidade"></progress>
-    <p id="status-cidade" class="status-terminal" aria-live="polite">Lendo os mapas da NASA…</p>
+    <!-- uma porcentagem só, de tudo (dados, mapa, chuva e sons); o leitor de tela ouve de 25 em 25% pelo #alerta -->
+    <p id="status-cidade" class="status-terminal">0%</p>
+    <button id="prep-tentar" class="btn btn-primario" type="button" data-i18n="prep.tentar" hidden>Try again</button>
   </section>
 
   <!-- 3. Tela principal -->

@@ -68,6 +68,11 @@ export class Motor {
     if (this.reverb.ready) await this.reverb.ready;
   }
 
+  /** Sons obrigatórios das camadas que não baixaram (fita, reverb e pontuais são opcionais: têm substituto). */
+  sonsFaltando() { return Object.values(this.dims).flatMap((d) => d.faltando()); }
+  /** Tenta baixar de novo os sons obrigatórios que faltaram. */
+  async recarregarFaltando() { await Promise.all(Object.values(this.dims).map((d) => d.recarregarFaltando())); }
+
   async prepararFita() {
     const F = ARQUIVOS.fita;
     const [rebobinar, tic, tapeStart] = await Promise.all([carregarBuffer(F.rebobinar), carregarBuffer(F.tic), carregarBuffer(F.tapeStart)]);

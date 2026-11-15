@@ -10,17 +10,21 @@ import { limitesChuva } from './trilha.js';
 
 let TIMELINE = null;
 
+const json = async (url) => {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Não foi possível carregar ${url}`);
+  return r.json();
+};
+
 export async function carregarTimeline() {
-  const resp = await fetch('data/timeline.json');
-  if (!resp.ok) throw new Error('Não foi possível carregar data/timeline.json');
-  TIMELINE = await resp.json();
+  // os três arquivos ao mesmo tempo (antes era um depois do outro)
+  const [timelineJson, co2, frames] = await Promise.all([json('data/timeline.json'), json('data/co2-noaa.json'), carregarFrames()]);
+  TIMELINE = timelineJson;
   // CO₂: média anual de Mauna Loa (NOAA), guardada no próprio site (data/co2-noaa.json); começa em 1959
-  const co2 = await fetch('data/co2-noaa.json');
-  if (!co2.ok) throw new Error('Não foi possível carregar data/co2-noaa.json');
-  const { anual } = await co2.json();
+  const { anual } = co2;
   TIMELINE.global.co2 = TIMELINE.passos.map((p) => anual[p.inicio] ?? null);
   TIMELINE.meta.inicioMedicao.co2 = TIMELINE.passos.find((p) => anual[p.inicio] != null)?.inicio ?? null;
-  TIMELINE.frames = await carregarFrames();
+  TIMELINE.frames = frames;
   return TIMELINE;
 }
 
@@ -49,15 +53,18 @@ export function regiaoMaisProxima(lat, lon) {
 /**
  * Dados da cidade escolhida. Com frames: a temperatura vem da cor do mapa sobre a cidade.
  * A chuva vem da NASA POWER; se ela falhar, entra em local.indisponivel e a camada é desligada.
+ * aoProgresso(parte, 0…1): parte = 'mapas' ou 'chuva' (a tela "Preparando" soma tudo numa porcentagem só).
  */
 export async function prepararLocal(lat, lon, aoProgresso = () => {}) {
   const base = regiaoMaisProxima(lat, lon);
   // chuva: NASA POWER, buscada em paralelo com a leitura dos mapas
-  const chuva = buscarChuva(lat, lon, TIMELINE.passos).catch((e) => { console.warn('Chuva indisponível:', e.message); return null; });
+  const chuva = buscarChuva(lat, lon, TIMELINE.passos)
+    .catch((e) => { console.warn('Chuva indisponível:', e.message); return null; })
+    .finally(() => aoProgresso('chuva', 1));
   let local;
-  if (!TIMELINE.frames) { local = { ...base, inicioMedicao: {} }; aoProgresso(1); }
+  if (!TIMELINE.frames) { local = { ...base, inicioMedicao: {} }; aoProgresso('mapas', 1); }
   else {
-    const serie = await lerSerieLocal(lat, lon, TIMELINE.passos, aoProgresso);
+    const serie = await lerSerieLocal(lat, lon, TIMELINE.passos, (p) => aoProgresso('mapas', p));
     local = { ...base, fonte: 'frames', inicioMedicao: {} };
     for (const [dim, lidos] of Object.entries(serie)) {
       // temperatura com 1 casa decimal: a linha, o número na tela e o som usam o mesmo valor

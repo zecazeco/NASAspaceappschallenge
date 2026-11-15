@@ -91,13 +91,32 @@ export class Camada {
   async carregar(aoArquivo = () => {}) {
     const { pasta } = this.def;
     await Promise.all([...nomesDaCamada(this.def).map(({ nome, k }) => carregarSom(pasta, nome).then((buf) => {
-      if (this.def.modo === 'compassos') this.buffers[k] = buf;
-      else this.loops[k] = this.criarLoop(buf);
+      this.guardar(k, buf);
       aoArquivo();
     })), ...pontuaisDaCamada(this.def).map(({ nome, conjunto, tipo }) => carregarSom(pasta, nome).then((buf) => {
       (this.pontuais[conjunto] ??= {})[tipo] = buf;
       aoArquivo();
     }))]);
+  }
+
+  guardar(k, buf) {
+    if (this.def.modo === 'compassos') this.buffers[k] = buf;
+    else if (this.loops[k]) this.loops[k].buf = buf;
+    else this.loops[k] = this.criarLoop(buf);
+  }
+
+  /** Sons obrigatórios (não os pontuais, que são opcionais) que não baixaram. */
+  faltando() {
+    return nomesDaCamada(this.def)
+      .filter(({ k }) => !(this.def.modo === 'compassos' ? this.buffers[k] : this.loops[k]?.buf))
+      .map(({ nome }) => nome);
+  }
+
+  /** Tenta de novo os sons obrigatórios que não baixaram. */
+  async recarregarFaltando() {
+    const falta = new Set(this.faltando());
+    await Promise.all(nomesDaCamada(this.def).filter(({ nome }) => falta.has(nome))
+      .map(({ nome, k }) => carregarSom(this.def.pasta, nome).then((buf) => this.guardar(k, buf))));
   }
 
   /** Loop: { buf, ganho, fonte }. fonte só existe enquanto ele pode ser ouvido. */
