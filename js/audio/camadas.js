@@ -100,12 +100,12 @@ async function carregarSom(pasta, nome, formato = 'mp3') {
   return null;
 }
 
-const RAMPA_NIVEL = 0.6;   // s: troca suave de volume entre níveis (e entrada das vozes) no início do compasso
+const RAMPA_NIVEL = 0.15;  // s: troca suave de volume entre níveis (e entrada das vozes) no início do compasso
 const VOLUME_BASE = 0.5;   // −6 dB (mesmo equilíbrio entre camadas de antes)
 /** Volume da camada: VOLUME_BASE × def.volume × def.volumeDb (em dB). */
 const volumeDaCamada = (def) => VOLUME_BASE * (def.volume ?? 1) * Tone.dbToGain(def.volumeDb ?? 0);
 const SOLTAR = 0.6;        // s: quando o compasso seguinte começa, a cauda do anterior some nesse tempo
-const REFORCO_FADE = 2;    // s: fade da troca de volume da melodia (reforcoPorNivelDb), quase 1 compasso
+const REFORCO_FADE = 0.5;   // s: fade da troca de volume da melodia (reforcoPorNivelDb), curto para soar junto com a virada do ano
 
 export class Camada {
   constructor(id) {
