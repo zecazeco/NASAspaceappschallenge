@@ -8,7 +8,7 @@
 
 Live site: https://zecazeco.github.io/NASAspaceappschallenge/ (use headphones; on iPhone, turn off silent mode)
 
-Earth Jukebox is a mobile-first web app that turns NASA's global temperature anomaly map into music. You pick a city by GPS or by typing its name, and hear 1950 to 2023 in about 2 minutes 40 seconds, one musical bar per year. Every year sounds different because every year has a different color on the map. It was designed from the start for **blind and low-vision people**: everything the map and the chart show can also be heard.
+Earth Jukebox is a mobile-first web app that turns NASA's global temperature anomaly map into music. You pick a city by GPS or by typing its name, and hear 1950 to 2023 in about 2 minutes 40 seconds, one musical bar per year. Every year sounds different because every year has a different color on the map. It was designed with **blind and low-vision people in mind** and is open to everyone: you can hear and see it, and everything the map and the chart show can also be heard.
 
 ---
 
